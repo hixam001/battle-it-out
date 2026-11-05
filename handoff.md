@@ -10,28 +10,30 @@ INNOFEST "Battle It Out" is a Battlecode-2026-style programming competition. Par
 ## 2. Workflow rules (from the owner — mandatory)
 
 1. **Start of every task:** read this file, read memory, load this handoff into memory, *then* proceed.
-2. **New task = new branch** named with Jira notation (e.g. `BIO-101-pin-dependencies`), then commit, **push**, and **open a pull request**.
+2. **New task = new branch** named with Jira notation (e.g. `BIO-101-pin-dependencies`; keys follow the PRD §10 ID scheme in §3 below; for epic-level work use `BIO-EPIC-0N-…`), then commit, **push**, and **open a pull request**.
 3. **No co-authors, ever.** No `Co-Authored-By` trailers, no "Generated with Claude Code" lines in commits, pushes, or PRs. Hisham Ahmed is the only contributor.
 4. **End of every task:** append an entry to the Task log below and update memory.
 5. Per PRD §12: for every change report Jira ID, files changed, tests run, results, risks, new decisions. Never claim compatibility/isolation/limits/reliability without a test that proves it. Don't invent values for `[DECIDE]` items — ask.
 
-## 3. Repository state (as of 2026-11-05)
+## 3. Repository state (as of 2026-11-05, after task BIO-EPIC-00 integration)
 
-- Git: branch `main`, single commit `27439bc Initial commit`. `docs/` is **untracked**.
-- Root: `README.md` (just a title), `.github/modernize/java-upgrade/` (hook scripts `recordToolUse.sh/.ps1`, `.gitignore` = `**/*`), `docs/`.
-- `docs/` contains six spec docs (below) plus `docs/battlecode26-scaffold/`.
-- `docs/battlecode26-scaffold/` is a **nested git repo** (origin `battlecode/battlecode26-scaffold`, HEAD `f69e2ab Bump engine version to 1.2.4`) with local artifacts: `.venv` (uv, CPython **3.12**), `.gradle`, `build/`, `client/*.AppImage`, `.temp/battlecode.tar.gz`, `matches/*.bc26`.
-  - `engine_version.txt` = `1.2.6`, `client_version.txt` = `1.0.6` (files have no trailing newline); the nested repo's last commit message says 1.2.4, so the version files differ from HEAD's message — verify before pinning.
-  - `gradle.properties`: teamA/teamB=`examplefuncsplayer`, language java, map `DefaultSmall`.
-  - Java player: `src/examplefuncsplayer/RobotPlayer.java`; Python player: `src/examplefuncsplayer_py/bot.py` (`from battlecode26 import *`, a `turn()` function using a global `rc`, `Direction`, `log`).
-  - `run.py` (Python launcher) **hard-requires Python exactly 3.12** (`REQUIRED_PYTHON_VERSION = (3, 12)`, raises otherwise) and pip-installs the engine from `.temp/`.
+- Branch `BIO-EPIC-00-backend-scaffold-integration` (PR open against `main`; `main` = `27439bc Initial commit` until merged).
+- Layout: `docs/` (six spec docs), `backend/` (home of the execution foundation and future web backend), `backend/battlecode26-scaffold/` (vendored Battlecode 2026 scaffold, **now tracked by this repo — no nested git**), `handoff.md`, `.github/modernize/java-upgrade/` (tool-use hook scripts; `.gitignore` = `**/*`), `README.md` (title only).
+- `backend/README.md` records provenance: upstream `battlecode/battlecode26-scaffold` commit `f69e2ab872a0061c9d4a684aa1dd798a0829da85`; upstream history not kept (updates are manual merges). Backup of the original nested `.git` was only kept in the session scratchpad (temporary) — it is just upstream history; re-clone upstream if ever needed.
+- Local modifications imported with the scaffold: `engine_version.txt` 1.2.4→1.2.6 (from `./gradlew update`), rewritten `src/examplefuncsplayer/RobotPlayer.java`. `client_version.txt` = 1.0.6 (upstream now offers client 1.0.7).
+- Scaffold files: `build.gradle`, `gradle.properties` (defaults: java vs java, map `DefaultSmall`), Java player `src/examplefuncsplayer/RobotPlayer.java`, Python player `src/examplefuncsplayer_py/bot.py` (`from battlecode26 import *`, `turn()` with global `rc`), test `test/examplefuncsplayer/RobotPlayerTest.java`, `run.py`.
+- `run.py` **hard-requires Python exactly 3.12** (`REQUIRED_PYTHON_VERSION = (3, 12)`) and pip-installs the engine from `.temp/`.
+- Ignored/local only (not in git): `.venv` (uv CPython 3.12.15, `battlecode26` imports OK; its `activate` script still hardcodes an older path `/home/hixam/Downloads/Innofest/battlecode26-scaffold/.venv` — recreate the venv rather than relying on `activate`), `.gradle`, `build/`, `client/` (AppImage), `matches/`, `.temp/`.
+- Editor note: the VS Code Java/NetBeans extension may recreate `docs/battlecode26-scaffold/.gradle/nb-cache` at the old path; delete it and reopen the project from `backend/battlecode26-scaffold`.
 
-### Repo-hygiene risks to resolve before first commit of `docs/`
-- Nested `.git` inside `docs/battlecode26-scaffold/` → `git add docs` will register an embedded repo/gitlink, not the files. Decide: submodule, vendor (remove nested `.git`), or keep out of the repo.
-- Big/generated content (`.venv`, `build/`, `.gradle/`, AppImage, `.bc26`, tarball) must not be committed; check the scaffold `.gitignore` and the root ignore rules.
-- Jira IDs in the PRD are reused: `BIO-101..110` appear both as P0 scope items (§5) and as different BIO-EPIC-01 tasks (§10); `BIO-201..` and `BIO-301..` similarly overlap between scope and breakdown. **Confirm the Jira ID scheme before naming branches.**
+### Jira / requirement ID scheme (fixed in PRD v1.1, TEST_PLAN v1.1)
+- Epics: `BIO-EPIC-00..08`.
+- Jira issue keys: `BIO-NNN`, hundreds digit = epic (`BIO-001..005` EPIC-00, `BIO-1NN` EPIC-01 … `BIO-8NN` EPIC-08). Only EPIC-00..03 tasks are defined (PRD §10). EPIC-04..08 tasks get keys when broken down; docs refer to the epic ID until then.
+- Requirement IDs (PRD §5 scope list): `BIO-REQ-01..23` (were the duplicate `BIO-101..110`, `201..208`, `301..305`). Not Jira keys. Traceability REQ→epic table in PRD §10 (proposed).
+- Test plan Jira references now use defined task keys or epic IDs only (TC-02, 03, 06, 07, 08 changed).
+- Real Jira assigns keys sequentially; if the tracker numbers differ from PRD §10, update the docs — never reuse a number.
 
-## 4. Document digest (all in `docs/`)
+## 4. Document digest (all in `docs/`; scaffold README is in `backend/battlecode26-scaffold/`)
 
 ### PRD.md — product requirements (v1.0, 2026-11-04)
 - Goals: BIO-G01 reproducible scaffold on Python 3.13; G02 safe deterministic bot execution (bot failure ≠ platform failure); G03 automated match lifecycle (advance, tie-break maps, final coin flip); G04 controlled tournament/registration/submission mgmt; G05 visible, auditable outcomes/notifications.
@@ -58,7 +60,7 @@ Environment: clean Linux, approved Py 3.13 patch, pinned engine/client/packages,
 ### APP_FLOW.md
 Entry points; FLOW-01 developer scaffold setup (error states: unsupported Python → stop with guidance, no silent unpinned downloads), FLOW-02 tournament creation/approval, FLOW-03 roster + invitation registration, FLOW-04 submission, FLOW-05 organizer runs a round, FLOW-06 results/replay, FLOW-07 account deletion, FLOW-08 archive/delete. Error/edge matrix, navigation map, route inventory (`/login`, `/register`, `/dashboard`, `/participant/*`, `/organizer/*`, `/admin/*`, `/matches/{id}`…), IF–THEN decision list, UX notes, unresolved flow decisions.
 
-### battlecode26-scaffold/README.md
+### backend/battlecode26-scaffold/README.md
 Stock Java scaffold README: `./gradlew build|run|update|zipForSubmit|tasks`, config in `gradle.properties`, player code under `src/`, maps under `maps/`, matches under `matches/`.
 
 ## 5. Unresolved `[DECIDE]` items (do not invent answers)
@@ -67,15 +69,15 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 
 ## 6. Key finding — first thing to fix
 
-**Docs target Python 3.13; the scaffold currently pins Python 3.12.** `run.py` raises unless `sys.version_info[:2] == (3, 12)`, and `.venv` is CPython 3.12 (uv 0.13.5). Whether the `battlecode26` engine package works on 3.13 is **unverified** — that is exactly TC-01 / BIO-EPIC-01. Don't "fix" by editing the version check blindly: inspect the engine wheel/tarball (`.temp/battlecode.tar.gz`) and dependencies first.
+**Docs target Python 3.13; the scaffold currently pins Python 3.12.** `run.py` raises unless `sys.version_info[:2] == (3, 12)`, and `.venv` is CPython 3.12 (uv 0.13.5). Whether the `battlecode26` engine package works on 3.13 is **unverified** — that is exactly TC-01 / BIO-EPIC-01. Don't "fix" by editing the version check blindly: inspect the engine package (`.temp/battlecode.tar.gz` if present, or the installed `battlecode26` in `.venv`) and dependencies first.
 
 ## 7. Next recommended steps
 
-1. Confirm Jira ID scheme (see §3 risks), create the Jira-named branch for the first task.
-2. Resolve the nested-git / ignore-rules question for `docs/battlecode26-scaffold`, then commit docs + handoff via PR.
-3. BIO-EPIC-00: audit scaffold (runner API, engine/client/package versions), produce the version matrix, run the Java baseline and the Python reference bot on 3.12 as the control.
-4. BIO-EPIC-01: attempt Python 3.13 in a clean env; record the result with exact versions (TC-01).
-5. Get decisions on DEC-03/04/05 before BIO-EPIC-02.
+1. BIO-EPIC-00: audit the scaffold (runner API, engine/client/package versions), produce the version matrix, run the Java baseline and the Python reference bot on 3.12 as the control (`./gradlew build --offline` already passes post-move).
+2. BIO-EPIC-01: attempt Python 3.13 in a clean env; record the result with exact versions (TC-01). Don't just edit the 3.12 check in `run.py`.
+3. Decide the `backend/` layout for the first built-on-top component (suggested: sibling packages next to `battlecode26-scaffold/`, e.g. bot validator and runner, before any Django code — execution foundation comes first).
+4. Get decisions on DEC-03/04/05 before BIO-EPIC-02.
+5. Optional: add a root `.gitignore`, and decide whether to take upstream client 1.0.7 (`./gradlew update`).
 
 ## 8. Task log (append newest at the bottom)
 
@@ -86,3 +88,12 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Tests run: none (documentation task).
 - Risks / findings: Py 3.12 vs 3.13 mismatch (§6); nested git repo in `docs/`; overlapping Jira IDs in PRD; version files vs nested git log differ.
 - New decisions needed: Jira ID scheme; how to track the scaffold in the repo (submodule / vendor / exclude).
+
+### 2026-11-05 — BIO-EPIC-00: integrate scaffold into backend + fix duplicate Jira IDs
+- Branch `BIO-EPIC-00-backend-scaffold-integration` (epic-level branch because no task key exists for this work yet — rename if a Jira issue is created). Commits: (1) add six spec docs unchanged, (2) fix Jira IDs, (3) move scaffold into `backend/` and track it, (4) handoff update.
+- Files changed: `docs/PRD.md` (v1.1: §5 scope IDs → `BIO-REQ-01..23`, new "ID scheme" subsection + traceability table in §10), `docs/TEST_PLAN.md` (v1.1: Jira refs on TC-02/03/06/07/08), `backend/README.md` (new), `backend/battlecode26-scaffold/**` (16 source files, moved from untracked `docs/battlecode26-scaffold`, nested `.git` removed), `handoff.md`.
+- Tests run: `./gradlew build --offline` in the new location → exit 0 (only prints the "new client 1.0.7 available" notice); `.venv/bin/python` = 3.12.15 and `import battlecode26` OK. Not run: Python bot match, Java match, anything on Python 3.13. `git add -n` confirmed only the 16 source files + handoff/README are tracked (no `.venv`/`build`/`client`).
+- Risks: upstream sync is now manual; `.venv/bin/activate` has a stale hardcoded path (venv still imports fine); IDE may recreate the old `docs/` path stub; REQ→epic table is my proposed mapping, needs owner confirmation.
+- Decisions made by owner: vendor scaffold into backend and build on top of it; fix reused Jira IDs. Decisions I made (reversible): layout `backend/battlecode26-scaffold/`; `BIO-REQ-nn` naming; epic-level branch name.
+- Still open: all `[DECIDE]` items (§5); Python 3.13 compatibility still unverified.
+
