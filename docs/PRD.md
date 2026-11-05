@@ -2,8 +2,8 @@
 
 **Project:** INNOFEST Battle It Out\
 **Document status:** Working baseline for implementation planning\
-**Version:** 1.0\
-**Last updated:** 2026-11-04\
+**Version:** 1.1 (scope IDs renumbered to `BIO-REQ-nn`; see §10 ID scheme)\
+**Last updated:** 2026-11-05\
 **Requirement notation:** Jira-style Epics/Stories, priorities, and
 Given/When/Then acceptance criteria.
 
@@ -147,57 +147,57 @@ historical records.
 
 ### P0 --- Critical execution foundation
 
--   \[BIO-101\] Audit the existing Battlecode 2026 repository, scaffold,
+-   \[BIO-REQ-01\] Audit the existing Battlecode 2026 repository, scaffold,
     engine, client, Python runner, and dependency compatibility.
--   \[BIO-102\] Make the scaffold reproducible and compatible with the
+-   \[BIO-REQ-02\] Make the scaffold reproducible and compatible with the
     approved Python 3.13 target.
--   \[BIO-103\] Execute a single-file Python bot (`bot.py`) using the
+-   \[BIO-REQ-03\] Execute a single-file Python bot (`bot.py`) using the
     supported Battlecode engine interface.
--   \[BIO-104\] Validate bot entrypoint, syntax, imports, and runtime
+-   \[BIO-REQ-04\] Validate bot entrypoint, syntax, imports, and runtime
     compatibility before activation.
--   \[BIO-105\] Run two Python bots in an isolated execution environment
+-   \[BIO-REQ-05\] Run two Python bots in an isolated execution environment
     with globally fixed resource limits.
--   \[BIO-106\] Distinguish bot-caused failures from platform/engine
+-   \[BIO-REQ-06\] Distinguish bot-caused failures from platform/engine
     failures.
--   \[BIO-107\] Automate sequential matches, result capture, bracket
+-   \[BIO-REQ-07\] Automate sequential matches, result capture, bracket
     advancement, tie-break maps, and final coin flip.
--   \[BIO-108\] Generate and retain match replay files until tournament
+-   \[BIO-REQ-08\] Generate and retain match replay files until tournament
     archive; delete replay files at archive.
--   \[BIO-109\] Implement platform-failure retry policy: retry up to 10
+-   \[BIO-REQ-09\] Implement platform-failure retry policy: retry up to 10
     times, then alert Admin. `[DECIDE]` whether 10 means total attempts
     or 10 retries after the first attempt.
--   \[BIO-110\] Prove the engine path end-to-end before starting the
+-   \[BIO-REQ-10\] Prove the engine path end-to-end before starting the
     public website.
 
 ### P1 --- Tournament operations and web platform
 
--   \[BIO-201\] Implement authentication, roles, and tournament-scoped
+-   \[BIO-REQ-11\] Implement authentication, roles, and tournament-scoped
     access.
--   \[BIO-202\] Implement tournament creation, Admin approval/rejection,
+-   \[BIO-REQ-12\] Implement tournament creation, Admin approval/rejection,
     and lifecycle controls.
--   \[BIO-203\] Import official roster, validate email/code
+-   \[BIO-REQ-13\] Import official roster, validate email/code
     registration, and enforce locked participant identity after
     successful registration.
--   \[BIO-204\] Implement one-file bot submissions, validation, version
+-   \[BIO-REQ-14\] Implement one-file bot submissions, validation, version
     history, activation, and deadline locking.
--   \[BIO-205\] Implement Admin/Organizer tournament operations and
+-   \[BIO-REQ-15\] Implement Admin/Organizer tournament operations and
     audit logging.
--   \[BIO-206\] Implement automated email and mandatory dashboard
+-   \[BIO-REQ-16\] Implement automated email and mandatory dashboard
     notifications.
--   \[BIO-207\] Implement participant dashboard, bracket/results views,
+-   \[BIO-REQ-17\] Implement participant dashboard, bracket/results views,
     and replay access.
--   \[BIO-208\] Implement team/account deletion lifecycle and retention
+-   \[BIO-REQ-18\] Implement team/account deletion lifecycle and retention
     rules.
 
 ### P2 --- Enhancements / later release
 
--   \[BIO-301\] Public landing page and marketing website.
--   \[BIO-302\] Live match viewing, if approved.
--   \[BIO-303\] Additional languages, multi-file submissions, custom
+-   \[BIO-REQ-19\] Public landing page and marketing website.
+-   \[BIO-REQ-20\] Live match viewing, if approved.
+-   \[BIO-REQ-21\] Additional languages, multi-file submissions, custom
     dependencies, or participant-defined environments.
--   \[BIO-304\] Advanced analytics and historical performance
+-   \[BIO-REQ-22\] Advanced analytics and historical performance
     dashboards.
--   \[BIO-305\] Match dispute workflow and additional administrative
+-   \[BIO-REQ-23\] Match dispute workflow and additional administrative
     reporting. `[DECIDE]`
 
 ## 6. Core product rules
@@ -584,6 +584,50 @@ repository audit and hardware benchmark.
   production                                       tournament, deployment,         signed off.
                                                    runbooks.                       
   ------------------------------------------------------------------------------------------------------
+
+### ID scheme (resolves earlier duplicate `BIO-1xx/2xx/3xx` IDs)
+
+Each ID below has exactly one meaning across all project documents.
+
+-   **Epics:** `BIO-EPIC-00` to `BIO-EPIC-08` (table above).
+-   **Jira issue keys:** `BIO-NNN`, where the hundreds digit is the epic
+    number (`BIO-001`--`BIO-005` = EPIC-00, `BIO-1NN` = EPIC-01, ...,
+    `BIO-8NN` = EPIC-08). Only EPIC-00 to EPIC-03 tasks are defined in
+    the breakdown below. Tasks for EPIC-04 to EPIC-08 receive keys when
+    those epics are broken down; until then documents refer to the epic
+    ID. If the tracker assigns different numbers, update the breakdown
+    and the references to it, never reuse a number for a second meaning.
+-   **Requirement IDs:** `BIO-REQ-01` to `BIO-REQ-23` identify the scope
+    items in §5. They are requirements, not Jira issues, in the same way
+    as `BIO-G01`, `BIO-NFR-01`, and `DEC-01`.
+
+Proposed traceability from scope items (§5) to epics:
+
+  -----------------------------------------------------------------------
+  Requirement                            Epic
+  -------------------------------------- --------------------------------
+  BIO-REQ-01                             BIO-EPIC-00
+
+  BIO-REQ-02, BIO-REQ-03                 BIO-EPIC-01
+
+  BIO-REQ-04, BIO-REQ-05, BIO-REQ-06     BIO-EPIC-02
+
+  BIO-REQ-07, BIO-REQ-08, BIO-REQ-09     BIO-EPIC-03
+
+  BIO-REQ-10                             Exit gates of BIO-EPIC-01 to
+                                         BIO-EPIC-03
+
+  BIO-REQ-11                             BIO-EPIC-04
+
+  BIO-REQ-13, BIO-REQ-14                 BIO-EPIC-05
+
+  BIO-REQ-12, BIO-REQ-15, BIO-REQ-16,    BIO-EPIC-06
+  BIO-REQ-18                             
+
+  BIO-REQ-17, BIO-REQ-19                 BIO-EPIC-07
+
+  BIO-REQ-20 to BIO-REQ-23               Unscheduled (P2)
+  -----------------------------------------------------------------------
 
 ### Phase 0--3 task breakdown (first implementation priority)
 

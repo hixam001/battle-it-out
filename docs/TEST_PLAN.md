@@ -1,8 +1,8 @@
 # Battle It Out --- Test Plan
 
-**Version:** 1.0\
+**Version:** 1.1 (Jira references aligned with PRD §10 ID scheme)\
 **Status:** Baseline test strategy\
-**Date:** 2026-11-04
+**Date:** 2026-11-05
 
 ## 1. Test objectives
 
@@ -68,7 +68,7 @@ pinned/replaced with evidence.
 
 ### TC-02 --- Single-file bot validation and version activation
 
-**Jira:** BIO-202 / BIO-203\
+**Jira:** BIO-202 / BIO-EPIC-05\
 **Priority:** P0\
 **Steps:** 1. Upload valid `bot.py`. 2. Upload wrong filename, ZIP,
 syntax-invalid file, missing entrypoint, and import-failing file. 3.
@@ -82,7 +82,7 @@ history.
 
 ### TC-03 --- Two-bot match and resource enforcement
 
-**Jira:** BIO-204 / BIO-205\
+**Jira:** BIO-203 / BIO-204 / BIO-205\
 **Priority:** P0\
 **Steps:** 1. Launch two independent valid bot submissions through the
 actual engine. 2. Record exact bot versions, map, seed, engine/runtime,
@@ -124,7 +124,7 @@ advance exactly once.
 
 ### TC-06 --- Registration, invitations, and deadline transitions
 
-**Jira:** BIO-203 / BIO-204 / BIO-601\
+**Jira:** BIO-EPIC-05 / BIO-EPIC-06\
 **Priority:** P1\
 **Steps:** 1. Import official roster. 2. Attempt registration with
 unknown email, invalid code, expired code, and valid code. 3. Retry with
@@ -139,7 +139,7 @@ excluded at deadline. - Only Admin can revoke/replace compromised code.
 
 ### TC-07 --- Permissions, privacy, audit, and deletion
 
-**Jira:** BIO-401 / BIO-501 / BIO-602\
+**Jira:** BIO-EPIC-04 / BIO-EPIC-05 / BIO-EPIC-06\
 **Priority:** P0\
 **Steps:** 1. Test Admin, assigned Organizer, unassigned Organizer,
 participant, and unrelated participant. 2. Attempt cross-tournament
@@ -158,7 +158,7 @@ immutable and retained after tournament deletion.
 
 ### TC-08 --- Replay, notifications, archive, and recovery
 
-**Jira:** BIO-305 / BIO-603 / BIO-801\
+**Jira:** BIO-305 / BIO-EPIC-06 / BIO-EPIC-08\
 **Priority:** P1\
 **Steps:** 1. Complete matches and generate replay artifacts. 2. Verify
 replay access for authorized tournament users and denial for
