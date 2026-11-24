@@ -1,2 +1,9 @@
 # Claude Code personal/local settings (e.g. hooks installed by `npx impeccable install`)
 .claude/settings.local.json
+
+# Agent skills, agent definitions, and installed-skill metadata.
+# Installed per developer (npx skills add / npx impeccable install), not shared via git.
+.claude/skills/
+.claude/agents/
+.agents/
+skills-lock.json
