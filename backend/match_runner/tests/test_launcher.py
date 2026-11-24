@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Unit tests (always run) and an opt-in integration test (BIO_INTEGRATION=1).
 
 Run with any environment from setup_env.py, e.g.:

@@ -124,14 +124,14 @@ Not yet done / not verified:
 | Needed before | Decision | Source |
 |---|---|---|
 | BIO-EPIC-01 | Exact Python 3.13 patch version and supported OS matrix | DEC-03 |
-| BIO-EPIC-02 | Numeric time, memory and instruction limits (benchmark first); allowed imports for bots | DEC-04, R3 |
+| BIO-EPIC-02 | Numeric time, memory and instruction limits (benchmark first); upload size cap (the import policy is decided: CN-004) | DEC-04, R3 |
 | BIO-EPIC-02/03 | Retry cap: 10 total attempts (recommended) or 10 retries after the first | DEC-05 |
 | BIO-EPIC-03 | House-bot bracket algorithm; qualification-draw inputs and randomness audit | DEC-06, DEC-14 |
 | BIO-EPIC-03 | Replay format and browser playback | DEC-10 |
 | BIO-EPIC-04 | Stack, hosting, email provider, object storage; auth/session model; pagination style | DEC-11 + API contract §9 |
 | BIO-EPIC-05 | Invitation code granularity; who may upload (captain-only recommended); team size and captain rules; roster file format; upload size cap | DEC-01, DEC-02, DEC-12 |
 | BIO-EPIC-06 | Captain deleted with no successor; config-freeze deadline; account recovery and disputes; source retention | DEC-07, DEC-08, DEC-13 |
-| Before any code is published or served | **Licensing of the project given the AGPL-3.0 scaffold** (R5) | new |
+| Before any code is published or served | **Open licensing items** (R5): Java engine confirmation, copyright holder, participant terms | new |
 
 The full register is in PRD §11 and `PRODUCT.md`.
 
@@ -145,7 +145,7 @@ Likelihood and impact are qualitative judgments by the author of this plan, not 
 | R2 | Python-bot matches did not start through Gradle and took 12 to 23 minutes | *Verified 2026-11-24*: wrong `python3` on `PATH`, `--new-process` deadlock, and Nagle plus delayed-ACK stalls (about 40 ms per message, no `TCP_NODELAY` on either side). The launcher fixes the first two and `runner_entry.py` sets `TCP_NODELAY` and `TCP_QUICKACK`: a full match now takes about 3 s with an identical replay | Low | Keep the launcher as the only supported way to run matches | Mitigated |
 | R3 | The engine's Python runner restricts imports more than the PRD promises | *Observed* in `battlecode26/runner.py`: a bot may import only its own modules plus `random`, `math`, `enum`, `battlecode26`; the PRD says "standard library and preinstalled libraries" | Medium | Decide the import policy (DEC-04 area) and document it in the bot contract; update PRD if the engine's rule is accepted | Open |
 | R4 | Engine-level restrictions are not host isolation | *Observed*: Python bots run in a Python process under RestrictedPython with bytecode counting and talk to the Java server over loopback TCP; PRD BIO-NFR-01 requires isolation from host services, other bots and user data | High | Add container/OS-level isolation (no network, read-only filesystem, CPU/memory/process limits) per the worker design; prove with the security tests in the test plan | Open |
-| R5 | The scaffold is licensed AGPL-3.0, and no project license or obligation analysis exists | *Observed*: `backend/battlecode26-scaffold/LICENSE` is the GNU Affero GPL v3; the repository root has no license | Medium | Owner decides the project license and checks AGPL obligations (including for a network-served platform) before publishing or deploying; this plan makes no legal conclusion | Open |
+| R5 | Licensing: AGPL-3.0 scaffold, and a Java engine with no declared license | *Observed 2026-11-24*: scaffold is AGPL-3.0, Python engine package MIT, Java engine jar and repository have no license. The project is now AGPL-3.0-only (CN-003) | Medium | Obligations and open items in `docs/LICENSING.md`: get written confirmation from the Battlecode team about the engine, decide the copyright holder and participant terms, plan the section 13 source offer; this plan makes no legal conclusion | Partly resolved |
 | R6 | Weak existing validation | *Observed*: `run.py verify` only checks that `bot.py` exists and contains the text `def turn():`; the bundled Java test is `assertEquals(2, 1+1)` | Medium | BIO-202 builds real syntax/import/entrypoint/runtime validation; BIO-104 adds meaningful smoke tests | Open |
 | R7 | Vendored scaffold falls behind upstream | Upstream history is not kept; the build already reports client 1.0.7 available while 1.0.6 is configured | Low | Update deliberately via `./gradlew update` in its own PR with a re-run of the baseline | Open |
 | R8 | Unbenchmarked resource limits | The engine's default bytecode limit is 20000 but is "updated by game"; PRD limits are undecided | Medium | Benchmark on target hardware (DEC-04) before any numeric claim | Open |

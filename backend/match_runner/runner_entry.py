@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Entry point that runs the Battlecode Python runner on any supported CPython (3.12 to 3.15+).
 
 It replaces `python -m battlecode26`, whose `main()` only accepts Python 3.12, and adds

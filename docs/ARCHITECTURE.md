@@ -253,7 +253,7 @@ Services are containerized; the worker runs on separate hardware or at least a s
 | A-02 | The Gradle Python path launches `python3` from `PATH` (system 3.14), deadlocks on `--new-process`, and needs a class directory that no longer exists; the Python package `1.2.2` is the content of the official 1.2.6 release | Python bots are the product; the path must run reliably | Done: `backend/match_runner/` pins versions and the artifact hash, starts runner and server itself, and removes the 12 to 23 minute socket stalls (matches now take about 3 s) (BIO-003/004) |
 | A-03 | Engine import allowlist (`random`, `math`, `enum`, `battlecode26`, own modules) conflicts with the PRD wording "standard library and preinstalled libraries" | Defines what participants may write | Decide the policy and update the bot contract (BIO-201) |
 | A-04 | Language-level sandbox only | Hostile-code risk | Container isolation and security tests (BIO-203/204) |
-| A-05 | AGPL-3.0 scaffold license; no project license | May affect how the platform is distributed and served | Owner decision before publishing or deploying |
+| A-05 | Project is AGPL-3.0-only (CN-003); the Java engine declares no license | Section 13 source offer for the website; engine terms unconfirmed | `docs/LICENSING.md` open items before publishing or deploying |
 | A-06 | Replay format and browser playback unknown | Determines replay delivery design | Reuse engine-native replays first, validate playback separately (DEC-10) |
 | A-07 | Post-retry-cap match state and resume authority undefined | Operations on failure | Decide and add to the state machine |
 
@@ -270,4 +270,4 @@ Services are containerized; the worker runs on separate hardware or at least a s
 | ADR-07 | Vendor the scaffold into `backend/battlecode26-scaffold/` and build on it | Decided by owner 2026-11-05 | PR #1 |
 | ADR-08 | Polling before WebSockets; defer live viewing | Proposed | DEC-09 |
 | ADR-09 | Retry cap interpreted as 10 total attempts | Proposed | DEC-05 |
-| ADR-10 | Project license given the AGPL-3.0 scaffold | Open | A-05 |
+| ADR-10 | Project license given the AGPL-3.0 scaffold | Decided 2026-11-24: AGPL-3.0-only (CN-003) | A-05 |

@@ -6,6 +6,8 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **License and notices (CN-003):** root `LICENSE` (AGPL-3.0-only, same text as the Battlecode scaffold), SPDX identifiers on our source files, `THIRD_PARTY_NOTICES.md`, `docs/LICENSING.md` (what each Battlecode component declares, AGPL obligations, open items), and a dated modification notice in the one edited scaffold file.
+- **Bot policy and validator (CN-004):** `docs/BOT_POLICY.md` and `backend/bot_validator/` (policy generated from the engine, validator with error and warning codes, 13 tests including an agreement test against the real engine runner and a drift check).
 - `backend/match_runner/`: command-line match launcher for Python bots on Python 3.12, 3.13, 3.14 and 3.15 (Linux), with pinned versions and engine-package SHA-256 in `versions.lock.json`, `setup_env.py` (reproducible environments via `uv`), `runner_entry.py` (runs the engine's runner on newer Pythons and removes socket latency), test bots, 14 unit tests and opt-in real-match integration tests. A full match of the example bot takes about 3 seconds on every tested version, down from 12 to 23 minutes, with an identical replay.
 - `docs/CHANGE_NOTICES.md`: CN-001 (latest stable Python, 3.15.2, replaces the 3.13 target) and CN-002 (Java bots removed); notices added to the PRD, SRD, TEST_PLAN and APP_FLOW headers.
 - **Documentation set** (this change): `docs/PROJECT_PLAN.md`, `docs/ARCHITECTURE.md`, `docs/TECHNICAL_DOCUMENTATION.md`, `docs/USER_GUIDE.md`, `docs/ADMIN_GUIDE.md`, a full `README.md`, and this changelog.
@@ -28,7 +30,7 @@ All notable changes to this project are recorded here. The format follows [Keep 
 ### Known issues
 
 - The engine package officially supports only Python 3.12 (`Requires-Python <3.13`). Python 3.12 to 3.15 pass our tests through `runner_entry.py`; this is unsupported by the engine's authors and was tested on Linux x86_64 only.
-- The engine's bot sandbox allows `open`, attribute-walk escapes and infinite loops; it offers no wall-clock or CPU limit for pure Python code.
+- The engine's bot sandbox allows `open`, attribute-walk escapes and infinite loops; it offers no wall-clock or CPU limit for pure Python code. The validator only warns about them (same policy as Battlecode).
+- The Battlecode Java engine declares no license; written confirmation is needed from the Battlecode team (`docs/LICENSING.md`).
 - The scaffold's Gradle task for Python bots fails on Linux as shipped (wrong `python3` from `PATH`; `--new-process` start-up deadlock; missing class directory now that Java bots are gone). Use the launcher.
 - The only automated test is a placeholder (`1 + 1`); the scaffold's Python `verify` checks only for the text `def turn():`.
-- The scaffold is AGPL-3.0 and the project has no license of its own yet.

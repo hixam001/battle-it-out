@@ -114,7 +114,7 @@ Cautions:
 
 ## 9. Decisions an Admin should help close before launch
 
-Highest impact first: Python 3.13 patch version and OS matrix (DEC-03); numeric time, memory and instruction limits from benchmarks (DEC-04); retry-cap meaning and the paused-match procedure (DEC-05); house-bot bracket algorithm (DEC-06); invitation code granularity (DEC-01) and who may upload (DEC-02); the allowed-imports policy for bots; hosting, email provider and storage (DEC-11); support route and account recovery (DEC-13); the project license given the AGPL-3.0 scaffold. The full register is in `PRD.md` §11 and `PROJECT_PLAN.md` §7.
+Highest impact first: Python patch version and OS matrix (DEC-03, tested: 3.15.2 on Linux, CN-001); numeric time, memory and instruction limits from benchmarks (DEC-04); retry-cap meaning and the paused-match procedure (DEC-05); house-bot bracket algorithm (DEC-06); invitation code granularity (DEC-01) and who may upload (DEC-02); hosting, email provider and storage (DEC-11); support route and account recovery (DEC-13); the project license given the AGPL-3.0 scaffold. The full register is in `PRD.md` §11 and `PROJECT_PLAN.md` §7.
 
 ## 10. Quick reference: Admin screens (planned)
 

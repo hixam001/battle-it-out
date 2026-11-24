@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 # Test bot: runs once (first turn of each robot) and logs deterministic "FT:" lines covering
 # language features and sandbox probes, so output can be compared across Python versions.
 from battlecode26 import *

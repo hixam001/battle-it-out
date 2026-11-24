@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Create a pinned, reproducible Python environment for the match launcher.
 
     python3 backend/match_runner/setup_env.py 3.15          # -> backend/.venvs/py3.15
