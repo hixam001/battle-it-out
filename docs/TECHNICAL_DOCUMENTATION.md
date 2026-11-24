@@ -183,11 +183,27 @@ These are facts for the bot validator (BIO-201), the sandbox (BIO-203/204) and t
 
 **Behaviour that differs from the official runner (CN-005 D4).** Because each team has its own process, bots no longer share Python module state or the global `random` stream. The example bot calls `random.seed(6147)`: in the official one-process setup both teams' bots drew from one interleaved stream (earlier runs: A wins in round 1290); now each team has an independent stream, the two example bots play identical games and the match ends in round 1310 with the engine's coin flip, whose winner varies from run to run (A in 4 of 6 runs, B in 2 of 6). No seed property was found among the server's `bc.*` settings, so replay hashes of tied games are not reproducible. Games decided by play (not by the coin flip) are not affected by this.
 
+**Failure classification (BIO-205, CN-006; *Verified* by `tests/test_failure_classification.py`).** `launcher.classify` turns the evidence of one match into one of four classifications, and `outcome` maps them to the worker contract: `normal` -> `completed`; `bot_violation` and `bot_crash` -> `bot_failure`; `platform_failure` -> `platform_failure`. Rules, in order:
+
+| # | Evidence | Result |
+|---|---|---|
+| 1 | The guard of team X recorded a limit breach | `bot_violation`, X loses |
+| 2 | A breach was recorded with no bot running (the engine itself grew) | `platform_failure` |
+| 3 | The match wall-clock timeout hit | `platform_failure` |
+| 4 | The match finished with no server errors | `normal` (whoever closed first) |
+| 5 | Unfinished, and a team's runner never connected | `platform_failure` (`runner_start_failure`) |
+| 6 | Unfinished, and a team's runner closed the engine connection first (any exit code, including 0, a signal, or a frame over 8 MiB) | `bot_crash`, that team loses, `evidence` = leg, exit status, signal |
+| 7 | Unfinished, and the engine server closed first | `platform_failure` (`engine_failure`), no loser |
+| 8 | Anything else | `platform_failure` (`unknown`) |
+
+The deciding fact is `router.first_end`, recorded by the host-side `Router`; a bot cannot forge it, whereas a line in the runner's log can be printed by the bot. When a runner dies the Java server crashes within milliseconds and prints a bug-report banner, so server error text alone is **not** used to blame the platform. Tested with real matches: a bot that calls `os._exit(3)`, `os._exit(0)`, segfaults (`faulthandler`), or kills itself with `SIGKILL` loses in either slot, with and without the sandbox; killing the engine JVM mid-match (found by its listening port and `-Dbc.game` argument, never the Gradle daemon) gives `platform_failure` with no loser. A runner that is not seen to connect, an engine-first hang-up and the other rows are covered by unit tests of the decision table. The trade-off and limits (engine-side Python crashes inside a runner are charged to the team; outside kills look the same) are in CN-006.
+
 **Known gaps (do not treat this as finished isolation):**
 
 - **No protection from a kernel or bubblewrap vulnerability.** Unprivileged user namespaces must be enabled on the host; the seccomp list is a denylist, not an allowlist, written for x86_64 only.
 - **Memory is per team process, not per robot.** All robots of one team share the team's limit.
 - **An uncaught exception in one robot does not end the match** (CN-005 D2): the engine kills that robot and continues (`allocbomb_py`); the guard counts these per team.
+- **Retries are not implemented yet:** the launcher reports `platform_failure`, the retry loop (BIO-306) does not exist. A runner killed from outside is charged to its team (CN-006).
 - **The tie-break seed is not controllable** (above), which also blocks TC-04's "retry with a new random seed".
 - **The router is trusted code on the host.** It parses only the message type and robot id; a malformed server message is forwarded to the active team. A hostile bot can still send arbitrary frames up to 8 MiB to the engine server through the router (the server is the engine's own code, part of the trusted base); flooding it is bounded by the turn time limit.
 - The sandbox shows empty parent directory names of the mounted paths (for example `/home/<user>`); it does not show their contents.
@@ -215,7 +231,7 @@ Removed (CN-002). The Java engine server remains and is not a bot language.
 
 ### 4.3 Tests
 
-The scaffold's only test (a Java `1 + 1` placeholder) was removed with the Java bots. Tests now are the launcher's: `backend/.venvs/py3.15/bin/python -m unittest backend.match_runner.tests.test_launcher` (14 unit tests, run on 3.12 to 3.15), plus real-match integration tests with `BIO_INTEGRATION=1 python3 -m unittest backend.match_runner.tests.test_launcher` (feature bot against `expected_featuretest.txt`, and a hanging bot stopped by the timeout). The planned test strategy and eight critical cases are in `TEST_PLAN.md`.
+The scaffold's only test (a Java `1 + 1` placeholder) was removed with the Java bots. Tests now are the launcher's: `backend/.venvs/py3.15/bin/python -m unittest backend.match_runner.tests.test_launcher` (14 unit tests, run on 3.12 to 3.15), `backend.match_runner.tests.test_limits_sandbox` (limits, sandbox, router) and `backend.match_runner.tests.test_failure_classification` (BIO-205; 16 unit tests, 8 real-match tests with `BIO_INTEGRATION=1`), plus real-match integration tests with `BIO_INTEGRATION=1 python3 -m unittest backend.match_runner.tests.test_launcher` (feature bot against `expected_featuretest.txt`, and a hanging bot stopped by the timeout). The planned test strategy and eight critical cases are in `TEST_PLAN.md`.
 
 ## 5. Database (proposed, not implemented)
 

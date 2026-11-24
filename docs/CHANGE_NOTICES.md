@@ -43,3 +43,18 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **D4. Behaviour that differs from the official runner, accepted:** with one process per team, bots no longer share Python module state or the global `random` stream (the official runner puts both teams in one process, so a bot that calls `random.seed()` changes the other team's random numbers). Replays of seeded bots therefore differ from earlier runs of this project.
 - **Still open (cannot be decided from here):** the engine's tie-break ("coin flip") is not seeded from anything we control (no seed property was found among the server's `bc.*` settings), so two identical runs can have different winners; TC-04's "retry with a new random seed" needs an engine-side seed. Also: approval of the benchmark-based numbers, the upload size cap.
 
+
+## CN-006 — Failure classification: who loses when a bot's process dies (2026-11-24)
+
+- **Task:** BIO-205 (classify bot/platform failure). Engineer's decision under the owner's earlier delegation ("handle it yourself", see CN-005); reversible, not an owner ruling.
+- **Gap closed:** before this, only a recorded limit breach counted as a bot failure. A bot that crashed its own process (`os._exit`, a segfault, a kill by the operating system, leaving mid-game) was reported as `platform_failure`, which the retry policy would replay up to 10 times.
+- **Rule:** if the match did not finish and no limit breach was recorded, whichever side **hung up the engine connection first** decides. That fact comes from the host-side router, which sits outside every sandbox; the runner's own log is not used, because bot code runs inside that process and can print anything.
+  - a team's runner ended it first -> `bot_crash`, that team loses (forfeit), no rematch;
+  - the engine server ended it first -> `platform_failure` (no loser, no winner);
+  - a runner never connected -> `platform_failure` (the platform failed to start it);
+  - no clue, or the whole-match timeout -> `platform_failure`.
+  Every result also carries `outcome` = `completed | bot_failure | platform_failure`, the three values of the worker contract (API_CONTRACT §8), and for crashes the `evidence` (which leg closed first, exit status, signal name).
+- **Trade-off, chosen on purpose:** a crash of the engine's own Python code inside a team's runner cannot be told apart from a bot crashing itself, because they are the same process. Such a crash is charged to that team. The opposite choice would let a losing bot force replays by crashing itself. `evidence` is kept so an Admin can review a suspicious case; a dispute workflow is deferred in the PRD.
+- **Other limit:** an operator or the host killing a runner process from outside (for example the kernel's out-of-memory killer outside our cgroup) is also charged to that team, since the router only sees the connection close.
+- **Replaces:** nothing in the PRD; it implements PRD "Bot crash/timeout/instruction-limit = auto loss, no rematch" for crashes and keeps "platform failure -> same map and versions, new seed, up to 10 retries".
+- **Still open:** TC-04's "retry with a new seed" (the engine tie-break seed is not controllable), the retry loop itself (BIO-306), structured logs (BIO-206).

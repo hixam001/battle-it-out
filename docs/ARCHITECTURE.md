@@ -200,6 +200,7 @@ The platform must treat every bot as hostile (SRD build notes). Proposed layered
 | No outbound network; read-only image; only a scratch directory writable | Prevent data exfiltration and tampering | Built and tested in the sandbox (no network, read-only root, size-capped `/tmp`) |
 | CPU, memory, process-count, file-size and wall-clock limits | Contain resource exhaustion; classify violations as bot loss | Mechanism built and tested (`guard.py`, rlimits, seccomp, optional cgroups, automatic `bot_violation` classification); **numeric values are an interim profile, not benchmark-approved (DEC-04, CN-005 D1)** |
 | One runner process per team behind a router | Keep a hostile bot away from the guard, the other team's code and the other team's memory | Built and tested (`Router`, TECHNICAL_DOCUMENTATION §3.6): the engine accepts one connection, so the router routes server messages by team and robot id |
+| Bot crash versus platform failure | A crashing bot loses; an engine or start-up fault is retryable | Built and tested (`classify`, `Router.first_end`, TECHNICAL_DOCUMENTATION §3.6, CN-006); the retry loop is not built (BIO-306) |
 | Empty, allowlisted environment; no credentials or sockets exposed | Prevent secret exposure | Proposed |
 | Worker output treated as untrusted | Validate every returned relation against the match record before persisting | Proposed (API contract §8) |
 
