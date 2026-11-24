@@ -4,6 +4,8 @@
 **Status:** Working baseline\
 **Date:** 2026-11-24\
 **Audience:** project owner, contributors, and tournament stakeholders who need to know what is being built, in what order, and what is still undecided.\
+**Requirement coverage:** every requirement, whether Battlecode provides it and what is built is tracked in `REQUIREMENTS_COVERAGE.md`; what Battlecode lacks is ours to develop.
+
 **Sources:** `PRD.md` (v1.1), `SRD.md`, `APP_FLOW.md`, `API_CONTRACT.md`, `DATA_MODEL.md`, `TEST_PLAN.md`, `PRODUCT.md`, `handoff.md`, and the code in `backend/`.
 
 > **Labels used in this document.** *Confirmed* = established in the requirement documents. *Proposed* = recommended but not approved. `[DECIDE]` = unresolved; do not assume an answer. *Observed* = checked directly in the repository or by running a command on 2026-11-24. This plan contains no calendar dates for future work on purpose: the PRD requires sprint dates to be set only after the repository audit and a hardware benchmark.
