@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 import os
 import platform
+import re
 import shutil
 import socket
 import struct
@@ -36,6 +37,7 @@ from pathlib import Path
 BWRAP = "bwrap"
 TMP_SIZE_BYTES = 64 << 20
 MAX_FRAME_BYTES = 8 << 20  # a runner-side frame larger than this ends the match connection
+CONTINUATION = "  | "      # starts every line after the first of any text a runner sends (BIO-206, CN-007)
 
 
 class SandboxUnavailable(Exception):
@@ -266,6 +268,74 @@ def _read_frame(sock: socket.socket, quickack: bool = False) -> bytes | None:
     return _read_exact(sock, n, quickack) if n else b""
 
 
+class MalformedFrame(ValueError):
+    """A runner sent something that is not an engine message."""
+
+
+_CONTROL = re.compile(r"[\x00-\x08\x0e-\x1f\x7f]")
+
+
+def sanitise_text(text: str) -> str:
+    """Make a runner-supplied string safe to print into the engine's log.
+
+    The Java server prints bot `log(...)` text after a `[A: #3@1]` prefix and does not escape line
+    breaks, so a bot could start a line with `[server] ...` and forge the engine's own output. Every
+    line break kind (`str.splitlines`: \\n \\r \\v \\f FS GS RS NEL LS PS) becomes a newline plus
+    `CONTINUATION`, so no bot-controlled line can begin like an engine line; other control characters
+    (including ESC) are dropped. A tab is kept.
+    """
+    lines = text.splitlines()
+    if len(lines) <= 1 and not _CONTROL.search(text):
+        return lines[0] if lines else ""
+    return ("\n" + CONTINUATION).join(_CONTROL.sub("", ln) for ln in lines)
+
+
+def _reject_constant(name: str):
+    raise MalformedFrame(f"non-standard JSON constant {name}")
+
+
+def _clean(value, counter: list):
+    if isinstance(value, str):
+        out = sanitise_text(value)
+        if out != value:
+            counter[0] += 1
+        return out
+    if isinstance(value, list):
+        return [_clean(v, counter) for v in value]
+    if isinstance(value, dict):
+        return {_clean(k, counter): _clean(v, counter) for k, v in value.items()}   # JSON keys are strings
+    return value
+
+
+def canonical_runner_frame(body: bytes) -> tuple[bytes, int]:
+    """Parse one runner frame and rebuild it. Returns (frame to forward, number of strings rewritten).
+
+    The server must see exactly what this function parsed. Forwarding the original bytes would let a
+    bot send JSON that Python reads one way and the Java server another (duplicate keys, comments,
+    lenient syntax). A frame is either JSON `null` (an answer to a notice) or an object with an integer
+    `method` and a list `params`; extra keys are dropped; anything else is `MalformedFrame` and ends that
+    runner's connection.
+    """
+    try:
+        msg = json.loads(body.decode("utf-8"), parse_constant=_reject_constant)
+    except (UnicodeDecodeError, RecursionError) as e:
+        raise MalformedFrame(f"frame is not valid JSON text ({type(e).__name__})")
+    except json.JSONDecodeError as e:
+        raise MalformedFrame(f"frame is not valid JSON ({e.msg})")
+    if msg is None:
+        return b"null", 0
+    method = msg.get("method") if isinstance(msg, dict) else None
+    params = msg.get("params") if isinstance(msg, dict) else None
+    if not isinstance(method, int) or isinstance(method, bool) or not isinstance(params, list):
+        raise MalformedFrame("frame is neither null nor {method: int, params: list}")
+    counter = [0]
+    try:
+        clean = {"method": method, "params": _clean(params, counter)}
+        return json.dumps(clean).encode("utf-8"), counter[0]
+    except RecursionError:
+        raise MalformedFrame("frame is nested too deeply")
+
+
 def route_for(msg, owner: dict, current: str) -> tuple[list[str], str]:
     """Decide which runner(s) get a server message. Returns (targets, new current runner).
 
@@ -296,7 +366,8 @@ def route_for(msg, owner: dict, current: str) -> tuple[list[str], str]:
 class Router:
     """Host-side connector: two unix sockets (one per team's runner) <-> TCP 127.0.0.1:port (engine).
 
-    Messages from a runner go to the server unchanged, one whole frame at a time. Messages from the
+    Messages from a runner are parsed and rebuilt (`canonical_runner_frame`: validated shape, line breaks
+    in text neutralised) before they go to the server, one whole frame at a time. Messages from the
     server go to the runner chosen by `route_for`. A runner frame above MAX_FRAME_BYTES ends the
     match connection. Waits for both runners before it connects to the server.
     """
@@ -307,7 +378,7 @@ class Router:
         self.port = port
         self.connect_timeout = connect_timeout
         self.stats = {"frames_to_server": 0, "frames_to_runners": 0, "error": None,
-                      "connected": [], "first_end": None}
+                      "connected": [], "first_end": None, "text_rewrites": {"A": 0, "B": 0}}
         self._end_lock = threading.Lock()
         self._t0 = time.monotonic()
         self._listeners: dict[str, socket.socket] = {}
@@ -392,6 +463,9 @@ class Router:
                 body = _read_frame(conn)
                 if body is None:
                     break
+                body, rewrites = canonical_runner_frame(body)   # raises MalformedFrame (a ValueError)
+                if rewrites:
+                    self.stats["text_rewrites"][team] += rewrites
                 with self._up_lock:
                     self._up.sendall(struct.pack(">I", len(body)) + body)
                 self.stats["frames_to_server"] += 1
