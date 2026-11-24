@@ -127,3 +127,15 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Tested for real:** three example-bot teams play a 4-slot bracket with one bye to a champion (two series, each a coin-flip tie of four games). 23 tests in total, 22 unit and 1 real. Seven of eight deliberate breakages fail the suite; the eighth was an equivalent mutant (it kept byes in distinct pairs) and led to a test that bye places and pairings vary with the draw.
 - **Not done:** house bots, the API and authorization for starting a round, a queue or service that runs `run_round`, storage of tournaments and maps, the qualification-cutoff draw, replay lifecycle, a champion/qualification hand-off, notifications. No independent review.
 - **Replaces:** nothing in the PRD. It implements SRD-020, SRD-023 and part of SRD-021 on top of CN-009 and CN-010.
+
+## CN-013 — Upload check: static check and a trial match (2026-11-24)
+
+- **Task:** BIO-202 (PRD BIO-REQ-04 "runtime compatibility before activation", SRD-050/051), in `backend/submission_check/` (library only). Engineer's decisions under the owner's delegation (see CN-005); each is reversible by a later notice.
+- **D1. Runtime validity = a trial match.** After the static check passes, the exact validated bytes play two full games on `DefaultSmall` against the scaffold's example bot (pinned by SHA-256): the candidate on side A, then on side B. Both sides, because a bot can fail only on one side's start positions. Winning is not required.
+- **D2. Three outcomes.** `valid`; `rejected` (static error, or the candidate crashed, hung, broke the protocol or breached a limit: participant must change something); `inconclusive` (platform failure, busy host, or the *reference* bot failed: nobody is blamed, the file does not become active, it is checked again). A participant fault outranks an inconclusive game.
+- **D3. The verdict is bound to the file.** The file is read once; what was validated is what is staged, played and hashed. `may_activate(verdict, sha256)` is true only for `valid` with no reasons and that exact hash, so a file swapped after the check cannot ride on an old verdict.
+- **D4. Reasons are fixed wording.** Bot-written text never becomes a reason; the bot's own output is attached separately as the participant view of the structured log (redacted, clipped).
+- **D5. Same host lock as tournament matches** (one engine port per host); the trial uses the sandbox and the same limits profile, so what is rejected follows the interim limits (DEC-04).
+- **Tested:** 21 tests (19 unit, 2 real games); ten deliberate breakages, eight caught at once and two (re-read of the file; static re-check of the read bytes) caught after two tests for a swap between validation and staging were added.
+- **Not done:** upload endpoint, storage and activation state, history of verdicts (SRD-053), upload size limit (DEC unset), throttling and queueing of checks, which maps and how many trial games, independent review.
+- **Replaces:** nothing in the PRD. It implements the "runtime" part of BIO-REQ-04 and the gate behind SRD-051.

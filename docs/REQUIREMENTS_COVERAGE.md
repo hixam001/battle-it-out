@@ -17,11 +17,11 @@ It does **not** provide: users, roles, tournaments, brackets, byes, house bots, 
 
 | Status | Count | Meaning |
 |---|---|---|
-| DONE | 10 | built and tested here (library or tool level), nothing material missing |
+| DONE | 11 | built and tested here (library or tool level), nothing material missing |
 | PARTIAL | 29 | built in part; the gap column says what is still ours to develop |
-| TODO | 47 | not built; no code exists |
+| TODO | 46 | not built; no code exists |
 | DEFERRED | 5 | P2, not scheduled (PRD section 5) |
-| **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 76 of the 91 still need development work |
+| **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 75 of the 91 still need development work |
 
 Reading this honestly: the **execution foundation** (EPIC-00 to EPIC-03: bot validation, sandbox, failure classification, logs, retry, tie-break maps) is largely built and tested, but only as libraries. **Everything that makes it a platform** (backend, auth, registration, submissions, tournament operations, notifications, deletion, website, replay lifecycle, bracket) is not built. 'DONE' does not mean accepted by the owner or reviewed independently.
 
@@ -67,8 +67,8 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | SRD-042 | Registration locks email, team, member number, role | None | **TODO** | BIO-EPIC-05 | DEC-12 |
 | SRD-043 | Only Admin revokes and replaces codes | None | **TODO** | BIO-EPIC-05 | - |
 | SRD-044 | Not fully registered by deadline: excluded | None | **TODO** | BIO-EPIC-05 | - |
-| SRD-050 | Invalid upload rejected at once with an actionable reason | None | **PARTIAL** | `bot_validator` error codes with line numbers | Upload endpoint and its error format |
-| SRD-051 | Only a valid submission may become active | None | **TODO** | BIO-EPIC-05 | Validator exists; activation state does not |
+| SRD-050 | Invalid upload rejected at once with an actionable reason | None | **PARTIAL** | `bot_validator` error codes with line numbers; `submission_check` adds trial-match reasons (CN-013) | Upload endpoint and its error format |
+| SRD-051 | Only a valid submission may become active | None | **PARTIAL** | `submission_check.may_activate` (valid verdict for the exact sha256; CN-013) | Activation state and its storage (BIO-EPIC-05) |
 | SRD-052 | Latest valid becomes active; invalid does not displace | None | **TODO** | BIO-EPIC-05 | - |
 | SRD-053 | History of versions and validation outcomes | None | **TODO** | BIO-EPIC-05 | Storage |
 | SRD-054 | Submissions lock at deadline, extension reopens | None | **TODO** | BIO-EPIC-05/06 | - |
@@ -90,7 +90,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | BIO-REQ-01 | Audit the Battlecode repository and scaffold | None | **DONE** | Docs, handoff, scaffold findings | - |
 | BIO-REQ-02 | Reproducible scaffold compatible with the Python target | Partly | **PARTIAL** | See SRD-002, SRD-003 | See SRD-002 |
 | BIO-REQ-03 | Execute a single-file Python bot with the engine | Provides (official runner) | **DONE** | Launcher over `runner_entry.py` | - |
-| BIO-REQ-04 | Validate entrypoint, syntax, imports, runtime | None | **PARTIAL** | `bot_validator` | Static only: 'runtime' validity (a trial match on upload) is not built |
+| BIO-REQ-04 | Validate entrypoint, syntax, imports, runtime | None | **DONE** | `bot_validator` + `submission_check` trial match on both sides (CN-013) | Wiring into upload and activation is BIO-REQ-14 |
 | BIO-REQ-05 | Run two bots in an isolated environment | None | **PARTIAL** | See SRD-007 | See SRD-007 |
 | BIO-REQ-06 | Separate bot failure from platform failure | None | **DONE** | CN-006 | - |
 | BIO-REQ-07 | Automate sequential matches, results, bracket advancement | None | **PARTIAL** | Orchestrator, series, bracket and round runner | Queue/service around them, house bots (DEC-06) |
@@ -127,7 +127,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 
 In the order the roadmap needs them (PROJECT_PLAN section 6); each line is development, none of it exists in Battlecode.
 
-1. **Finish the execution gate (EPIC-02/03):** benchmark and fix the limits (DEC-04); independent sandbox review; engine-side seed or an accepted waiver for TC-04; worker service, queue and container; Admin alert channel; house bots in the bracket (needs DEC-06; the human bracket and round runner exist); qualification draw (DEC-14); replay storage, access and purge (BIO-305, DEC-10); tie-break map storage; full simulated tournament (TC-05). Static validation of `bot.py` on upload plus a trial match.
+1. **Finish the execution gate (EPIC-02/03):** benchmark and fix the limits (DEC-04); independent sandbox review; engine-side seed or an accepted waiver for TC-04; worker service, queue and container; Admin alert channel; house bots in the bracket (needs DEC-06; the human bracket and round runner exist); qualification draw (DEC-14); replay storage, access and purge (BIO-305, DEC-10); tie-break map storage; full simulated tournament (TC-05). The upload check itself (static check plus trial match) exists, CN-013; its upload endpoint and activation do not.
 2. **Backend foundation (EPIC-04, needs DEC-11):** stack, database, auth and sessions, roles and tournament scope enforced on the server (BIO-NFR-05), append-only audit log, private file storage, job queue, API from `API_CONTRACT.md`, plus the missing user/role/organizer assignment endpoints.
 3. **Registration and submissions (EPIC-05):** roster import and correction, invitation codes (DEC-01), registration rules and locks, submission upload, activation, history, download, privacy, deadline locks.
 4. **Tournament operations (EPIC-06):** approval and rejection, independent deadlines and extensions, emergency override, notifications (dashboard and email), deletion and retention lifecycle, archive.
