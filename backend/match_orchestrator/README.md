@@ -53,6 +53,14 @@ R.archive_tournament(vault, "open-2026", actor="admin-1")          # {"status": 
 R.purge_pending(vault)                                              # run from a scheduler; finishes any purge that did not complete
 ```
 
+## Whole-tournament test (CN-015)
+
+`tests/test_tournament_e2e.py` runs everything above together on the real engine: pool, five-team bracket, rounds, tie-breaks, replays, archive (about 48 s, `BIO_INTEGRATION=1`). Run it after changing any of these modules:
+
+```
+BIO_INTEGRATION=1 python3 -m unittest backend.match_orchestrator.tests.test_tournament_e2e -v
+```
+
 States follow `docs/DATA_MODEL.md`: `scheduled -> queued -> running -> completed`, retries `running -> platform_failed -> retry_queued -> running`, bot failure `running -> bot_forfeit -> completed`. `paused` is **our** name for the state after the cap; the final name and who may resume are open decisions.
 
 ## Use
