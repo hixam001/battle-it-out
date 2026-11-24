@@ -34,7 +34,7 @@ flowchart TB
 
 ### 1.2 What exists today (Observed)
 
-Only the execution foundation exists: the Battlecode 2026 scaffold at `backend/battlecode26-scaffold/`. There is no API, database or website; a job queue and a worker process exist as `backend/work_queue/` (CN-017) and run the upload check and tournament rounds from JSON files; `backend/tournament_flow/` (CN-018) is the library an API will call for each step (upload and queue the check, pin and draw, verify and start a round, housekeeping). `backend/tournaments/` (CN-019) holds the tournament record with its approval states and deadlines, and `scheduler.tick` draws the bracket when the submission deadline passes.
+Only the execution foundation exists: the Battlecode 2026 scaffold at `backend/battlecode26-scaffold/`. There is no API, database or website; a job queue and a worker process exist as `backend/work_queue/` (CN-017) and run the upload check and tournament rounds from JSON files; `backend/tournament_flow/` (CN-018) is the library an API will call for each step (upload and queue the check, pin and draw, verify and start a round, housekeeping). `backend/tournaments/` (CN-019) holds the tournament record with its approval states and deadlines, and `scheduler.tick` draws the bracket when the submission deadline passes. `backend/registration/` (CN-020) holds the official roster, single-use invitation codes, the claim with email and code, and the participant `Actor` (teams, captain-of) for the submission registry.
 
 | Element | What it is | Where |
 |---|---|---|
