@@ -20,7 +20,7 @@ F.housekeeping(fl, vault)                                # sweep, store replays 
 | `open_bracket` | before the deadline; a check is still pending; fewer than two teams with an active bot | yes: the stored draw comes back; pins are write-once |
 | `start_round` | bracket without a tournament; a pinned version differs from the drawn one; a pinned file no longer matches its hash (staff incident); the previous round is not complete | yes: one job; nothing for a completed round |
 
-A team with no active version is **excluded and listed** by `open_bracket`. Whether it should instead lose by forfeit or be replaced by a house bot is an owner decision (CN-018 D4).
+A team with no active version is **excluded and listed** by `open_bracket`. Fewer than two such teams is refused **before** the write-once pin is made (CN-019 fixed a defect where the pin came first and the tournament could never be drawn again). Whether it should instead lose by forfeit or be replaced by a house bot is an owner decision (CN-018 D4).
 
 ## Tests
 
@@ -31,4 +31,4 @@ BIO_INTEGRATION=1 python3 -m unittest backend.tournament_flow.tests.test_flow.Re
 
 ## Not done
 
-The API that calls these functions; a timer or scheduler that opens the bracket at the deadline and runs `housekeeping`; tournament, deadline and registration storage; notifications; house bots; independent review.
+The API that calls these functions; tournament, deadline and registration storage is in `backend/tournaments/` (CN-019), whose `scheduler.tick` calls `open_bracket` and `housekeeping`; registration storage; notifications; house bots; independent review.

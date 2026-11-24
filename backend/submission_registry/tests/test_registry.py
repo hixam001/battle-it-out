@@ -507,6 +507,28 @@ class Pins(Base):
         self.assertEqual(self.state()["pins"], {})
         self.assertEqual(self.pin(allow_unchecked=True)["ta"], "ta-v1")
 
+    def test_a_preview_shows_the_pins_without_writing_anything_or_waiting_for_the_deadline(self):
+        before = self.state()
+        out = R.preview_pins(self.reg, "t1", ["ta", "tb", "tz"])
+        self.assertEqual(out, {"pinned": False, "teams": {"ta": "ta-v1", "tb": "tb-v1", "tz": None}, "pending": []})
+        self.assertEqual(self.state(), before)               # nothing written, although the deadline has not passed
+
+    def test_a_preview_names_the_teams_still_being_checked(self):
+        self.up(GOOD3)
+        out = R.preview_pins(self.reg, "t1", ["ta", "tb"])
+        self.assertEqual((out["pinned"], out["pending"]), (False, ["ta"]))
+
+    def test_a_preview_of_a_pinned_tournament_is_the_stored_pin_whatever_teams_are_asked_for(self):
+        self.clock.t = DEADLINE
+        self.pin()
+        self.up(GOOD3, deadline=DEADLINE + 100)
+        out = R.preview_pins(self.reg, "t1", ["ta"])
+        self.assertEqual(out, {"pinned": True, "teams": {"ta": "ta-v1", "tb": "tb-v1"}, "pending": []})
+
+    def test_a_preview_of_a_team_from_another_tournament_is_refused(self):
+        with self.assertRaises(R.Conflict):
+            R.preview_pins(self.reg, "t2", ["ta"])
+
     def test_an_old_inconclusive_version_does_not_block_when_a_newer_one_is_active(self):
         s = self.up(GOOD3)
         self.check(s, GOOD3, "inconclusive", reasons=[{"code": "T-PLATFORM", "message": "again"}])

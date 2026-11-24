@@ -511,6 +511,49 @@ def download(reg: Registry, actor: Actor | None, submission_id: str, *,
 
 # ---------------------------------------------------------------------------------------------- pins
 
+def _collect_pins(state: dict, tournament_id: str, team_ids: list[str]) -> tuple[dict, list[str]]:
+    """`({team: active submission or None}, teams whose newest version is still being checked)`. Reads only."""
+    pins, pending = {}, []
+    for tid in team_ids:
+        team = _team(state, tid)
+        if team is not None and team["tournament_id"] != tournament_id:
+            raise Conflict(f"team {tid} belongs to another tournament")
+        active = team["active"] if team else None
+        latest = max((r for r in state["submissions"].values() if r["team_id"] == tid),
+                     key=lambda r: r["version"], default=None)
+        if latest and latest["validation_status"] in (VALIDATING, INCONCLUSIVE) and (
+                active is None or state["submissions"][active]["version"] < latest["version"]):
+            pending.append(tid)
+        pins[tid] = active
+    return pins, pending
+
+
+def _check_team_ids(tournament_id: str, team_ids) -> None:
+    _check_id("tournament id", tournament_id, TOURNAMENT_ID_RE)
+    if not isinstance(team_ids, list) or not team_ids or len(set(team_ids)) != len(team_ids):
+        raise ValueError("team_ids must be a non-empty list without duplicates")
+    for tid in team_ids:
+        _check_id("team id", tid)
+
+
+def preview_pins(reg: Registry, tournament_id: str, team_ids: list[str]) -> dict:
+    """What `pin_tournament` would record right now, without recording it (no deadline check, nothing written).
+    Returns `{"pinned": bool, "teams": {team: submission id or None}, "pending": [teams still being checked]}`;
+    once the tournament is pinned, `teams` is the stored pin and `pending` is empty.
+
+    It exists so a caller can refuse a draw that cannot work (fewer than two playable teams) BEFORE the
+    write-once pin is made: a pin made for a tournament that cannot be drawn could never be corrected by a
+    deadline extension. An active version is never removed, so what a preview shows as playable stays
+    playable when the pin is made a moment later."""
+    _check_team_ids(tournament_id, team_ids)
+    with reg.store.transaction() as state:
+        existing = state["pins"].get(tournament_id)
+        if existing:
+            return {"pinned": True, "teams": dict(existing["teams"]), "pending": []}
+        pins, pending = _collect_pins(state, tournament_id, team_ids)
+        return {"pinned": False, "teams": pins, "pending": pending}
+
+
 def pin_tournament(reg: Registry, tournament_id: str, team_ids: list[str], *, deadline_at: float,
                    now: Callable[[], float] = time.time, allow_unchecked: bool = False) -> dict:
     """Record, once, which version each team plays with (SRD-054, SRD-055). Returns `{team_id: submission id or
@@ -520,11 +563,7 @@ def pin_tournament(reg: Registry, tournament_id: str, team_ids: list[str], *, de
     unless `allow_unchecked`. Write-once: a second call returns the stored pins and never changes them (a
     later upload or an extension cannot move a bracket that is already drawn).
     """
-    _check_id("tournament id", tournament_id, TOURNAMENT_ID_RE)
-    if not isinstance(team_ids, list) or not team_ids or len(set(team_ids)) != len(team_ids):
-        raise ValueError("team_ids must be a non-empty list without duplicates")
-    for tid in team_ids:
-        _check_id("team id", tid)
+    _check_team_ids(tournament_id, team_ids)
     t = now()
     with reg.store.transaction() as state:
         existing = state["pins"].get(tournament_id)
@@ -534,18 +573,7 @@ def pin_tournament(reg: Registry, tournament_id: str, team_ids: list[str], *, de
             return dict(existing["teams"])
         if t < deadline_at:
             raise Conflict("submissions are still open")
-        pins, pending = {}, []
-        for tid in team_ids:
-            team = _team(state, tid)
-            if team is not None and team["tournament_id"] != tournament_id:
-                raise Conflict(f"team {tid} belongs to another tournament")
-            active = team["active"] if team else None
-            latest = max((r for r in state["submissions"].values() if r["team_id"] == tid),
-                         key=lambda r: r["version"], default=None)
-            if latest and latest["validation_status"] in (VALIDATING, INCONCLUSIVE) and (
-                    active is None or state["submissions"][active]["version"] < latest["version"]):
-                pending.append(tid)
-            pins[tid] = active
+        pins, pending = _collect_pins(state, tournament_id, team_ids)
         if pending and not allow_unchecked:
             raise PendingChecks(pending)
         state["pins"][tournament_id] = {"pinned_at": _iso(t), "teams": pins}
