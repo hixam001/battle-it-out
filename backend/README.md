@@ -9,6 +9,8 @@ Home of the Battle It Out execution foundation and, later, the web backend.
   the backend is built on (the project does not replace the Battlecode engine).
   Planned additions (bot validator, runner/sandbox, match orchestration, API)
   are added next to it under `backend/`, following the epics in `docs/PRD.md`.
+- `match_runner/` — command-line match launcher for Python and Java bots, with
+  pinned versions (`versions.lock.json`) and unit tests. See its `README.md`.
 
 ## Provenance of `battlecode26-scaffold/`
 
