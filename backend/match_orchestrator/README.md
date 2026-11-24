@@ -36,6 +36,10 @@ B.run_round(store, "open-2026", 1, run_fn)                # worker; safe to repe
 B.public_view(B.get_bracket(store, "open-2026"))          # what participants may see
 ```
 
+## Map pools (`maps.py`, BIO-303/304, CN-014)
+
+Where the map names come from. `load_engine_maps(jar)` lists the maps inside the pinned engine jar with the SHA-256 of each file (read as a zip, nothing extracted). `create_pool` stores a pool: the played maps, **1** tie-break map for a normal tie and **3** for a final tie, all from that catalogue, with the engine version and every file hash pinned. A pool is never edited (a different set is a new pool id); a tie-break map may not also be a played map. `verify_pool` reports a missing map, a changed file or a different engine; `create_bracket_from_pool` refuses to draw a bracket on a pool that fails and records the pool id on the bracket. Custom (Organizer-uploaded) maps are not supported.
+
 ## Replays (`replays.py`, BIO-305, CN-012)
 
 A vault for the engine's `.bc26` replay files (one per game) plus an index. Stored files are private (0600), checked on the way in (hash equal to the launcher's, complete gzip), and served only through the access rule: Admin any tournament, Organizer assigned ones, participant tournaments they are registered in; no access looks exactly like "no such replay"; after archive everyone gets `Gone`, Admin included. Archive marks first, then deletes, then verifies; a failed or interrupted purge is finished by `purge_pending`. Results and brackets are never touched.
@@ -74,14 +78,16 @@ result = O.take_advancement(store, "match-17")                       # the resul
 |---|---|
 | `orchestrator.py` | Match and attempt state machine, retry loop, incidents and alerts, host lock, launcher adapter |
 | `bracket.py` | Bracket draw, byes, Organizer-started rounds, idempotent advancement, public view |
+| `maps.py` | Map pools: engine map catalogue with hashes, pinned pools, verification, bracket from a pool |
 | `tiebreak.py` | Series of games: tie detection, tie-break maps, coin flip, series result, public view |
 | `store.py` | `JsonFileStore`: one JSON file, an exclusive lock across processes, atomic write; a damaged file is an error, never an empty store |
 | `tests/test_orchestrator.py` | 34 tests: 30 unit tests with a fake run function, 4 real matches (`BIO_INTEGRATION=1`) |
 | `tests/test_bracket.py` | 23 tests: 22 unit, 1 real 3-team tournament (`BIO_INTEGRATION=1`) |
+| `tests/test_maps.py` | 34 tests: 32 unit, 1 on the real engine jar, 1 real final series on pool maps (`BIO_INTEGRATION=1`) |
 | `tests/test_tiebreak.py` | 31 tests: 28 unit tests, 3 real series (`BIO_INTEGRATION=1`) |
 
 ```bash
-backend/.venvs/py3.15/bin/python -m unittest backend.match_orchestrator.tests.test_orchestrator backend.match_orchestrator.tests.test_tiebreak backend.match_orchestrator.tests.test_bracket
+backend/.venvs/py3.15/bin/python -m unittest backend.match_orchestrator.tests.test_orchestrator backend.match_orchestrator.tests.test_tiebreak backend.match_orchestrator.tests.test_bracket backend.match_orchestrator.tests.test_maps
 BIO_INTEGRATION=1 backend/.venvs/py3.15/bin/python -m unittest backend.match_orchestrator.tests.test_orchestrator backend.match_orchestrator.tests.test_tiebreak backend.match_orchestrator.tests.test_bracket   # plays real matches, about 75 s
 ```
 
@@ -92,5 +98,5 @@ BIO_INTEGRATION=1 backend/.venvs/py3.15/bin/python -m unittest backend.match_orc
 - **`take_advancement` is only the first guard.** If the caller crashes after taking it and before advancing the bracket, the claim is lost. BIO-303 must make advancement idempotent on the match id.
 - **No heartbeat.** A long match that outlives its lease is taken over (see above).
 - **One match per host at a time** (the engine's fixed port). The host lock serialises matches in this package; two hosts need two engines.
-- **Not here:** house bots (DEC-06), where tie-break maps come from, the qualification-cutoff draw (DEC-14), replay endpoint, object storage and a player (the vault, access rule and purge are `replays.py`), the real Admin notification channel, who may resume a paused match, scheduling and the web API.
+- **Not here:** house bots (DEC-06), custom maps and where the chosen pool is stored, the qualification-cutoff draw (DEC-14), replay endpoint, object storage and a player (the vault, access rule and purge are `replays.py`), the real Admin notification channel, who may resume a paused match, scheduling and the web API.
 - **No independent review.** Written and tested by the same assistant; the tests encode my reading of PRD SRD-010/011 and TC-04.
