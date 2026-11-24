@@ -10,7 +10,7 @@ INNOFEST **Battle It Out** is a Battlecode-style programming competition. Partic
 - the Battlecode 2026 scaffold, vendored at [`backend/battlecode26-scaffold/`](backend/battlecode26-scaffold/);
 - project state and working rules in [`handoff.md`](handoff.md).
 
-There is **no API, database, worker, or website yet**. The delivery order is fixed: scaffold and Python 3.13 compatibility first, then safe bot execution and match automation, then backend, then registration and submissions, then tournament operations, then the website. See [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md).
+There is **no API, database, or website yet** (a job queue and a worker process exist: `backend/work_queue/`). The delivery order is fixed: scaffold and Python 3.13 compatibility first, then safe bot execution and match automation, then backend, then registration and submissions, then tournament operations, then the website. See [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md).
 
 Known open issues (details in the plan and architecture documents):
 
