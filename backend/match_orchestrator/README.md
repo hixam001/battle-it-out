@@ -12,6 +12,17 @@ Drives one match to a final state, with platform retry (BIO-301 core, BIO-306; `
 - **An answer is never trusted blindly.** A launcher result that is not a dict, lacks a winner, contradicts itself, or has a winner but did not exit cleanly is a platform failure (`malformed_result`, `unclean_completion`), never an invented result.
 - **Retrying cannot help** when a bot folder is missing or the version check fails (`ConfigurationError`): the match is paused at once with a `configuration_error` incident instead of spending ten attempts on the same mistake. A busy engine port or a host lock timeout is a normal, retryable platform failure.
 
+## Tie-break maps and the coin flip (`tiebreak.py`, BIO-304, CN-010)
+
+A tournament match is a **series** of games; each game is an ordinary match with the retry rules above. A game is *tied* when the engine's reason line says it was decided by its own unseeded coin flip (the engine pick is ignored). Tied game 0 -> 1 predefined tie-break map (normal stage) or 3 maps (final), always all played, in order; more tie-break map wins decides; still equal -> one 50/50 coin flip from `secrets`, drawn and stored in one transaction, never redrawn. A bot failure in any game forfeits the series. The series result is advanced once (`take_series_advancement`); `public_view` is what may be shown to tournament users.
+
+```python
+from backend.match_orchestrator import tiebreak as T
+T.create_series(store, "r1m3", "team-a", "team-b", "DefaultSmall", "sub-a-v3", "sub-b-v1", "final", ["TieA", "TieB", "TieC"])
+T.run_series_job(store, "r1m3", run_fn, alert=notify_admin)       # games are named r1m3-g0 ... r1m3-g3
+result = T.take_series_advancement(store, "r1m3")                  # once; None afterwards
+```
+
 States follow `docs/DATA_MODEL.md`: `scheduled -> queued -> running -> completed`, retries `running -> platform_failed -> retry_queued -> running`, bot failure `running -> bot_forfeit -> completed`. `paused` is **our** name for the state after the cap; the final name and who may resume are open decisions.
 
 ## Use
@@ -36,12 +47,14 @@ result = O.take_advancement(store, "match-17")                       # the resul
 | File | Purpose |
 |---|---|
 | `orchestrator.py` | Match and attempt state machine, retry loop, incidents and alerts, host lock, launcher adapter |
+| `tiebreak.py` | Series of games: tie detection, tie-break maps, coin flip, series result, public view |
 | `store.py` | `JsonFileStore`: one JSON file, an exclusive lock across processes, atomic write; a damaged file is an error, never an empty store |
 | `tests/test_orchestrator.py` | 34 tests: 30 unit tests with a fake run function, 4 real matches (`BIO_INTEGRATION=1`) |
+| `tests/test_tiebreak.py` | 31 tests: 28 unit tests, 3 real series (`BIO_INTEGRATION=1`) |
 
 ```bash
-backend/.venvs/py3.15/bin/python -m unittest backend.match_orchestrator.tests.test_orchestrator
-BIO_INTEGRATION=1 backend/.venvs/py3.15/bin/python -m unittest backend.match_orchestrator.tests.test_orchestrator   # plays 3 real matches, about 13 s
+backend/.venvs/py3.15/bin/python -m unittest backend.match_orchestrator.tests.test_orchestrator backend.match_orchestrator.tests.test_tiebreak
+BIO_INTEGRATION=1 backend/.venvs/py3.15/bin/python -m unittest backend.match_orchestrator.tests.test_orchestrator backend.match_orchestrator.tests.test_tiebreak   # plays real matches, about 25 s
 ```
 
 ## Not covered (and why it matters)
@@ -51,5 +64,5 @@ BIO_INTEGRATION=1 backend/.venvs/py3.15/bin/python -m unittest backend.match_orc
 - **`take_advancement` is only the first guard.** If the caller crashes after taking it and before advancing the bracket, the claim is lost. BIO-303 must make advancement idempotent on the match id.
 - **No heartbeat.** A long match that outlives its lease is taken over (see above).
 - **One match per host at a time** (the engine's fixed port). The host lock serialises matches in this package; two hosts need two engines.
-- **Not here:** bracket, byes and house bots (BIO-303), tie-break maps and coin flip (BIO-304), replay storage and deletion (BIO-305), the real Admin notification channel, who may resume a paused match, scheduling and the web API.
+- **Not here:** bracket, byes and house bots (BIO-303), where tie-break maps come from, the qualification-cutoff draw (DEC-14), replay storage and deletion (BIO-305), the real Admin notification channel, who may resume a paused match, scheduling and the web API.
 - **No independent review.** Written and tested by the same assistant; the tests encode my reading of PRD SRD-010/011 and TC-04.

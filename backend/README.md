@@ -16,7 +16,7 @@ Home of the Battle It Out execution foundation and, later, the web backend.
   to 3.15, with pinned versions (`versions.lock.json`), environment setup, a
   resource guard and bubblewrap sandbox (limits are provisional), and tests.
 - `match_orchestrator/` — match jobs on top of the launcher: platform retry
-  with a cap, Admin incident, exactly-once result (library; `docs/CHANGE_NOTICES.md` CN-009).
+  with a cap, Admin incident, exactly-once result, tie-break maps and the 50/50 coin flip (library; `docs/CHANGE_NOTICES.md` CN-009, CN-010).
   See its `README.md`.
 
 ## Provenance of `battlecode26-scaffold/`

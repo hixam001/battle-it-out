@@ -12,7 +12,7 @@ DATA_MODEL "Match" and TEST_PLAN TC-04:
   * a result is recorded once: a duplicate delivery of the job, a second worker, or a late answer from a
     worker that was replaced changes nothing, and bracket advancement can be taken exactly once.
 
-Not here: bracket and bye rules (BIO-303), tie-break maps and the coin flip (BIO-304), replay storage
+Not here: bracket and bye rules (BIO-303), tie-break maps and the coin flip (BIO-304: `tiebreak.py`), replay storage
 (BIO-305), the real notification channel for the Admin alert, the web API. See README.md.
 
 States follow DATA_MODEL: scheduled -> queued -> running -> completed, with
@@ -114,12 +114,13 @@ def _other(side: str) -> str:
     return "B" if side == "A" else "A"
 
 
-def interpret(result) -> dict:
+def interpret(result, require_reason: bool = False) -> dict:
     """Turn a run function's answer into one of three verdicts, trusting nothing that is not consistent.
 
     Returns {"class": "completed"|"bot_failure"|"platform_failure", ...}. An answer that is missing a
     field, contradicts itself or is not a dict is a platform failure (`malformed_result`): the platform
-    must not invent a winner.
+    must not invent a winner. With `require_reason` (games of a tie-break series, BIO-304) a completed
+    result must also carry the engine's reason line: whether the game was decided or tied depends on it.
     """
     def platform(kind, detail):
         return {"class": "platform_failure", "kind": kind, "detail": str(detail)[:MAX_TEXT]}
@@ -136,6 +137,8 @@ def interpret(result) -> dict:
             # The engine printed a winner but the process did not end cleanly (non-zero exit, timeout):
             # the replay may be incomplete, so do not publish it. Retry.
             return platform("unclean_completion", "the match has a winner but did not end cleanly")
+        if require_reason and not (isinstance(result.get("reason"), str) and result["reason"].strip()):
+            return platform("missing_reason", "completed without the engine's reason line; cannot tell a win from a tie")
         return {"class": "completed", "winner_side": winner, "summary": summary}
     if outcome == "bot_failure":
         loser = result.get("loser")
@@ -160,14 +163,7 @@ def _move(match: dict, to: str, now: float, note: str = "") -> None:
     match["status"] = to
 
 
-def create_match(store: JsonFileStore, match_id: str, team_a: str, team_b: str, map_name: str,
-                 submission_a: str, submission_b: str, *, max_attempts: int = DEFAULT_MAX_ATTEMPTS,
-                 now: Callable[[], float] = time.time) -> dict:
-    """Create a match in `scheduled`. Calling it again with the same content returns the same match.
-
-    `team_*` and `submission_*` are opaque references; the submission references pin the exact bot
-    versions for every attempt. Nothing can change them afterwards.
-    """
+def _validate_new(match_id, team_a, team_b, map_name, submission_a, submission_b, max_attempts) -> dict:
     for what, v in (("match_id", match_id), ("team_a", team_a), ("team_b", team_b),
                     ("submission_a", submission_a), ("submission_b", submission_b)):
         if not isinstance(v, str) or not REF_RE.match(v):
@@ -176,20 +172,41 @@ def create_match(store: JsonFileStore, match_id: str, team_a: str, team_b: str, 
         raise OrchestratorError(f"map must match {MAP_RE.pattern}")
     if not isinstance(max_attempts, int) or isinstance(max_attempts, bool) or not 1 <= max_attempts <= 100:
         raise OrchestratorError("max_attempts must be an integer from 1 to 100")
-    identity = {"team_a": team_a, "team_b": team_b, "map": map_name,
-                "submission_a": submission_a, "submission_b": submission_b}
+    return {"team_a": team_a, "team_b": team_b, "map": map_name,
+            "submission_a": submission_a, "submission_b": submission_b}
+
+
+def _create_in(state: dict, match_id: str, team_a: str, team_b: str, map_name: str, submission_a: str,
+               submission_b: str, max_attempts: int, t: float, series_game: bool = False) -> dict:
+    """Create a match inside an open transaction (the caller deep-copies what it returns)."""
+    identity = _validate_new(match_id, team_a, team_b, map_name, submission_a, submission_b, max_attempts)
+    existing = state["matches"].get(match_id)
+    if existing is not None:
+        if {k: existing[k] for k in identity} != identity:
+            raise ConflictError(f"match {match_id} already exists with different teams, map or submissions")
+        return existing
+    match = {"id": match_id, **identity, "status": SCHEDULED, "max_attempts": max_attempts,
+             "created_at": _now_iso(t), "attempts": [], "history": [], "lease": None, "result": None,
+             "advancement": {"pending": False, "taken_at": None}}
+    if series_game:
+        # One game of a tie-break series (tiebreak.py): its result is NOT handed to bracket advancement;
+        # only the series result is, once every tie-break game is played.
+        match["series_game"] = True
+    state["matches"][match_id] = match
+    return match
+
+
+def create_match(store: JsonFileStore, match_id: str, team_a: str, team_b: str, map_name: str,
+                 submission_a: str, submission_b: str, *, max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+                 now: Callable[[], float] = time.time) -> dict:
+    """Create a match in `scheduled`. Calling it again with the same content returns the same match.
+
+    `team_*` and `submission_*` are opaque references; the submission references pin the exact bot
+    versions for every attempt. Nothing can change them afterwards.
+    """
     with store.transaction() as state:
-        existing = state["matches"].get(match_id)
-        if existing is not None:
-            if {k: existing[k] for k in identity} != identity:
-                raise ConflictError(f"match {match_id} already exists with different teams, map or submissions")
-            return copy.deepcopy(existing)
-        t = now()
-        match = {"id": match_id, **identity, "status": SCHEDULED, "max_attempts": max_attempts,
-                 "created_at": _now_iso(t), "attempts": [], "history": [], "lease": None, "result": None,
-                 "advancement": {"pending": False, "taken_at": None}}
-        state["matches"][match_id] = match
-        return copy.deepcopy(match)
+        return copy.deepcopy(_create_in(state, match_id, team_a, team_b, map_name, submission_a, submission_b,
+                                        max_attempts, now()))
 
 
 def queue_match(store: JsonFileStore, match_id: str, now: Callable[[], float] = time.time) -> str:
@@ -283,12 +300,12 @@ def finish(store: JsonFileStore, match_id: str, attempt: int, owner: str, result
     a worker that was already replaced, or a second answer for the same attempt, is dropped
     (`applied: False`): that is what makes duplicate delivery harmless.
     """
-    verdict = interpret(result)
     with store.transaction() as state:
         match = _get(state, match_id)
         lease = match["lease"]
         if match["status"] != RUNNING or not lease or lease["attempt"] != attempt or lease["owner"] != owner:
             return {"applied": False, "status": match["status"], "incident": None}
+        verdict = interpret(result, require_reason=bool(match.get("series_game")))
         t = now()
         att = match["attempts"][attempt - 1]
         att["finished_at"] = _now_iso(t)
@@ -318,7 +335,7 @@ def finish(store: JsonFileStore, match_id: str, attempt: int, owner: str, result
                 "round": summary.get("round"), "reason": summary.get("reason"), "attempt": attempt,
                 "replay": summary.get("replay"), "replay_sha256": summary.get("replay_sha256"),
                 "structured_log": _log_path(summary.get("structured_log"))}
-            match["advancement"] = {"pending": True, "taken_at": None}
+            match["advancement"] = {"pending": not match.get("series_game"), "taken_at": None}
             _move(match, COMPLETED, t, f"{match['result']['result_type']} by {winner_team}")
         incident = state["incidents"][-1]["id"] if len(state["incidents"]) > incident_before else None
         return {"applied": True, "status": match["status"], "incident": incident}
