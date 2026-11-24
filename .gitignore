@@ -11,3 +11,7 @@ skills-lock.json
 # Python bytecode caches
 __pycache__/
 *.pyc
+
+# Match launcher environments and cached engine package
+backend/.venvs/
+backend/.cache/

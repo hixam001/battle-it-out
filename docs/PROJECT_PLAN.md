@@ -50,7 +50,7 @@ Public landing page before the execution foundation passes its exit gate; additi
 
 **Assumptions** (not yet verified): a single worker host is sufficient for the first tournament (`[DECIDE]` load targets); the official roster arrives in an importable format (`[DECIDE]` format); organizers will operate rounds manually, as the PRD describes.
 
-**Constraints:** Python only; exactly one `bot.py`; same runtime image for every bot; no participant-installed packages; Java 21 or newer is enforced by the scaffold build (*Observed*: `build.gradle` throws below JDK 21); the scaffold's Python launcher `run.py` currently accepts only Python 3.12 (*Observed*), while the project target is 3.13.
+**Constraints:** Python only; exactly one `bot.py`; same runtime image for every bot; no participant-installed packages; Java 21 or newer is enforced by the scaffold build (*Observed*: `build.gradle` throws below JDK 21); the Python target is the latest stable CPython (3.15.2 tested; 3.12 to 3.14 also pass; CN-001), run through `backend/match_runner/runner_entry.py` because the scaffold's `run.py` accepts only 3.12 (*Observed*). Java bots are removed (CN-002); the Java engine server stays.
 
 **External dependencies:** the Battlecode engine, client and Python package releases (served from `releases.battlecode.org` and `api.battlecode.org`); third-party packages on Python 3.13; worker hardware; email provider and domain; object storage; hosting.
 
@@ -105,10 +105,10 @@ Done (evidence in git history, PRs #1 to #4, all merged):
 - Specification documents committed; duplicate Jira IDs fixed (PRD v1.1, test plan v1.1).
 - Battlecode 2026 scaffold vendored into `backend/battlecode26-scaffold/` (upstream commit `f69e2ab`).
 - `PRODUCT.md` created for the design tooling; agent/skill files are git-ignored.
-- *Observed* on 2026-11-24: `./gradlew runLocal --offline` ran a Java-vs-Java match to completion in about 2 seconds and wrote a replay.
+- *Observed* on 2026-11-24: full Python-vs-Python matches on Python 3.12, 3.13, 3.14 and 3.15 through `backend/match_runner/launcher.py` (about 3 s each; same replay on all four for the example bot).
 
 Not yet done / not verified:
-- Python 3.13 compatibility has not been tried. `run.py` requires Python exactly 3.12.
+- Exact Python patch and OS matrix (DEC-03): only Linux x86_64 was tested. Bot sandbox, isolation and time limits are not solved: the engine allows `open`, attribute-walk escapes and infinite loops (`TECHNICAL_DOCUMENTATION.md` §3.5).
 - A Python-bot match through Gradle did not complete in two attempts (see §8, R2); this is unresolved, not a conclusion about the engine.
 - No version matrix, no pinned dependencies, no automated tests beyond a placeholder (`1 + 1`).
 
@@ -141,8 +141,8 @@ Likelihood and impact are qualitative judgments by the author of this plan, not 
 
 | ID | Risk | Evidence | Impact | Mitigation | Status |
 |---|---|---|---|---|---|
-| R1 | Python 3.13 does not work with the engine or its package, blocking the whole project target | `run.py` raises unless Python is exactly 3.12; the engine package on 3.13 is untried | High | Run TC-01 first; if 3.13 fails, bring the decision (target 3.12 vs wait for engine support) to the owner with evidence | Open |
-| R2 | Python-bot matches do not start cleanly through Gradle, and run slowly | *Verified 2026-11-24*: `build.gradle` launches `python3` from `PATH` (system 3.14.10 here, rejected by `run.py`, and without the package), which explains "No module named battlecode26"; with the venv first on `PATH`, `runPyLocal` with `--new-process` deadlocks because the spawned runner keeps Gradle's output pipe open while waiting for the Java server that Gradle has not started yet. Started separately (now by `backend/match_runner/launcher.py`), a Python-vs-Python match runs, but at about 0.9 rounds per second (1.8 with an opt-in `TCP_NODELAY` shim) (runner CPU near 0%, so latency-bound; no `TCP_NODELAY` on either side of the socket). The Python package `1.2.2` is exactly what the official 1.2.6 release contains, so there is no version drift | High | BIO-003/BIO-004: versions and artifact hash are pinned in `backend/match_runner/versions.lock.json` and the launcher exists; still open: the remaining per-round latency, and measuring before DEC-04 limits | Partly mitigated |
+| R1 | The engine package does not officially support Python above 3.12, yet the project runs it on 3.15 | *Verified 2026-11-24*: tested 3.12, 3.13, 3.14, 3.15 with identical results; the package's `Requires-Python` is `<3.13` and its `main()` rejects other versions; we bypass both in `runner_entry.py` | Medium | Pins in `versions.lock.json`; re-run the matrix on any engine or Python change; keep 3.12 as fallback; owner to confirm CN-001 and DEC-03 | Mitigated |
+| R2 | Python-bot matches did not start through Gradle and took 12 to 23 minutes | *Verified 2026-11-24*: wrong `python3` on `PATH`, `--new-process` deadlock, and Nagle plus delayed-ACK stalls (about 40 ms per message, no `TCP_NODELAY` on either side). The launcher fixes the first two and `runner_entry.py` sets `TCP_NODELAY` and `TCP_QUICKACK`: a full match now takes about 3 s with an identical replay | Low | Keep the launcher as the only supported way to run matches | Mitigated |
 | R3 | The engine's Python runner restricts imports more than the PRD promises | *Observed* in `battlecode26/runner.py`: a bot may import only its own modules plus `random`, `math`, `enum`, `battlecode26`; the PRD says "standard library and preinstalled libraries" | Medium | Decide the import policy (DEC-04 area) and document it in the bot contract; update PRD if the engine's rule is accepted | Open |
 | R4 | Engine-level restrictions are not host isolation | *Observed*: Python bots run in a Python process under RestrictedPython with bytecode counting and talk to the Java server over loopback TCP; PRD BIO-NFR-01 requires isolation from host services, other bots and user data | High | Add container/OS-level isolation (no network, read-only filesystem, CPU/memory/process limits) per the worker design; prove with the security tests in the test plan | Open |
 | R5 | The scaffold is licensed AGPL-3.0, and no project license or obligation analysis exists | *Observed*: `backend/battlecode26-scaffold/LICENSE` is the GNU Affero GPL v3; the repository root has no license | Medium | Owner decides the project license and checks AGPL obligations (including for a network-served platform) before publishing or deploying; this plan makes no legal conclusion | Open |

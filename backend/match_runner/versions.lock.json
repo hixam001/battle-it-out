@@ -1,12 +1,17 @@
 {
-  "_comment": "Pinned versions for the match launcher. Change only with a recorded version test (BIO-003).",
-  "python": "3.12",
+  "_comment": "Pinned versions for the match launcher. Change only with a recorded version test (BIO-003, TC-01).",
+  "primary_python": "3.15",
+  "tested_python": ["3.12", "3.13", "3.14", "3.15"],
   "engine_version": "1.2.6",
   "engine_package": {
     "name": "battlecode26",
     "metadata_version": "1.2.2",
     "artifact_url": "https://releases.battlecode.org/maven/org/battlecode/battlecode26-python/1.2.6/battlecode.tar.gz",
     "artifact_sha256": "bf52c03852afc8cc26f3ad978c501f2385bb36cf0ab4c28a4c2223630f8b03f9"
+  },
+  "dependencies": {
+    "RestrictedPython": "8.1",
+    "flatbuffers": "24.3.25"
   },
   "crossplay_port": 27185
 }

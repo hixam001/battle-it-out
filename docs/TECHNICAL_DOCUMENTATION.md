@@ -22,14 +22,14 @@ battle-it-out/
 │       USER_GUIDE.md  ADMIN_GUIDE.md
 ├── backend/
 │   ├── README.md                provenance and local notes for the vendored scaffold
+│   ├── match_runner/            match launcher, pinned versions, env setup, tests (BIO-003/004)
+│   ├── .venvs/ .cache/          git-ignored; created by match_runner/setup_env.py
 │   └── battlecode26-scaffold/   Battlecode 2026 scaffold (upstream f69e2ab + local edits)
 │       ├── build.gradle  gradle.properties  gradlew  gradlew.bat  gradle/wrapper/
 │       ├── engine_version.txt  client_version.txt
-│       ├── run.py               Python launcher (requires Python 3.12)
+│       ├── run.py               scaffold launcher (accepts only Python 3.12; not used by match_runner)
 │       ├── src/
-│       │   ├── examplefuncsplayer/RobotPlayer.java      Java example bot
 │       │   └── examplefuncsplayer_py/bot.py             Python example bot
-│       ├── test/examplefuncsplayer/RobotPlayerTest.java placeholder test
 │       └── LICENSE              GNU AGPL v3
 └── .github/modernize/java-upgrade/   tooling hook scripts (not part of the product)
 ```
@@ -44,9 +44,10 @@ The backend described in later sections (API, database, worker) does not exist y
 |---|---|---|
 | JDK 21 or newer | `build.gradle` throws "The engine must be run using >= Java 21 JDK" below 21 | *Verified* (JDK 21.0.13 used) |
 | Gradle | Wrapper `gradle-8.10`; use `./gradlew`, no system Gradle needed | *Verified* |
-| Python **3.12 exactly** for `run.py` | `REQUIRED_PYTHON_VERSION = (3, 12)`; any other version raises `Python 3.12 is required.` | *Verified*: system `python3` here is 3.14.10 and was rejected |
-| Python 3.13 | Project target; **untried** | `[DECIDE]` patch version (DEC-03) |
-| Virtual environment | The scaffold expects the engine's Python package (`battlecode26`) and `RestrictedPython` in the interpreter that runs bots | *Verified*: local `.venv` is CPython 3.12.15 with `battlecode26` 1.2.2 and `RestrictedPython` 8.1 |
+| Python (latest stable; 3.15.2 primary) | Run through `match_runner/runner_entry.py`, which works on 3.12 to 3.15 (section 3.5). `uv` creates the environments | *Verified* on 3.12.15, 3.13.18, 3.14.10, 3.15.2 (Linux x86_64); `[DECIDE]` exact patch and OS matrix (DEC-03, `CHANGE_NOTICES.md` CN-001) |
+| `uv` | `backend/match_runner/setup_env.py` calls it to create environments from `versions.lock.json` | *Verified* (uv 0.13.5) |
+| Scaffold `run.py` | Accepts only Python 3.12 (`REQUIRED_PYTHON_VERSION = (3, 12)`); the match launcher does not use it | *Verified*; its `verify` and `test` tasks are of little value (section 3.4) |
+| Environments | `backend/.venvs/py<version>`: the engine package `battlecode26` 1.2.2 (installed `--no-deps`, hash-checked) plus `RestrictedPython` 8.1 and `flatbuffers` 24.3.25 | *Verified*; the older scaffold `.venv` (3.12.15) still exists and is only used by `run.py` |
 | Network (first build) | Gradle downloads the engine/client from `releases.battlecode.org`; the Python package comes from `.temp/battlecode.tar.gz` | Offline runs need a warm cache; a cold-clone build was **not** tested |
 
 **Version facts to keep in mind** (*Verified*): `engine_version.txt` = `1.2.6`, `client_version.txt` = `1.0.6`, installed Python package `battlecode26` = `1.2.2`. The package number is not drift: the official release artifact for engine 1.2.6 (`releases.battlecode.org/maven/org/battlecode/battlecode26-python/1.2.6/battlecode.tar.gz`) contains package 1.2.2, and the copy in `.temp/` is byte-identical to it (SHA-256 `bf52c038...8b03f9`, checked 2026-11-24). Side effect: `run.py install_current_version` compares `1.2.2` with `1.2.6` and so reinstalls the package on every `runLocal` with a Python team. The build also reports that client `1.0.7` is available (server says `release_version_client` 1.0.7, `release_version_public` 1.2.6). Pinning the versions and the artifact hash is BIO-003/BIO-101.
@@ -62,8 +63,8 @@ Run from `backend/battlecode26-scaffold/`.
 | `build` | Compile and test; also downloads the client (`unpackClient`) |
 | `runLocal` | Run a match locally without updating anything and without starting the client |
 | `run` | Same as `runLocal`, but first updates the Python package for Python teams (needs network) |
-| `verify` | Run the Java instrumenter's package verification (`battlecode.instrumenter.Verifier`) for a team package |
-| `listPlayers` | List packages containing `RobotPlayer.java` or `.scala` |
+| `verify` | Run the Java instrumenter's package verification for a team package (only meaningful for Java packages; unused now) |
+| `listPlayers` | List packages containing `RobotPlayer.java` or `.scala` (now always empty) |
 | `listMaps` | List available `.map26` maps |
 | `version` | Print configured engine and client versions |
 | `checkNewVersion` | Compare configured versions to the published ones |
@@ -75,57 +76,33 @@ Run from `backend/battlecode26-scaffold/`.
 
 ### 3.2 Run a match
 
-*Verified* (Java vs Java, replay written outside the repo so existing replays are untouched):
+Participants write Python bots only; the Java *engine server* is what plays the game (CN-002). Use the match launcher, not the scaffold's Gradle task for Python bots:
 
 ```bash
-cd backend/battlecode26-scaffold
-./gradlew runLocal --offline -Preplay=/some/path/java-baseline.bc26
-```
-
-Observed result: `examplefuncsplayer (A) wins (round 860)`, reason "The winning team destroyed all of the enemy team's rat kings", about 2 seconds, replay about 61 KB. Without `-Preplay`, the replay goes to `matches/<teamA>-vs-<teamB>-on-<maps>.bc26` (name truncated to 80 characters) and overwrites a file of the same name.
-
-**Python bots: verified on 2026-11-24 only with a manual launch, not with the shipped Gradle command.** The intended command, `./gradlew runLocal -PlanguageA=python -PteamA=examplefuncsplayer_py -PlanguageB=python -PteamB=examplefuncsplayer_py`, does not work as shipped on Linux. Two causes were established by running it and reading the code:
-
-1. **Wrong interpreter.** `build.gradle` starts `python3` from `PATH`. Here that is the system Python 3.14, which has no `battlecode26` package and is rejected by `run.py`, hence `No module named battlecode26` / `Python 3.12 is required`. Putting `.venv/bin` first on `PATH` fixes it, but an already running Gradle daemon keeps the `PATH` it started with (observed: the first retry still failed until `--no-daemon` was used).
-2. **Start-up deadlock.** `runPyLocal` calls the runner with `--new-process`. The spawned runner inherits Gradle's output pipe and retries `127.0.0.1:27185` until the Java server accepts, but the Java server task is ordered after `runPyLocal` and Gradle waits for the pipe to close. Result: no output until the timeout. (The Windows branch uses `DETACHED_PROCESS`, which avoids this; the Linux branch does not.)
-
-**Supported way: the match launcher** (`backend/match_runner/`, see its `README.md`):
-
-```bash
-python3 backend/match_runner/launcher.py verify   # checks the pins in versions.lock.json
+python3 backend/match_runner/setup_env.py 3.15          # once; creates backend/.venvs/py3.15 from versions.lock.json
+python3 backend/match_runner/launcher.py verify          # checks interpreter, package pins, engine version, cached artifact hash
 python3 backend/match_runner/launcher.py run --team-a examplefuncsplayer_py --team-b examplefuncsplayer_py \
-    --lang-a python --lang-b python --out-dir /path/outside/repo
+    --out-dir /path/outside/repo                         # --python-version 3.14 to use another environment
 ```
 
-It does what the manual recipe below does, with version checks, a busy-port check, a timeout and clean-up of the runner it started. Verified 2026-11-24: Java vs Java (round 860, 5 s), Python vs Python (round 1290, exit 0), busy port (exit 2, clear error), timeout (server stopped, runner cleaned up, port free afterwards). Linux only; one match per host at a time.
+*Observed* (2026-11-24, example bot against itself on `DefaultSmall`, all four Python versions): `examplefuncsplayer_py (A) wins (round 1290)`, reason "The winning team destroyed all of the enemy team's rat kings", 2.8 to 3.3 s including JVM start-up, and the replay has the same SHA-256 on every version (`a08779089a8c...`). The earlier Java-vs-Java baseline took 5.2 s through the launcher (round 860, a different game), so Python matches are not slower than the old Java baseline for this bot. This is one light bot; heavier bots are limited by the speed of Python (section 3.5).
 
-**Manual recipe** (what the launcher automates; Python 3.12 venv, engine 1.2.6, package 1.2.2): start the runner yourself in the background with its output redirected, then run only the server task.
+The launcher starts `runner_entry.py` in the chosen environment (the engine's Python runner), runs only `./gradlew runJavaLocal` (the Java server) with a timeout, stops the runner it started, and prints a JSON summary. It refuses to start when versions differ from the pins or loopback port 27185 is busy (one match per host at a time). It marks a run failed if the server logs a team error, the runner exits abnormally, or the timeout is hit. Details and exit codes: `backend/match_runner/README.md`.
 
-```bash
-cd backend/battlecode26-scaffold
-.venv/bin/python -m battlecode26 --teamA examplefuncsplayer_py --teamB examplefuncsplayer_py \
-    --dirA "$PWD/src" --dirB "$PWD/src" > /path/outside/repo/runner.log 2>&1 < /dev/null &
-PATH="$PWD/.venv/bin:$PATH" ./gradlew runJavaLocal --no-daemon --offline \
-    -PlanguageA=python -PlanguageB=python -PteamA=examplefuncsplayer_py -PteamB=examplefuncsplayer_py \
-    -Preplay=/path/outside/repo/match.bc26
-```
+**Why not the scaffold's Gradle task** (`./gradlew runLocal -PlanguageA=python ...`)? Three problems, found by running it and reading the code:
 
-The runner exits by itself when the server ends the game. If you abort, stop the runner by its PID.
+1. **Wrong interpreter.** `build.gradle` starts `python3` from `PATH` (system 3.14 here: no package, and `run.py` rejects it). A running Gradle daemon also keeps the `PATH` it started with.
+2. **Start-up deadlock.** `runPyLocal` calls the runner with `--new-process`; the spawned runner holds Gradle's output pipe while it retries `127.0.0.1:27185`, but the Java server task is ordered after it and Gradle waits for the pipe to close. (The Windows branch uses `DETACHED_PROCESS`, which avoids it.)
+3. **Missing class directory.** With no Java bots there is no compiled-classes directory, and the engine server treats that as a team error for Python teams too (`Error while loading player ...: ILLEGAL Team is known to have errors`); the game then runs to round 2000 on a coin flip with no bots acting. The launcher passes `-PclassLocationA/B=<empty dir>`; do the same if you run Gradle by hand.
 
-*Observed result* of one earlier full control match (`examplefuncsplayer_py` against itself on `DefaultSmall`): `examplefuncsplayer_py (A) wins (round 1290)`, reason "The winning team destroyed all of the enemy team's rat kings", Gradle exit 0, 706 seconds, replay about 64 KB, no stray processes afterwards. That run used a small wrapper that sets `TCP_NODELAY` and merges the two writes of each message on the Python side (now `backend/match_runner/nodelay_shim.py`, opt-in with `--tcp-nodelay`).
-
-*Observed comparison through the launcher* (same teams, same map, 2026-11-24): without the shim 1400.1 s (0.92 rounds/s); with the shim 703.9 s (1.83 rounds/s). Both ended `examplefuncsplayer_py (A) wins (round 1290)`, and the three replay files (this run, the shim run, the earlier manual run) have the same SHA-256. So for this one pairing the shim gives the same replay at about twice the speed; that is not proof of equal behaviour for other bots or maps.
-
-**Throughput is low.** About 0.9 rounds per second as shipped, 1.8 with the shim (a full match needs 12 to 23 minutes, against about 5 seconds for Java-vs-Java), with the runner at about 0.3% CPU, so the time is spent waiting, not computing. Each message is sent as a 4-byte length followed by the JSON body in two `sendall` calls and neither the Python client nor the Java `CrossPlay` server sets `TCP_NODELAY` (read from the Python source and `javap` output of the 1.2.6 jar). That is a confirmed partial cause (about 2x), but the remaining delay is not explained. This matters for DEC-04 (time limits) and for tournament scheduling: do not size match time budgets from the Java baseline.
-
-Two further cautions: (1) `runLocal` with a Python team depends on `installPyLocal`, which reinstalls the package on every run because it compares package metadata `1.2.2` with `engine_version.txt` `1.2.6`; (2) a hung run can leave a `python -m battlecode26` process behind, so check `ps` and stop only your own process by PID.
+**Why matches used to take 12 to 23 minutes, and what fixed it.** The engine's Python client sends each message as two writes (4-byte length, then JSON) and neither it nor the Java `CrossPlay` server sets `TCP_NODELAY`, so Nagle's algorithm and delayed ACKs cost about 40 ms per message, and every game call is a round trip. `runner_entry.py` sets `TCP_NODELAY`, sends one write per message and asks for immediate ACKs (`TCP_QUICKACK`) around each receive; message contents are unchanged. *Measured* on 3.12 with the example bot: 1400 s without, 704 s with `TCP_NODELAY` and a single write, about 3 s with `TCP_QUICKACK` added. The replay was byte-identical in all three cases. Use `--no-socket-tuning` to switch it off for comparison. Linux only (`TCP_QUICKACK`).
 
 ### 3.3 Configuration properties (`gradle.properties` plus `-P` overrides)
 
 | Property | Default in file | Meaning |
 |---|---|---|
-| `teamA`, `teamB` | `examplefuncsplayer` | Team package names under `src/` |
-| `languageA`, `languageB` | `java` | `java` or `python` |
+| `teamA`, `teamB` | `examplefuncsplayer_py` | Team directory names under `src/` |
+| `languageA`, `languageB` | `python` | Language of each team; the launcher always passes `python` (Java bots were removed, CN-002) |
 | `maps` | `DefaultSmall` | Map name(s) |
 | `debug` | `false` | Engine debug methods |
 | `outputVerbose` | `true` | Print bot output to the console |
@@ -135,24 +112,54 @@ Two further cautions: (1) `runLocal` with a Python team depends on `installPyLoc
 | `compatibilityClient` | `false` | Download the Electron client instead of the Tauri one |
 | `replay` | (unset) | Replay output path (default `matches/<names>.bc26`) |
 | `waitForClient` | `false` | Pause until a client connects |
-| `classLocationA/B`, `packageNameA/B` | derived | Where team classes and packages are found |
+| `classLocationA/B`, `packageNameA/B` | derived | Where team classes and packages are found; **must point to an existing directory** even for Python teams (an empty one is enough, see section 3.2) |
 | `onSaturn`, `gcloudToken`, `forceReinstallPy` | unset | Organizer-internal distribution options of the scaffold |
 
 The Java engine reads these through JVM system properties such as `-Dbc.game.team-a`, `-Dbc.game.maps`, `-Dbc.server.save-file`, `-Dbc.server.mode=headless`, `-Dbc.server.validate-maps`. The server is pointed at a `maps` directory (`-Dbc.server.map-path=maps`; it does not exist locally), and `listMaps` reads `.map26` files from both that directory and the engine jar. The default map `DefaultSmall` ran successfully, so it is available from the jar.
 
 ### 3.4 `run.py` tasks (*Verified*: `tasks`, `verify`, `test`; others read, not run)
 
-Run with the Python 3.12 interpreter, from the scaffold root: `.venv/bin/python run.py <task> [options]`.
+Run with the scaffold's Python 3.12 interpreter, from the scaffold root: `.venv/bin/python run.py <task> [options]`. The match launcher does not use `run.py`.
 
 | Task | Behavior |
 |---|---|
 | `tasks` | Prints `tasks, test, update, verify, run, install_current_version, zip_submission` |
-| `verify --p1 <team>` | Passes if `src/<team>/bot.py` exists and its text contains `def turn():`. *Verified*: passes for `examplefuncsplayer_py`, fails for the Java package `examplefuncsplayer`. **It checks neither syntax nor imports.** |
+| `verify --p1 <team>` | Passes if `src/<team>/bot.py` exists and its text contains `def turn():`. *Verified*: passes for `examplefuncsplayer_py`. **It checks neither syntax nor imports.** |
 | `test` | Runs every `*.py` file under `test/`; *Verified*: prints `No tests found.` |
 | `update` | Downloads the latest engine Python package to `.temp/` and installs it; writes `engine_version.txt` |
 | `install_current_version` | Installs the package for the version in `engine_version.txt` when the installed one differs |
 | `run --p1 --p2 [--p1-dir --p2-dir --debug]` | Starts the Python cross-play runner (`from battlecode26 import _main`) |
 | `zip_submission` | Zips `src/**/*.py` into `submission.zip` |
+
+### 3.5 Python version test matrix (*Verified*, 2026-11-24, Linux x86_64, CachyOS, JDK 21)
+
+Every row is a full match through `launcher.py` in a fresh environment built by `setup_env.py` from `versions.lock.json`. Test bots live in `backend/match_runner/tests/bots/`.
+
+| Python | Example bot, 1290 rounds | Feature bot, 1310 rounds | CPU-load bot, 1310 rounds |
+|---|---|---|---|
+| 3.12.15 | 3.3 s | 2.1 s | 4.3 s |
+| 3.13.18 | 2.8 s | 2.0 s | 4.4 s |
+| 3.14.10 | 2.9 s | 2.0 s | 5.7 s |
+| 3.15.2 | 3.2 s | 2.1 s | 4.6 s |
+
+- **Same behaviour on every version.** The feature bot (`featuretest_py`) logs 32 deterministic lines covering arithmetic, strings, collections, classes, generators, closures, exceptions, the walrus operator, `match`, recursion, seeded `random`, `math`, `*args/**kwargs`, and the sandbox probes below; the output is identical on 3.12, 3.13, 3.14 and 3.15 (`tests/expected_featuretest.txt`). The example bot's replay has the same SHA-256 on all four. Replays of the two do-nothing test bots vary from run to run on the same version (two different hashes in five runs, same round and winner); the cause was not investigated.
+- **Why newer Pythons needed work.** The engine package's `instrument.py` builds a table of CPython 3.12 opcode names when imported and raises `KeyError: 'KW_NAMES'` on 3.13 and later; its `main()` rejects anything but 3.12. Nothing in the package calls `Instrument.instrument()` (the runner `exec()`s the bot source), so the table is unused; `runner_entry.py` lets the import succeed by giving a copy of `dis.opmap` the missing names for that import only (`dis.opmap` is read-only on 3.15). The engine package itself is not modified.
+- **Speed is not a version problem.** Python 3.15 ran the CPU-load bot in 4.6 s against 4.3 s on 3.12; differences between versions were within about 30% on one machine and were not repeated enough to rank versions.
+- **What was not tested:** other operating systems, free-threaded builds, 3.16, other maps, matches between different bots, and long or memory-heavy bots.
+
+**Sandbox probes** (from `featuretest_py`, identical on all four versions). The engine does not use RestrictedPython's compiler; the runner `exec()`s the bot's source with a reduced builtins table. Observed:
+
+| Probe | Result |
+|---|---|
+| `import os`, `import sys` | blocked (`ImportError`); `import math` allowed |
+| `eval`, `exec` | blocked (not defined) |
+| `open` | **available** (the runner adds it to the builtins) |
+| `().__class__.__base__.__subclasses__()` | **allowed**: attribute access is not guarded, the usual route out of such sandboxes |
+| `setattr`, `delattr` | available |
+| `dict`, `sum`, `min`, `max`, `map`, `filter`, `any`, `all`, `super`, `type`, `object`, `property`, `next`, `iter`, `getattr`, `print`, `classmethod`, `staticmethod` | **not defined** (`NameError`); dict literals, comprehensions, `sorted`, `zip`, `enumerate`, `set`, `range`, `len`, `abs`, `pow`, `round`, `divmod` work |
+| `while True: pass` in `turn()` | **never stops**: the match hangs until the launcher's timeout (the `hang_py` bot; runner killed, port freed) |
+
+These are facts for the bot validator (BIO-201), the sandbox (BIO-203/204) and the limits (DEC-04): the engine gives no protection against file access or a runaway bot, so the platform must enforce host-level isolation and wall-clock limits itself, and the allowed-builtins list is far narrower than the PRD's "standard library".
 
 ## 4. Writing and running bots
 
@@ -164,18 +171,19 @@ Run with the Python 3.12 interpreter, from the scaffold root: `.venv/bin/python 
 - Typical calls used by the example: `rc.can_move_forward()`, `rc.move_forward()`, `rc.can_turn()`, `rc.turn(direction)`, `rc.get_direction()`, `rc.get_location()`, `rc.get_type()`, `rc.set_indicator_string(text)`.
 - Imports: a bot may import its own modules plus `random`, `math`, `enum`, `battlecode26`. Anything else raises `ImportError('Module "<name>" does not exist.')`. Relative imports and import cycles are rejected. **This is stricter than the PRD's "standard library and preinstalled libraries" wording; the policy is undecided** (see `PROJECT_PLAN.md` R3).
 - Errors: the example wraps game calls in `try/except GameActionException` and a generic `except Exception`, logging via `log(...)`. What the runner does with an uncaught exception was not checked; follow the example's pattern.
-- Compute budget: the runner counts bytecode and reports "Ran out of bytecode" when it hits the limit. The default constant is 20000 and is described as updated by the game. The platform's official limit values are `[DECIDE]` (DEC-04).
+- Builtins: the sandbox offers a reduced set (section 3.5): for example no `dict()`, `sum`, `min`, `max`, `map`, `super`, `type`, `property`, `print`; use `log(...)` for output.
+- Compute budget: the runner has a bytecode counter (default 20000) but charges it only for game API calls (each has a cost); **pure Python computation is not limited** (verified with an infinite loop, section 3.5). The platform's official limits are `[DECIDE]` (DEC-04) and must be wall-clock based.
 - Platform submission rule (confirmed requirement): exactly one file named `bot.py`; no ZIP, no extra files. Multi-module bots that work with the raw engine are therefore not allowed on the platform.
 
 For the game rules, units and the complete `rc` API, use the official Battlecode 2026 documentation (`https://play.battlecode.org/bc26/quick_start`, referenced in the scaffold README). This repository does not duplicate it.
 
-### 4.2 Java bot contract (scaffold)
+### 4.2 Java bots
 
-A class `RobotPlayer` in package `<team>` with `public static void run(RobotController rc) throws GameActionException`, containing a loop that ends each turn with `Clock.yield()`. The platform does not accept Java bots; Java is used for the scaffold baseline and engine tests only.
+Removed (CN-002). The Java engine server remains and is not a bot language.
 
 ### 4.3 Tests
 
-The only test is `RobotPlayerTest.testSanity` (`assertEquals(2, 1 + 1)`), a placeholder that proves the toolchain compiles and runs, not that any bot works. There are no Python tests. The planned test strategy and eight critical cases are in `TEST_PLAN.md`.
+The scaffold's only test (a Java `1 + 1` placeholder) was removed with the Java bots. Tests now are the launcher's: `backend/.venvs/py3.15/bin/python -m unittest backend.match_runner.tests.test_launcher` (14 unit tests, run on 3.12 to 3.15), plus real-match integration tests with `BIO_INTEGRATION=1 python3 -m unittest backend.match_runner.tests.test_launcher` (feature bot against `expected_featuretest.txt`, and a hanging bot stopped by the timeout). The planned test strategy and eight critical cases are in `TEST_PLAN.md`.
 
 ## 5. Database (proposed, not implemented)
 
@@ -320,11 +328,14 @@ Errors: `400` malformed, `403` not allowed to upload, `409` deadline closed, `41
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `RuntimeError: Python 3.12 is required.` | `run.py` accepts only Python 3.12; system Python here is 3.14 | Use the project's 3.12 interpreter (for example `.venv/bin/python run.py ...`) |
+| `RuntimeError: Python 3.12 is required.` | You ran the scaffold's `run.py` (or `python -m battlecode26`) with another Python | Use `backend/match_runner/launcher.py`, which does not need it |
 | `The engine must be run using >= Java 21 JDK` | JDK older than 21 | Install JDK 21 or newer |
-| `Player is not valid!` from `run.py verify` | `src/<team>/bot.py` missing or lacks `def turn():` (the Java example package has no `bot.py`) | Verify the Python example (`--p1 examplefuncsplayer_py`) |
-| `No module named battlecode26` when Gradle starts a Python team | `build.gradle` runs `python3` from `PATH`, which is not the venv | Put `.venv/bin` first on `PATH` and run Gradle with `--no-daemon` (a running daemon keeps its old `PATH`); see section 3.2 |
-| A run hangs and a `python -m battlecode26` process stays alive | Python runner waiting for the engine (cause not established) | Stop your own stray process by PID; do not kill other Java processes (editors and Gradle daemons use them) |
+| `Player is not valid!` from `run.py verify` | `src/<team>/bot.py` missing or lacks `def turn():` | Check the file |
+| `No module named battlecode26` when Gradle starts a Python team | `build.gradle` runs `python3` from `PATH`, which is not an environment with the package | Use the launcher (section 3.2) |
+| Match ends in round 2000 by coin flip and the server log says `Error while loading player` | The engine server needs an existing class directory even for Python teams | Use the launcher, or pass `-PclassLocationA/B=<empty dir>` |
+| `version check failed` from the launcher | Interpreter, package or `engine_version.txt` differs from `versions.lock.json` | Run `setup_env.py <version>` and `launcher.py verify`; change the pins only with a recorded test |
+| `loopback port 27185 is already in use` | Another match (or a leftover runner/server) holds the engine's fixed port | Wait, or stop your own leftover process by PID |
+| A run hangs and a `runner_entry.py` process stays alive | A bot never returns from `turn()`, or the server died | The launcher's timeout stops it; if you started things by hand, stop your own process by PID and do not kill other Java processes (editors and Gradle daemons use them) |
 | Existing replay overwritten | Default replay path is `matches/<teamA>-vs-<teamB>-on-<maps>.bc26` | Pass `-Preplay=<path>` |
 | Build prints "NEW BATTLECODE VERSION AVAILABLE" | Published client or engine is newer than the configured version | Informational; update deliberately with `./gradlew update` in its own PR and re-run the baseline |
 

@@ -14,23 +14,24 @@ There is **no API, database, worker, or website yet**. The delivery order is fix
 
 Known open issues (details in the plan and architecture documents):
 
-- Python 3.13 is the target, but the scaffold launcher `run.py` accepts only Python 3.12, and 3.13 has not been tried.
-- Running Python bots through Gradle fails or hangs on Linux. Use `python3 backend/match_runner/launcher.py run ...` (see `backend/match_runner/README.md`); Python matches take 12 to 23 minutes in testing.
+- The engine package officially supports only Python 3.12. Python 3.12 to 3.15 (latest stable, 3.15.2) pass our tests through `backend/match_runner/`, on Linux x86_64 only; the engine's authors do not support this (`docs/CHANGE_NOTICES.md` CN-001).
+- The engine's bot sandbox is weak (it allows `open`, attribute-walk escapes and infinite loops); isolation and limits are still to be built (`docs/TECHNICAL_DOCUMENTATION.md` section 3.5).
+- Running Python bots through Gradle fails or hangs on Linux. Use `python3 backend/match_runner/launcher.py run ...` (see `backend/match_runner/README.md`); a match of the example bot takes about 3 seconds.
 - The scaffold is licensed under AGPL-3.0; the project's own license is not yet decided.
 
-## Quick start (local engine baseline)
+## Quick start (local match)
 
-Requirements: **JDK 21 or newer**. A cold clone needs network access on the first build to download the engine and client.
+Requirements: **JDK 21 or newer** (the Battlecode engine server is a Java program), [`uv`](https://docs.astral.sh/uv/), and network access the first time (engine and Python downloads). Participants write Python bots only; Java bots were removed.
 
 ```bash
-cd backend/battlecode26-scaffold
-./gradlew build                      # first time: downloads engine and client
-./gradlew runLocal --offline -Preplay=/tmp/baseline.bc26
+cd backend/battlecode26-scaffold && ./gradlew build && cd ../..      # first time: downloads the engine jar
+python3 backend/match_runner/setup_env.py 3.15                       # pinned environment, hash-checked engine package
+python3 backend/match_runner/launcher.py verify
+python3 backend/match_runner/launcher.py run --team-a examplefuncsplayer_py --team-b examplefuncsplayer_py \
+    --out-dir /tmp/bio-match                                          # prints a JSON summary; replay and logs in --out-dir
 ```
 
-Checked on 2026-11-24 (Java vs Java, warm cache): the match finishes in about 2 seconds and writes a replay. `-Preplay=` puts the replay where you choose; without it, the replay goes to `matches/` and replaces a file of the same name. The cold-clone `./gradlew build` was not tested.
-
-To run Python bots you need a **Python 3.12** environment with the engine's `battlecode26` package; see [`docs/TECHNICAL_DOCUMENTATION.md`](docs/TECHNICAL_DOCUMENTATION.md) section 3 for what is verified and what is not before you rely on it.
+Checked on 2026-11-24 on Python 3.12, 3.13, 3.14 and 3.15: the example match finishes in about 3 seconds (team A wins in round 1290) with the same replay on every version. Other versions: `setup_env.py 3.14` and `--python-version 3.14`. The cold-clone `./gradlew build` was not tested.
 
 ## Repository layout
 
