@@ -89,7 +89,17 @@ Observed result: `examplefuncsplayer (A) wins (round 860)`, reason "The winning 
 1. **Wrong interpreter.** `build.gradle` starts `python3` from `PATH`. Here that is the system Python 3.14, which has no `battlecode26` package and is rejected by `run.py`, hence `No module named battlecode26` / `Python 3.12 is required`. Putting `.venv/bin` first on `PATH` fixes it, but an already running Gradle daemon keeps the `PATH` it started with (observed: the first retry still failed until `--no-daemon` was used).
 2. **Start-up deadlock.** `runPyLocal` calls the runner with `--new-process`. The spawned runner inherits Gradle's output pipe and retries `127.0.0.1:27185` until the Java server accepts, but the Java server task is ordered after `runPyLocal` and Gradle waits for the pipe to close. Result: no output until the timeout. (The Windows branch uses `DETACHED_PROCESS`, which avoids this; the Linux branch does not.)
 
-**Workaround that worked** (Python 3.12 venv, engine 1.2.6, package 1.2.2): start the runner yourself in the background with its output redirected, then run only the server task.
+**Supported way: the match launcher** (`backend/match_runner/`, see its `README.md`):
+
+```bash
+python3 backend/match_runner/launcher.py verify   # checks the pins in versions.lock.json
+python3 backend/match_runner/launcher.py run --team-a examplefuncsplayer_py --team-b examplefuncsplayer_py \
+    --lang-a python --lang-b python --out-dir /path/outside/repo
+```
+
+It does what the manual recipe below does, with version checks, a busy-port check, a timeout and clean-up of the runner it started. Verified 2026-11-24: Java vs Java (round 860, 5 s), Python vs Python (round 1290, exit 0), busy port (exit 2, clear error), timeout (server stopped, runner cleaned up, port free afterwards). Linux only; one match per host at a time.
+
+**Manual recipe** (what the launcher automates; Python 3.12 venv, engine 1.2.6, package 1.2.2): start the runner yourself in the background with its output redirected, then run only the server task.
 
 ```bash
 cd backend/battlecode26-scaffold
@@ -102,9 +112,11 @@ PATH="$PWD/.venv/bin:$PATH" ./gradlew runJavaLocal --no-daemon --offline \
 
 The runner exits by itself when the server ends the game. If you abort, stop the runner by its PID.
 
-*Observed result* of one full control match (`examplefuncsplayer_py` against itself on `DefaultSmall`): `examplefuncsplayer_py (A) wins (round 1290)`, reason "The winning team destroyed all of the enemy team's rat kings", Gradle exit 0, 706 seconds, replay about 64 KB, no stray processes afterwards. Caveat: this run used a small wrapper that sets `TCP_NODELAY` and merges the two writes of each message on the Python side (see below); the unpatched runner was only run for partial matches (23 rounds in the first 30 s versus 46 with the patch, including JVM start-up), so the unpatched full-match time and outcome were not measured. The wrapper only changes socket behaviour, but outcome equality was not tested.
+*Observed result* of one earlier full control match (`examplefuncsplayer_py` against itself on `DefaultSmall`): `examplefuncsplayer_py (A) wins (round 1290)`, reason "The winning team destroyed all of the enemy team's rat kings", Gradle exit 0, 706 seconds, replay about 64 KB, no stray processes afterwards. That run used a small wrapper that sets `TCP_NODELAY` and merges the two writes of each message on the Python side (now `backend/match_runner/nodelay_shim.py`, opt-in with `--tcp-nodelay`).
 
-**Throughput is low.** About 1.6 to 1.8 rounds per second (a full match needs minutes, against about 2 seconds for Java-vs-Java), with the runner at about 0.3% CPU, so the time is spent waiting, not computing. Each message is sent as a 4-byte length followed by the JSON body in two `sendall` calls and neither the Python client nor the Java `CrossPlay` server sets `TCP_NODELAY` (read from the Python source and `javap` output of the 1.2.6 jar). That is a plausible cause, supported by the roughly 2x gain from the wrapper, but the remaining delay is not explained. This matters for DEC-04 (time limits) and for tournament scheduling: do not size match time budgets from the Java baseline.
+*Observed comparison through the launcher* (same teams, same map, 2026-11-24): without the shim 1400.1 s (0.92 rounds/s); with the shim 703.9 s (1.83 rounds/s). Both ended `examplefuncsplayer_py (A) wins (round 1290)`, and the three replay files (this run, the shim run, the earlier manual run) have the same SHA-256. So for this one pairing the shim gives the same replay at about twice the speed; that is not proof of equal behaviour for other bots or maps.
+
+**Throughput is low.** About 0.9 rounds per second as shipped, 1.8 with the shim (a full match needs 12 to 23 minutes, against about 5 seconds for Java-vs-Java), with the runner at about 0.3% CPU, so the time is spent waiting, not computing. Each message is sent as a 4-byte length followed by the JSON body in two `sendall` calls and neither the Python client nor the Java `CrossPlay` server sets `TCP_NODELAY` (read from the Python source and `javap` output of the 1.2.6 jar). That is a confirmed partial cause (about 2x), but the remaining delay is not explained. This matters for DEC-04 (time limits) and for tournament scheduling: do not size match time budgets from the Java baseline.
 
 Two further cautions: (1) `runLocal` with a Python team depends on `installPyLocal`, which reinstalls the package on every run because it compares package metadata `1.2.2` with `engine_version.txt` `1.2.6`; (2) a hung run can leave a `python -m battlecode26` process behind, so check `ps` and stop only your own process by PID.
 

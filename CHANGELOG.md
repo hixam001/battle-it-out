@@ -6,6 +6,7 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- `backend/match_runner/`: command-line match launcher for Python and Java bots (Linux), pinned versions and artifact hash in `versions.lock.json`, an opt-in `TCP_NODELAY` shim, and unit tests (`python3 -m unittest backend.match_runner.tests.test_launcher`). Verified 2026-11-24 with full Python-vs-Python matches (A wins round 1290, replay identical with and without the shim).
 - **Documentation set** (this change): `docs/PROJECT_PLAN.md`, `docs/ARCHITECTURE.md`, `docs/TECHNICAL_DOCUMENTATION.md`, `docs/USER_GUIDE.md`, `docs/ADMIN_GUIDE.md`, a full `README.md`, and this changelog.
 - `PRODUCT.md`: product context for design tooling, derived from the requirement documents (#4, 2026-11-24).
 - Root `.gitignore` ignoring `.claude/settings.local.json`, `.claude/skills/`, `.claude/agents/`, `.agents/`, and `skills-lock.json` (#4, 2026-11-24).
@@ -25,6 +26,6 @@ All notable changes to this project are recorded here. The format follows [Keep 
 ### Known issues
 
 - Python 3.13 compatibility is unverified; the scaffold launcher `run.py` accepts only Python 3.12.
-- The Gradle Python-bot path fails on Linux as shipped (wrong `python3` from `PATH`; `--new-process` start-up deadlock). A manual launch works and was verified with a full Python-vs-Python match on 2026-11-24 (see `docs/TECHNICAL_DOCUMENTATION.md` section 3.2). Throughput is about 1.6 to 1.8 rounds per second.
+- The Gradle Python-bot path fails on Linux as shipped (wrong `python3` from `PATH`; `--new-process` start-up deadlock). Use the new launcher (see Added). Python matches run at about 0.9 rounds per second (1.8 with the opt-in shim); the remaining latency is unexplained.
 - The only automated test is a placeholder (`1 + 1`); the scaffold's Python `verify` checks only for the text `def turn():`.
 - The scaffold is AGPL-3.0 and the project has no license of its own yet.

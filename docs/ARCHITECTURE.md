@@ -251,7 +251,7 @@ Services are containerized; the worker runs on separate hardware or at least a s
 | ID | Issue | Why it matters | Next step |
 |---|---|---|---|
 | A-01 | Python 3.13 is the target, but `run.py` accepts only 3.12 and the engine package on 3.13 is untried | Blocks the P0 goal BIO-G01 | TC-01 in a clean environment (BIO-102) |
-| A-02 | The Gradle Python path launches `python3` from `PATH` (system 3.14), deadlocks on `--new-process`, and is latency-bound; the Python package `1.2.2` is the content of the official 1.2.6 release | Python bots are the product; the path must run reliably | Pin versions and artifact hash; start the runner and server from our own launcher instead of the Gradle Exec task; measure throughput (BIO-003/004) |
+| A-02 | The Gradle Python path launches `python3` from `PATH` (system 3.14), deadlocks on `--new-process`, and is latency-bound; the Python package `1.2.2` is the content of the official 1.2.6 release | Python bots are the product; the path must run reliably | Done in part: `backend/match_runner/` pins versions and the artifact hash and starts runner and server itself; throughput still to be measured against limits (BIO-003/004) |
 | A-03 | Engine import allowlist (`random`, `math`, `enum`, `battlecode26`, own modules) conflicts with the PRD wording "standard library and preinstalled libraries" | Defines what participants may write | Decide the policy and update the bot contract (BIO-201) |
 | A-04 | Language-level sandbox only | Hostile-code risk | Container isolation and security tests (BIO-203/204) |
 | A-05 | AGPL-3.0 scaffold license; no project license | May affect how the platform is distributed and served | Owner decision before publishing or deploying |

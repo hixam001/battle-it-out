@@ -1,0 +1,12 @@
+{
+  "_comment": "Pinned versions for the match launcher. Change only with a recorded version test (BIO-003).",
+  "python": "3.12",
+  "engine_version": "1.2.6",
+  "engine_package": {
+    "name": "battlecode26",
+    "metadata_version": "1.2.2",
+    "artifact_url": "https://releases.battlecode.org/maven/org/battlecode/battlecode26-python/1.2.6/battlecode.tar.gz",
+    "artifact_sha256": "bf52c03852afc8cc26f3ad978c501f2385bb36cf0ab4c28a4c2223630f8b03f9"
+  },
+  "crossplay_port": 27185
+}
