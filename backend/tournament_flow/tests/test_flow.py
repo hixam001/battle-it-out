@@ -220,6 +220,41 @@ class Brackets(BracketBase):
             self.open(("ta", "tb"))
         self.assertIn("tb", str(e.exception))
         self.assertEqual(self.flow.store.snapshot().get("brackets", {}), {})
+        self.assertEqual(self.snap()["pins"], {})                 # refused BEFORE the write-once pin
+
+    def test_a_refused_draw_can_be_recovered_by_an_extension_and_a_new_bot(self):
+        """The pin used to be written before the two-team check, so a tournament with one playable team could
+        never be drawn again, even after the Admin extended the deadline and the second team uploaded."""
+        self.up("ta"), self.up("tb", b"nothing useful\n")
+        self.check_all()
+        self.clock.t = DEADLINE + 1
+        with self.assertRaises(F.FlowError):
+            self.open(("ta", "tb"))
+        later = DEADLINE + 5_000                                  # an Admin extension: a later deadline
+        F.upload(self.flow, captain("tb"), "tb", "t1", "bot.py", BOT, idempotency_key="k2", deadline_at=later, now=self.clock)
+        self.check_all()
+        self.clock.t = later + 1
+        out = F.open_bracket(self.flow, "t1", "b1", ["ta", "tb"], "pool", self.catalogue, ENGINE,
+                             deadline_at=later, now=self.clock, rng=random.Random(3))
+        self.assertEqual([e["team"] for e in out["bracket"]["teams"]], ["ta", "tb"])
+
+    def test_a_team_whose_only_version_is_unchecked_is_pending_not_missing(self):
+        """One active team and one still being checked is 'wait', not 'too few teams': the check may yet pass."""
+        self.up("ta")
+        self.check_all()
+        self.up("tb")                                             # validating, never checked
+        self.clock.t = DEADLINE + 1
+        with self.assertRaises(R.PendingChecks):
+            self.open(("ta", "tb"))
+        self.assertEqual(self.snap()["pins"], {})
+
+    def test_an_unfinished_check_is_reported_as_pending_not_as_too_few_teams(self):
+        self.up("ta"), self.up("tb")
+        self.check_all()
+        self.up("tb", b"def turn():\n    z = 3\n", key="k2")      # tb's newest version is unchecked
+        self.clock.t = DEADLINE + 1
+        with self.assertRaises(R.PendingChecks):
+            self.open(("ta", "tb"))
 
     def test_a_repeated_call_returns_the_same_draw_and_a_later_upload_changes_nothing(self):
         self.ready()

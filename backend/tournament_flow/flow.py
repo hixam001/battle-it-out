@@ -105,6 +105,17 @@ def open_bracket(flow: Flow, tournament_id: str, bracket_id: str, team_ids: list
       draw and gets the stored one back. The bracket remembers its tournament.
     * Pins are write-once: a repeated call after a later upload or extension changes nothing.
     """
+    # Refuse a draw that cannot work BEFORE the write-once pin: a pin made for a tournament with fewer than two
+    # playable teams could never be corrected by an Admin extension (the pins would stay). Unfinished checks
+    # and the deadline are left to `pin_tournament`, which raises its own errors first.
+    preview = R.preview_pins(flow.registry, tournament_id, team_ids)
+    if not preview["pinned"] and not preview["pending"] and now() >= deadline_at:
+        have = sorted(t for t, sid in preview["teams"].items() if sid)
+        if len(have) < 2:
+            without = sorted(t for t, sid in preview["teams"].items() if not sid)
+            raise FlowError(f"only {len(have)} team(s) have an active bot; a bracket needs at least 2"
+                            + (f" (without one: {', '.join(without)})" if without else "")
+                            + "; nothing was pinned")
     pins = R.pin_tournament(flow.registry, tournament_id, team_ids, deadline_at=deadline_at, now=now)
     playable = sorted(t for t, sid in pins.items() if sid)
     excluded = sorted(t for t, sid in pins.items() if not sid)
