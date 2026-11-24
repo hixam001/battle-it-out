@@ -183,21 +183,85 @@ def _stop_group(proc: subprocess.Popen, grace: float = 5.0) -> None:
             continue
 
 
-def classify(result: dict, violation: dict | None, runner_exit: int | None, timed_out: bool) -> dict:
-    """Decide who is responsible. Bot limit breaches are bot failures (PRD: automatic loss, no rematch).
+def describe_exit(code: int | None) -> dict:
+    """Plain description of a runner exit status (bubblewrap and shells report a signal as 128+N)."""
+    if code is None:
+        return {"exit_status": None, "signal": None}
+    if code > 128:
+        try:
+            return {"exit_status": code, "signal": signal.Signals(code - 128).name}
+        except ValueError:
+            pass
+    if code < 0:
+        try:
+            return {"exit_status": code, "signal": signal.Signals(-code).name}
+        except ValueError:
+            pass
+    return {"exit_status": code, "signal": None}
 
-    Never invents a winner for a platform failure.
+
+def _other(side: str) -> str:
+    return "B" if side == "A" else "A"
+
+
+def classify(result: dict, violation: dict | None, runner_exit: int | None, timed_out: bool,
+             router: dict | None = None, runner_exits: dict | None = None) -> dict:
+    """Decide who is responsible (BIO-205). Never invents a winner for a platform failure.
+
+    Rules, in order (PRD: a bot crash, timeout or limit breach is an automatic loss, no rematch;
+    anything else is a platform failure that may be retried):
+      1. The guard recorded a limit breach by a team -> `bot_violation`; with no team -> platform.
+      2. The wall-clock timeout of the whole match hit -> platform.
+      3. The match finished and nothing failed -> `normal`.
+      4. The match did NOT finish. With router evidence, who ended the connection first decides:
+           * a team's runner never connected            -> platform (the platform failed to start it);
+           * a team's runner ended it first             -> `bot_crash`: that team loses;
+           * the engine server ended it first / no clue -> platform.
+         A runner's own log is never used as proof: bot code runs inside that process and can print
+         anything. The router sits outside every sandbox, so a bot cannot forge what it sees. The
+         price: if the engine's Python code crashes inside a runner (a platform bug), that team is
+         charged. That cannot be told apart from a bot that crashes on purpose, and the opposite choice
+         would let a losing bot force replays by crashing itself. The evidence is kept in the result.
     """
     if violation is not None and violation.get("team") in ("A", "B"):
         loser = violation["team"]
-        return {"classification": "bot_violation", "loser": loser, "winner_by_forfeit": "B" if loser == "A" else "A"}
+        return {"classification": "bot_violation", "loser": loser, "winner_by_forfeit": _other(loser)}
     if violation is not None or runner_exit in (guard_mod.EXIT_PLATFORM,):
-        return {"classification": "platform_failure", "detail": "limit breached while no bot was running"}
+        return {"classification": "platform_failure", "kind": "limit_breach_no_bot",
+                "detail": "limit breached while no bot was running"}
     if timed_out:
-        return {"classification": "platform_failure", "detail": "match wall-clock timeout, no bot violation recorded"}
+        return {"classification": "platform_failure", "kind": "match_timeout",
+                "detail": "match wall-clock timeout, no bot violation recorded"}
+    finished_ok = result["finished"] and not result["server_errors"]
+    if router is not None and not finished_ok:
+        connected = set(router.get("connected") or [])
+        missing = sorted({"A", "B"} - connected)
+        if missing:
+            return {"classification": "platform_failure", "kind": "runner_start_failure",
+                    "detail": f"runner for team {', '.join(missing)} never connected to the engine"}
+        end = router.get("first_end") or {}
+        leg = end.get("leg", "")
+        if leg.startswith("runner:"):
+            loser = leg.split(":", 1)[1]
+            ex = describe_exit((runner_exits or {}).get(loser))
+            return {"classification": "bot_crash", "kind": "runner_ended_connection",
+                    "loser": loser, "winner_by_forfeit": _other(loser),
+                    "detail": f"team {loser}'s process ended the engine connection first ({end.get('how')})",
+                    "evidence": {"first_end": end, **ex}}
+        if leg == "server":
+            return {"classification": "platform_failure", "kind": "engine_failure",
+                    "detail": "the engine server ended the connection first",
+                    "evidence": {"first_end": end}}
+        return {"classification": "platform_failure", "kind": "unknown",
+                "detail": "the match did not finish and no side is known to have ended it"}
     if runner_exit not in (0, None) or result["server_errors"] or not result["finished"]:
-        return {"classification": "platform_failure", "detail": "runner or server did not finish cleanly"}
+        return {"classification": "platform_failure", "kind": "unfinished",
+                "detail": "runner or server did not finish cleanly"}
     return {"classification": "normal"}
+
+
+OUTCOME = {"normal": "completed", "bot_violation": "bot_failure", "bot_crash": "bot_failure",
+           "platform_failure": "platform_failure"}
 
 
 def merge_usage(per_side: dict[str, dict | None]) -> dict | None:
@@ -292,6 +356,7 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
     gradle_exit = None
     runner_exit: dict[str, int | None] = {"A": None, "B": None}
     died_order: list[str] = []
+    early_exit: dict[str, int | None] = {}   # runners that were already dead before we stopped anything
     timed_out = False
     died_at = None
     start = time.monotonic()
@@ -316,12 +381,17 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
                     if r.poll() is not None and r.returncode != 0 and side not in died_order:
                         died_order.append(side)
                         died_at = died_at or time.monotonic()
+                fe = router.stats["first_end"]
+                if (died_at is None and fe and fe["leg"].startswith("runner:")
+                        and "Match Finished" not in server_log.read_text(errors="replace")):
+                    died_at = time.monotonic()  # a runner hung up (even with exit 0) and the game is not over
                 if died_at and time.monotonic() - died_at > 3:
                     break           # a runner died: the server would wait for it forever
                 time.sleep(0.1)
     finally:
         for fd in seccomp_fds:
             os.close(fd)
+        early_exit = {s_: r.returncode for s_, r in runners.items() if r.poll() is not None}
         if gradle is not None:
             _stop_group(gradle)
             gradle_exit = gradle.returncode
@@ -354,8 +424,9 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
                          for side in "AB"})
     exits = [e for e in (runner_exit["A"], runner_exit["B"]) if e not in (0, None)]
     combined_exit = exits[0] if exits else (0 if None not in runner_exit.values() else None)
-    verdict = classify(result, violation, combined_exit, timed_out)
-    if verdict["classification"] == "bot_violation":
+    verdict = classify(result, violation, combined_exit, timed_out, router.stats, early_exit)
+    verdict["outcome"] = OUTCOME[verdict["classification"]]    # the worker contract's three values
+    if verdict["classification"] in ("bot_violation", "bot_crash"):
         # The engine never finished this game; do not report its (absent) winner.
         result["winner"] = result["winning_team"] = result["round"] = None
     result.update(verdict)
@@ -366,6 +437,7 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
         "timed_out": timed_out,
         "gradle_exit": gradle_exit,
         "runner_exit": runner_exit,
+        "runner_exit_early": early_exit,
         "router": router.stats,
         "python": interpreter_version(py),
         "seconds": seconds,

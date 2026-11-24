@@ -306,7 +306,10 @@ class Router:
         self.paths = {"A": self.dir / "a.sock", "B": self.dir / "b.sock"}
         self.port = port
         self.connect_timeout = connect_timeout
-        self.stats = {"frames_to_server": 0, "frames_to_runners": 0, "error": None}
+        self.stats = {"frames_to_server": 0, "frames_to_runners": 0, "error": None,
+                      "connected": [], "first_end": None}
+        self._end_lock = threading.Lock()
+        self._t0 = time.monotonic()
         self._listeners: dict[str, socket.socket] = {}
         self._conns: dict[str, socket.socket] = {}
         self._up: socket.socket | None = None
@@ -324,6 +327,17 @@ class Router:
         self._thread = threading.Thread(target=self._run, daemon=True, name="bio-router")
         self._thread.start()
 
+    def _note_end(self, leg: str, how: str) -> None:
+        """Remember which leg of the connection ended first (BIO-205). Only the first call counts.
+
+        This is evidence a bot cannot forge: the router sits outside every sandbox and sees the sockets
+        close, whatever the bot prints. `leg` is "runner:A", "runner:B" or "server".
+        """
+        with self._end_lock:
+            if self.stats["first_end"] is None:
+                self.stats["first_end"] = {"leg": leg, "how": how,
+                                           "after_seconds": round(time.monotonic() - self._t0, 3)}
+
     # -- connection set-up -------------------------------------------------------------
     def _accept(self, team: str) -> None:
         srv = self._listeners[team]
@@ -332,6 +346,7 @@ class Router:
         while not self._stop.is_set() and time.monotonic() < deadline:
             try:
                 self._conns[team], _ = srv.accept()
+                self.stats["connected"].append(team)
                 return
             except (socket.timeout, TimeoutError):
                 continue
@@ -381,7 +396,10 @@ class Router:
                     self._up.sendall(struct.pack(">I", len(body)) + body)
                 self.stats["frames_to_server"] += 1
         except (OSError, ValueError) as e:
+            self._note_end(f"runner:{team}", f"error: {e}")
             self.stats["error"] = self.stats["error"] or f"runner {team}: {e}"
+        else:
+            self._note_end(f"runner:{team}", "closed")
         finally:
             self._shutdown()
 
@@ -405,7 +423,10 @@ class Router:
                         pass  # that runner is gone; the launcher sees its exit status
                 self.stats["frames_to_runners"] += 1
         except (OSError, ValueError) as e:
+            self._note_end("server", f"error: {e}")
             self.stats["error"] = self.stats["error"] or f"server: {e}"
+        else:
+            self._note_end("server", "closed")
         finally:
             self._shutdown()
 
