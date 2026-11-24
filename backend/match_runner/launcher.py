@@ -20,6 +20,7 @@ engine's fixed loopback port 27185).
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import hashlib
 import json
 import re
@@ -34,10 +35,12 @@ from pathlib import Path
 
 try:  # works both as a script (python backend/match_runner/launcher.py) and as a package module
     from backend.match_runner import guard as guard_mod
+    from backend.match_runner import match_log as log_mod
     from backend.match_runner import sandbox as sandbox_mod
 except ImportError:  # pragma: no cover - script mode without the repo root on sys.path
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from backend.match_runner import guard as guard_mod
+    from backend.match_runner import match_log as log_mod
     from backend.match_runner import sandbox as sandbox_mod
 
 HERE = Path(__file__).resolve().parent
@@ -46,8 +49,13 @@ DEFAULT_SCAFFOLD = HERE.parent / "battlecode26-scaffold"
 VENVS = HERE.parent / ".venvs"
 DEFAULT_LIMITS = HERE / "limits.provisional.json"
 
-RESULT_RE = re.compile(r"\[server\]\s+(\S+)\s+\((A|B)\) wins \(round (\d+)\)")
-REASON_RE = re.compile(r"\[server\] Reason: (.+)")
+# Engine lines are matched at the start of a line, and the LAST match wins. The router rewrites every
+# runner-supplied text so a bot cannot start a line with `[server]` (BIO-206, CN-007); anchoring and
+# taking the last match are the second layer in case that ever fails: the engine prints the result
+# after every bot has finished.
+RESULT_RE = re.compile(r"^\[server\]\s+(\S+)\s+\((A|B)\) wins \(round (\d+)\)\s*$", re.MULTILINE)
+REASON_RE = re.compile(r"^\[server\] Reason: (.+)$", re.MULTILINE)
+FINISHED_RE = re.compile(r"^\[server\] -+ Match Finished -+\s*$", re.MULTILINE)
 SERVER_ERROR_RE = re.compile(r"^\[server:(?:warning|error)\] (?!\(Stacktrace Error\)$)(.+)$", re.MULTILINE)
 
 
@@ -141,14 +149,16 @@ def build_gradle_cmd(scaffold: Path, team_a: str, team_b: str, maps: str, replay
 
 
 def parse_result(log_text: str) -> dict:
-    m = RESULT_RE.search(log_text)
-    r = REASON_RE.search(log_text)
+    results = list(RESULT_RE.finditer(log_text))
+    reasons = list(REASON_RE.finditer(log_text))
+    m = results[-1] if results else None
+    r = reasons[-1] if reasons else None
     return {
         "winner": m.group(2) if m else None,
         "winning_team": m.group(1) if m else None,
         "round": int(m.group(3)) if m else None,
         "reason": r.group(1).strip() if r else None,
-        "finished": "Match Finished" in log_text,
+        "finished": FINISHED_RE.search(log_text) is not None,
         "server_errors": [e.strip() for e in SERVER_ERROR_RE.findall(log_text)],
     }
 
@@ -288,12 +298,25 @@ def merge_usage(per_side: dict[str, dict | None]) -> dict | None:
 def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str, maps: str,
               out_dir: Path, timeout: int, offline: bool, socket_tuning: bool,
               sandbox: bool = True, limits_path: Path | None = DEFAULT_LIMITS,
-              cgroup: bool | None = None) -> dict:
+              cgroup: bool | None = None, trace_id: str | None = None, match_id: str | None = None,
+              attempt: int = 1, submissions: dict | None = None) -> dict:
     """Run one match: one runner process per team, a router in front of the engine server.
 
     `cgroup`: None = use kernel cgroup limits if a user systemd manager is available, True = require,
     False = never. Only applies with the sandbox.
+
+    `trace_id`, `match_id`, `attempt`, `submissions` ({"A": ref, "B": ref}) are echoed into the result and
+    into the structured log (BIO-206); a trace id is generated when none is given.
     """
+    try:
+        trace_id = log_mod.check_ref(trace_id, "trace_id") or log_mod.new_trace_id()
+        match_id = log_mod.check_ref(match_id, "match_id")
+        submissions = {k: log_mod.check_ref(v, f"submission_{k.lower()}") for k, v in (submissions or {}).items()}
+    except ValueError as e:
+        raise LauncherError(str(e))
+    if not isinstance(attempt, int) or attempt < 1:
+        raise LauncherError("attempt must be an integer >= 1")
+    started_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     lock = load_lock()
     problems = verify(scaffold, py, lock)
     if problems:
@@ -324,6 +347,7 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
 
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%d-%H%M%S")
+    events_path = out_dir / f"match-{stamp}.events.jsonl"
     replay = out_dir / f"{team_a}-vs-{team_b}-{stamp}.bc26"
     server_log = out_dir / f"server-{stamp}.log"
     runner_logs = {"A": out_dir / f"runner-A-{stamp}.log", "B": out_dir / f"runner-B-{stamp}.log"}
@@ -383,7 +407,7 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
                         died_at = died_at or time.monotonic()
                 fe = router.stats["first_end"]
                 if (died_at is None and fe and fe["leg"].startswith("runner:")
-                        and "Match Finished" not in server_log.read_text(errors="replace")):
+                        and not FINISHED_RE.search(server_log.read_text(errors="replace"))):
                     died_at = time.monotonic()  # a runner hung up (even with exit 0) and the game is not over
                 if died_at and time.monotonic() - died_at > 3:
                     break           # a runner died: the server would wait for it forever
@@ -450,8 +474,34 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
         "cgroup": use_cgroup,
         "limits_profile": str(limits_path) if limits_path else None,
         "logs": {"server": str(server_log), "runner_A": str(runner_logs["A"]), "runner_B": str(runner_logs["B"])},
+        "trace_id": trace_id,
+        "match_id": match_id,
+        "attempt": attempt,
     })
+    result["structured_log"] = write_structured_log(
+        result, events_path, server_log, started_at, names, submissions, maps, lock, limits_path, limits,
+        redact_paths={"scaffold": scaffold, "bots": bots_dir, "out": out_dir, "repo": HERE.parents[1],
+                      "tmp": tempfile.gettempdir()})
     return result
+
+
+def write_structured_log(result: dict, events_path: Path, server_log: Path, started_at: str, names: dict,
+                         submissions: dict, maps: str, lock: dict, limits_path: Path | None,
+                         limits, redact_paths: dict) -> dict:
+    """Build and write the structured log (BIO-206). A failure here must never lose the match result."""
+    try:
+        ctx = {
+            "trace_id": result["trace_id"], "match_id": result["match_id"], "attempt": result["attempt"],
+            "teams": names, "submissions": submissions, "map": maps, "engine_version": lock["engine_version"],
+            "started_at": started_at, "finished_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "limits": dataclasses.asdict(limits) if limits is not None else None,
+            "limits_profile": limits_path.stem if limits_path else None,
+        }
+        events = log_mod.build_events(result, ctx, server_log.read_text(errors="replace"),
+                                      log_mod.Redactor(redact_paths))
+        return log_mod.write_jsonl(events_path, events)
+    except Exception as e:   # noqa: BLE001 - reported in the result, not raised
+        return {"error": f"{type(e).__name__}: {e}"}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -477,9 +527,26 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--require-cgroup", action="store_true",
                    help="fail if kernel cgroup limits (systemd-run --user) are unavailable; default: use them if present")
     r.add_argument("--no-cgroup", action="store_true", help="do not use kernel cgroup limits")
+    r.add_argument("--trace-id", help="correlation id echoed into the result and log; default: a new random id")
+    r.add_argument("--match-id", help="platform match id echoed into the result and log")
+    r.add_argument("--attempt", type=int, default=1, help="attempt number echoed into the result and log")
+    r.add_argument("--submission-a", help="submission reference of team A, echoed into the log")
+    r.add_argument("--submission-b", help="submission reference of team B, echoed into the log")
     r.add_argument("--no-limits", action="store_true",
                    help="measure only: no limits are enforced (implies --no-sandbox); usage is still recorded")
+    lg = sub.add_parser("logs", help="print the part of a structured match log that a role may read")
+    lg.add_argument("file", type=Path, help="a match-*.events.jsonl file")
+    lg.add_argument("--role", required=True, choices=log_mod.ROLES)
+    lg.add_argument("--team", choices=("A", "B"), help="the reader's team (required for --role participant)")
     args = p.parse_args(argv)
+    if args.cmd == "logs":
+        try:
+            for e in log_mod.view(log_mod.read_jsonl(args.file), args.role, args.team):
+                print(json.dumps(e, separators=(",", ":")))
+        except (OSError, ValueError) as e:
+            print(json.dumps({"ok": False, "error": str(e)}), file=sys.stderr)
+            return 2
+        return 0
     scaffold = args.scaffold.resolve()
     lock = load_lock()
     py = resolve_python(args.python_version, args.python, lock)
@@ -496,7 +563,9 @@ def main(argv: list[str] | None = None) -> int:
                         args.timeout, not args.no_offline, not args.no_socket_tuning,
                         sandbox=not (args.no_sandbox or args.no_limits),
                         limits_path=None if args.no_limits else args.limits,
-                        cgroup=False if args.no_cgroup else (True if args.require_cgroup else None))
+                        cgroup=False if args.no_cgroup else (True if args.require_cgroup else None),
+                        trace_id=args.trace_id, match_id=args.match_id, attempt=args.attempt,
+                        submissions={"A": args.submission_a, "B": args.submission_b})
     except LauncherError as e:
         print(json.dumps({"ok": False, "error": str(e)}, indent=2))
         return 2
