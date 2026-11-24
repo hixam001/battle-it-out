@@ -7,7 +7,10 @@ the existing Battlecode engine and is not replaced. It exists because the scaffo
 for Python bots uses `python3` from PATH and deadlocks with `--new-process` on Linux (see
 docs/TECHNICAL_DOCUMENTATION.md section 3.2).
 
-Limits: one match per host at a time (fixed loopback port 27185). Not a sandbox.
+Safety (BIO-203/204): by default each team runs in its own bubblewrap sandbox process (no network, read-only
+root, seccomp filter, optional cgroup limits) with a resource guard, behind a router in front of the Java
+server. `--no-sandbox` and `--no-limits` exist for development only. Limit: one match per host at a time (the
+engine's fixed loopback port 27185).
 
     python3 backend/match_runner/setup_env.py 3.15            # once per Python version
     python3 backend/match_runner/launcher.py verify
@@ -111,13 +114,17 @@ def port_in_use(port: int) -> bool:
         return s.connect_ex(("127.0.0.1", port)) == 0
 
 
-def build_runner_cmd(py: Path, bots_dir: Path, team_a: str, team_b: str, socket_tuning: bool,
-                     limits: Path | None = None) -> list[str]:
-    cmd = [str(py), "-I", str(HERE / "runner_entry.py"),
-           "--teamA", team_a, "--teamB", team_b, "--dirA", str(bots_dir), "--dirB", str(bots_dir)]
+def build_runner_cmd(py: Path, bots_dir: Path, side: str, name: str, socket_tuning: bool,
+                     limits: Path | None = None, ipc_socket: Path | None = None) -> list[str]:
+    """Runner for ONE team (`side` is "A" or "B"); the other slot is "/" (no bot)."""
+    if side not in ("A", "B"):
+        raise ValueError(side)
+    cmd = [str(py), "-I", str(HERE / "runner_entry.py"), f"--team{side}", name, f"--dir{side}", str(bots_dir)]
     if not socket_tuning:
         cmd.append("--no-socket-tuning")
     cmd += ["--limits", str(limits)] if limits is not None else ["--measure"]
+    if ipc_socket is not None:
+        cmd += ["--ipc-socket", str(ipc_socket)]
     return cmd
 
 
@@ -193,9 +200,36 @@ def classify(result: dict, violation: dict | None, runner_exit: int | None, time
     return {"classification": "normal"}
 
 
+def merge_usage(per_side: dict[str, dict | None]) -> dict | None:
+    """Combine the two runner processes' usage records (one per team)."""
+    got = {k: v for k, v in per_side.items() if v}
+    if not got:
+        return None
+    teams: dict = {}
+    for side, u in got.items():
+        for team, stats in u.get("teams", {}).items():
+            if team == side:      # a process may only report on its own team
+                teams[team] = stats
+    return {
+        "peak_rss_mib": max(u["peak_rss_mib"] for u in got.values()),
+        "peak_vm_mib": max((u.get("peak_vm_mib") or 0) for u in got.values()),
+        "peak_threads": max(u.get("peak_threads", 0) for u in got.values()),
+        "cpu_seconds": round(sum(u.get("cpu_seconds", 0) for u in got.values()), 2),
+        "wall_seconds": max(u.get("wall_seconds", 0) for u in got.values()),
+        "teams": teams,
+        "processes": got,
+    }
+
+
 def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str, maps: str,
               out_dir: Path, timeout: int, offline: bool, socket_tuning: bool,
-              sandbox: bool = True, limits_path: Path | None = DEFAULT_LIMITS) -> dict:
+              sandbox: bool = True, limits_path: Path | None = DEFAULT_LIMITS,
+              cgroup: bool | None = None) -> dict:
+    """Run one match: one runner process per team, a router in front of the engine server.
+
+    `cgroup`: None = use kernel cgroup limits if a user systemd manager is available, True = require,
+    False = never. Only applies with the sandbox.
+    """
     lock = load_lock()
     problems = verify(scaffold, py, lock)
     if problems:
@@ -203,18 +237,23 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
     for t in (team_a, team_b):
         if not (bots_dir / t).is_dir():
             raise LauncherError(f"bot directory not found: {bots_dir / t}")
+    limits = None
     if limits_path is not None:
         try:
-            guard_mod.load_profile(limits_path)
+            limits = guard_mod.load_profile(limits_path)[0]
         except (OSError, ValueError, KeyError) as e:
             raise LauncherError(f"bad limits profile {limits_path}: {e}")
+    use_cgroup = False
     if sandbox:
         try:
             sandbox_mod.check_available()
         except sandbox_mod.SandboxUnavailable as e:
             raise LauncherError(f"{e}; install it or pass --no-sandbox (NOT safe for untrusted bots)")
-        if limits_path is None:
+        if limits is None:
             raise LauncherError("the sandbox needs a limits profile")
+        use_cgroup = sandbox_mod.cgroup_available() if cgroup is None else cgroup
+        if cgroup and not sandbox_mod.cgroup_available():
+            raise LauncherError("--require-cgroup: no usable `systemd-run --user` scope on this host")
     port = lock["crossplay_port"]
     if port_in_use(port):
         raise LauncherError(f"loopback port {port} is already in use (another match running?)")
@@ -222,34 +261,49 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%d-%H%M%S")
     replay = out_dir / f"{team_a}-vs-{team_b}-{stamp}.bc26"
-    runner_log = out_dir / f"runner-{stamp}.log"
     server_log = out_dir / f"server-{stamp}.log"
+    runner_logs = {"A": out_dir / f"runner-A-{stamp}.log", "B": out_dir / f"runner-B-{stamp}.log"}
     # The Java server loads a class directory for every team, even Python ones, and treats a missing
     # directory as a team error (the game then runs to round 2000 with no bots). With no Java bots in
     # the scaffold nothing creates that directory, so give the server an empty one.
     class_dir = out_dir / "empty-classes"
     class_dir.mkdir(exist_ok=True)
 
-    bridge = None
-    sock_dir = None
-    if sandbox:
-        sock_dir = Path(tempfile.mkdtemp(prefix="bio-ipc-"))  # short path: unix socket paths are limited
-        bridge = sandbox_mod.Bridge(sock_dir / "engine.sock", port)
-        runner_cmd = sandbox_mod.build_command(
-            py, HERE / "runner_entry.py", {"A": bots_dir / team_a, "B": bots_dir / team_b},
-            bridge.path, limits_path, [] if socket_tuning else ["--no-socket-tuning"])
-    else:
-        runner_cmd = build_runner_cmd(py, bots_dir, team_a, team_b, socket_tuning, limits_path)
+    names = {"A": team_a, "B": team_b}
+    sock_dir = Path(tempfile.mkdtemp(prefix="bio-ipc-"))  # short path: unix socket paths are limited
+    router = sandbox_mod.Router(sock_dir, port)
+    seccomp_fds: list[int] = []
+    cmds: dict[str, list[str]] = {}
+    for side in ("A", "B"):
+        if sandbox:
+            fd = sandbox_mod.seccomp_pipe()
+            seccomp_fds.append(fd)
+            cmd = sandbox_mod.build_command(py, HERE / "runner_entry.py", side, bots_dir / names[side],
+                                            router.paths[side], limits_path,
+                                            [] if socket_tuning else ["--no-socket-tuning"], seccomp_fd=fd)
+            if use_cgroup:
+                cmd = sandbox_mod.cgroup_prefix(limits.memory_rss_mb * 2, limits.max_tasks + 32) + cmd
+        else:
+            cmd = build_runner_cmd(py, bots_dir, side, names[side], socket_tuning, limits_path, router.paths[side])
+        cmds[side] = cmd
 
-    runner = gradle = None
-    gradle_exit = runner_exit = None
+    runners: dict[str, subprocess.Popen] = {}
+    gradle = None
+    gradle_exit = None
+    runner_exit: dict[str, int | None] = {"A": None, "B": None}
+    died_order: list[str] = []
     timed_out = False
-    runner_died_at = None
+    died_at = None
     start = time.monotonic()
     try:
-        with open(runner_log, "wb") as rl, open(server_log, "wb") as sl:
-            runner = subprocess.Popen(runner_cmd, stdin=subprocess.DEVNULL, stdout=rl, stderr=subprocess.STDOUT,
-                                      start_new_session=True, cwd=scaffold)
+        with open(runner_logs["A"], "wb") as la, open(runner_logs["B"], "wb") as lb, open(server_log, "wb") as sl:
+            for side, log in (("A", la), ("B", lb)):
+                runners[side] = subprocess.Popen(
+                    cmds[side], stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+                    start_new_session=True, cwd=scaffold, pass_fds=tuple(seccomp_fds))
+            for fd in seccomp_fds:      # the children have their own copies
+                os.close(fd)
+            seccomp_fds = []
             gradle = subprocess.Popen(
                 build_gradle_cmd(scaffold, team_a, team_b, maps, replay, offline, class_dir),
                 stdin=subprocess.DEVNULL, stdout=sl, stderr=subprocess.STDOUT,
@@ -258,34 +312,49 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
                 if time.monotonic() - start > timeout:
                     timed_out = True
                     break
-                if runner.poll() is not None and runner.returncode != 0:
-                    # The runner died (bot violation or crash): the server would wait for it forever.
-                    runner_died_at = runner_died_at or time.monotonic()
-                    if time.monotonic() - runner_died_at > 3:
-                        break
+                for side, r in runners.items():
+                    if r.poll() is not None and r.returncode != 0 and side not in died_order:
+                        died_order.append(side)
+                        died_at = died_at or time.monotonic()
+                if died_at and time.monotonic() - died_at > 3:
+                    break           # a runner died: the server would wait for it forever
                 time.sleep(0.1)
     finally:
+        for fd in seccomp_fds:
+            os.close(fd)
         if gradle is not None:
             _stop_group(gradle)
             gradle_exit = gradle.returncode
-        if runner is not None:
-            if runner.poll() is None:
-                time.sleep(1)  # the runner exits by itself when the server ends the game
-            _stop_group(runner)
-            runner_exit = runner.returncode
-        if bridge is not None:
-            bridge.close()
-        if sock_dir is not None:
-            for f in sock_dir.iterdir():
-                f.unlink()
-            sock_dir.rmdir()
+        if any(r.poll() is None for r in runners.values()):
+            time.sleep(1)  # the runners exit by themselves when the server ends the game
+        for side, r in runners.items():
+            _stop_group(r)
+            runner_exit[side] = r.returncode
+        router.close()
+        for f in sock_dir.iterdir():
+            f.unlink()
+        sock_dir.rmdir()
     seconds = round(time.monotonic() - start, 1)
 
     result = parse_result(server_log.read_text(errors="replace"))
-    records = parse_guard_records(runner_log.read_text(errors="replace"))
-    violation = records.get("violation")
-    usage = records.get("usage") or (violation or {}).get("usage")
-    verdict = classify(result, violation, runner_exit, timed_out)
+    per_side = {side: parse_guard_records(runner_logs[side].read_text(errors="replace")) for side in "AB"}
+    # Which process wrote a record decides which team it is about: a bot can print any text, so the
+    # team named inside a record is never trusted.
+    violation = None
+    for side in died_order + [s_ for s_ in "AB" if s_ not in died_order]:
+        v = per_side[side].get("violation")
+        if v is not None:
+            v = dict(v)
+            if v.get("team") != side:
+                v["claimed_team"] = v.get("team")
+                v["team"] = side if v.get("team") in ("A", "B") else v.get("team")
+            violation = v
+            break
+    usage = merge_usage({side: per_side[side].get("usage") or (per_side[side].get("violation") or {}).get("usage")
+                         for side in "AB"})
+    exits = [e for e in (runner_exit["A"], runner_exit["B"]) if e not in (0, None)]
+    combined_exit = exits[0] if exits else (0 if None not in runner_exit.values() else None)
+    verdict = classify(result, violation, combined_exit, timed_out)
     if verdict["classification"] == "bot_violation":
         # The engine never finished this game; do not report its (absent) winner.
         result["winner"] = result["winning_team"] = result["round"] = None
@@ -297,6 +366,7 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
         "timed_out": timed_out,
         "gradle_exit": gradle_exit,
         "runner_exit": runner_exit,
+        "router": router.stats,
         "python": interpreter_version(py),
         "seconds": seconds,
         "rounds_per_second": round(result["round"] / seconds, 2) if result["round"] else None,
@@ -305,8 +375,9 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
         "replay_bytes": replay.stat().st_size if replay.exists() else None,
         "socket_tuning": socket_tuning,
         "sandbox": sandbox,
+        "cgroup": use_cgroup,
         "limits_profile": str(limits_path) if limits_path else None,
-        "logs": {"server": str(server_log), "runner": str(runner_log)},
+        "logs": {"server": str(server_log), "runner_A": str(runner_logs["A"]), "runner_B": str(runner_logs["B"])},
     })
     return result
 
@@ -331,6 +402,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="run the runner without bubblewrap (development only; NOT safe for untrusted bots)")
     r.add_argument("--limits", type=Path, default=DEFAULT_LIMITS,
                    help="limits profile JSON; default: limits.provisional.json (numbers not yet approved, DEC-04)")
+    r.add_argument("--require-cgroup", action="store_true",
+                   help="fail if kernel cgroup limits (systemd-run --user) are unavailable; default: use them if present")
+    r.add_argument("--no-cgroup", action="store_true", help="do not use kernel cgroup limits")
     r.add_argument("--no-limits", action="store_true",
                    help="measure only: no limits are enforced (implies --no-sandbox); usage is still recorded")
     args = p.parse_args(argv)
@@ -349,7 +423,8 @@ def main(argv: list[str] | None = None) -> int:
         res = run_match(scaffold, py, bots_dir, args.team_a, args.team_b, args.maps, out_dir,
                         args.timeout, not args.no_offline, not args.no_socket_tuning,
                         sandbox=not (args.no_sandbox or args.no_limits),
-                        limits_path=None if args.no_limits else args.limits)
+                        limits_path=None if args.no_limits else args.limits,
+                        cgroup=False if args.no_cgroup else (True if args.require_cgroup else None))
     except LauncherError as e:
         print(json.dumps({"ok": False, "error": str(e)}, indent=2))
         return 2

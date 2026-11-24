@@ -80,6 +80,23 @@ def turn():
                 os.waitpid(p, 0)
         return str(n) + " children"
 
+    def list_work():
+        return sorted(os.listdir("/work"))
+
+    def read_other_team():
+        return os.listdir("/work/B")
+
+    def ptrace():
+        ctypes = imp("ctypes")
+        libc = ctypes.CDLL(None, use_errno=True)
+        r = libc.syscall(101, 0, 0, 0, 0)
+        if r == -1:
+            raise Exception("errno " + str(ctypes.get_errno()))
+        return r
+
+    probe("list_work", list_work)
+    probe("read_other_team", read_other_team)
+    probe("ptrace", ptrace)
     probe("read_canary", read_canary)
     probe("list_home", list_home)
     probe("list_repo", read_repo)

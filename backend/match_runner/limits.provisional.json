@@ -1,5 +1,5 @@
 {
-  "_status": "PROVISIONAL - NOT APPROVED. PRD BIO-NFR-02 / DEC-04 require benchmarked numbers that the owner approves. These values only make enforcement testable; replace them after a benchmark with realistic bots, maps and hardware, then record the approval in docs/CHANGE_NOTICES.md.",
+  "_status": "INTERIM - in force by owner delegation (2026-11-24), NOT benchmark-approved. PRD BIO-NFR-02 / DEC-04 want benchmarked numbers: the owner delegated the decision to the engineer, who kept these generous values so enforcement can run now. Re-benchmark with realistic bots, maps and hardware before a tournament; any change is recorded in docs/CHANGE_NOTICES.md (CN-005).",
   "_basis": "Chosen as generous multiples of what was measured on 2026-11-24 (Python 3.15.2, Linux x86_64, DefaultSmall, example bot + CPU-load bot + feature-test bot, 1290-1310 rounds): longest turn 19 ms (limit is 52x), longest init 1.4 ms (limit ~1400x), peak RSS 22 MiB (limit 23x), VmPeak 329 MiB (limit 12x), CPU 2.4 s per match (limit 375x). Three small bots are NOT a representative benchmark.",
   "limits": {
     "turn_wall_seconds": 1.0,
