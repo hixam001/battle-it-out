@@ -86,7 +86,7 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 
 ## 7. Next recommended steps
 
-1. BIO-003/004: write our own launcher (start runner + server, correct interpreter, detached output, no Gradle Exec deadlock), pin engine/package versions and artifact hash, and measure throughput (investigate the remaining per-round latency) before setting DEC-04 limits. The 3.12 Python-vs-Python control now passes manually.
+1. BIO-003/004 (rest): find the remaining per-round latency (about 0.9 rounds/s as shipped, 1.8 with the shim; runner idle), then measure real bots before DEC-04 limits. The launcher (`backend/match_runner/`) and version pins now exist; decide whether to make the TCP shim default (replays were byte-identical for the one pairing tested).
 2. BIO-EPIC-01: attempt Python 3.13 in a clean env; record the result with exact versions (TC-01). Don't just edit the 3.12 check in `run.py`.
 3. Decide the `backend/` layout for the first built-on-top component (suggested: sibling packages next to `battlecode26-scaffold/`, e.g. bot validator and runner, before any Django code — execution foundation comes first).
 4. Get decisions on DEC-03/04/05 before BIO-EPIC-02.
@@ -160,3 +160,11 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Safety: stopped only my own runner processes by PID (one `pkill -f` attempt matched my own shell and was a no-op); left the two pre-existing Gradle daemons alone; all logs/replays outside the repo.
 - Risks: docs describe a workaround, not a supported command; throughput may force a custom crossplay transport or a different match-scheduling budget.
 - Decisions needed: unchanged (project license vs AGPL scaffold; allowed-imports policy; DEC-03/04/05).
+
+### 2026-11-24 — BIO-EPIC-00: match launcher and version pins
+- Branch `BIO-EPIC-00-match-launcher`, stacked on `BIO-EPIC-00-version-alignment-python-baseline` (PR #6 was still open; this PR will include its commit until #6 merges, then retarget/rebase). Task: handoff §7 step 1 (own launcher, pin versions, measure throughput).
+- Added `backend/match_runner/` (`launcher.py`, `nodelay_shim.py`, `versions.lock.json`, `README.md`, `tests/test_launcher.py`) and a layout line in `backend/README.md`; docs/CHANGELOG updated. Scaffold untouched. Launcher uses only the standard library; verifies venv Python 3.12, package 1.2.2, `engine_version.txt` 1.2.6, `.temp` tarball SHA-256; refuses a busy port 27185; starts runner (no `--new-process`, logs to file, own session), runs `runJavaLocal` with timeout, stops its own runner; prints JSON.
+- Tests / runs: 10 unit tests pass. Java vs Java via launcher: A wins r860, 5 s. Python vs Python full matches via launcher: without shim 1400.1 s (0.92 rounds/s), with shim 703.9 s (1.83); both A wins r1290, exit 0, runner exit 0; the three replay files (incl. the earlier manual run) have identical SHA-256. Busy-port case: exit 2 with message. 20 s timeout: server stopped (daemon cancels on client kill), runner cleaned, port free, no stray processes.
+- Not verified: Python 3.13; other bots/maps with the shim; cause of the remaining latency; Windows/macOS; running two matches at once (fixed port 27185); sandboxing. The pins describe this machine's working set, not a compatibility matrix (DEC-03).
+- Safety: only my own runner processes were started/stopped; Gradle daemons untouched; all logs and replays outside the repo.
+- Decisions needed: unchanged, plus whether the TCP shim should become the default.

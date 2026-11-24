@@ -15,7 +15,7 @@ There is **no API, database, worker, or website yet**. The delivery order is fix
 Known open issues (details in the plan and architecture documents):
 
 - Python 3.13 is the target, but the scaffold launcher `run.py` accepts only Python 3.12, and 3.13 has not been tried.
-- Running Python bots through Gradle fails or hangs on Linux unless the Python 3.12 venv is first on `PATH` and the runner is started outside Gradle; see `docs/TECHNICAL_DOCUMENTATION.md` section 3.2 for the verified workaround and its limits.
+- Running Python bots through Gradle fails or hangs on Linux. Use `python3 backend/match_runner/launcher.py run ...` (see `backend/match_runner/README.md`); Python matches take 12 to 23 minutes in testing.
 - The scaffold is licensed under AGPL-3.0; the project's own license is not yet decided.
 
 ## Quick start (local engine baseline)
