@@ -60,6 +60,7 @@ Checked on 2026-11-24 on Python 3.12, 3.13, 3.14 and 3.15: the example match fin
 | [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md), [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) | Implement endpoints or the schema |
 | [`docs/APP_FLOW.md`](docs/APP_FLOW.md) | Follow user flows, screens and edge cases |
 | [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md) | Know how the work will be verified |
+| [`docs/REQUIREMENTS_COVERAGE.md`](docs/REQUIREMENTS_COVERAGE.md) | See, requirement by requirement, what Battlecode provides, what is built and what we still must develop |
 | [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | Learn the participant and organizer experience (planned platform) |
 | [`docs/ADMIN_GUIDE.md`](docs/ADMIN_GUIDE.md) | Learn the platform Admin's responsibilities (planned platform) |
 
