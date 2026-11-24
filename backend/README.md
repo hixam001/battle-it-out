@@ -15,6 +15,7 @@ Home of the Battle It Out execution foundation and, later, the web backend.
 - `submission_check/` — upload check: static check, then a trial match on both sides; decides whether a `bot.py` may become active
 - `submission_registry/` — versions, validation history, active version, deadline lock and access rules for submissions (library; `docs/CHANGE_NOTICES.md` CN-016)
 - `work_queue/` — durable job queue and a worker process outside the web process: runs the upload check and tournament rounds, with leases, retry and dead-job incidents (`docs/CHANGE_NOTICES.md` CN-017)
+- `tournament_flow/` — the steps that join registry, queue, pins, bracket and round: upload queues its check, pins then draw after the deadline, round start re-hashes the pinned bots, housekeeping (`docs/CHANGE_NOTICES.md` CN-018)
 - `match_runner/` — command-line match launcher for Python bots on Python 3.12
   to 3.15, with pinned versions (`versions.lock.json`), environment setup, a
   resource guard and bubblewrap sandbox (limits are provisional), and tests.
