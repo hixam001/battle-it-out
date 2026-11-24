@@ -151,3 +151,14 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Tested:** 21 tests (19 unit, 2 real games); ten deliberate breakages, eight caught at once and two (re-read of the file; static re-check of the read bytes) caught after two tests for a swap between validation and staging were added.
 - **Not done:** upload endpoint, storage and activation state, history of verdicts (SRD-053), upload size limit (DEC unset), throttling and queueing of checks, which maps and how many trial games, independent review.
 - **Replaces:** nothing in the PRD. It implements the "runtime" part of BIO-REQ-04 and the gate behind SRD-051.
+
+## CN-014 — Map pools for tie-breaks (2026-11-24)
+
+- **Task:** BIO-303/304 follow-up in `backend/match_orchestrator/maps.py` (library only). Engineer's decisions under the owner's delegation (see CN-005); each is reversible by a later notice.
+- **D1. Engine maps only.** A pool may use only maps shipped in the pinned engine jar (43 in 1.2.6). Organizer-uploaded maps are hostile input (size, format, validation not designed) and are not supported.
+- **D2. A pool is one immutable version.** Played maps (1 to 50), 1 tie-break map (normal tie), 3 tie-break maps (final tie), the engine version and each map file's SHA-256. A different set is a new pool id; the same content again returns the stored pool; different content under one id is a conflict (DATA_MODEL: map references are immutable by version, SRD-012).
+- **D3. A tie-break map must not also be a played map; maps within a list do not repeat.** The PRD says "predefined tie-breaker map(s)" without saying more; a tie "broken" on a map the teams already played is not a new test. The normal and the final tie-break lists may share a map. Reading is mine; the owner may relax it.
+- **D4. A bracket is drawn only on a pool that matches the running engine** (`create_bracket_from_pool`): a missing map, a changed file or another engine version refuses the draw. The pool id is stored on the bracket, and a second pool id for the same bracket conflicts. The check runs at draw time only, not before each round.
+- **Tested:** 34 tests (32 unit with a built jar, 1 on the real pinned jar, 1 real two-team final on three real tie-break maps with `BIO_INTEGRATION=1`); twelve deliberate breakages: eleven caught, one equivalent (the declared-size check, the bounded read behind it catches the same file). One survivor became a test (a second pool with identical maps). All pass on Python 3.12 to 3.15.
+- **Not done:** custom maps, who chooses a pool and where tournament settings are stored (EPIC-04), re-verification before each round, the map list shown to participants, no independent review.
+- **Replaces:** nothing in the PRD. It supplies the "predefined tie-breaker maps" that SRD-024/025 and CN-010 assumed.
