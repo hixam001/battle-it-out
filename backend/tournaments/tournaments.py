@@ -175,6 +175,11 @@ def _manages(actor: R.Actor, rec: dict) -> bool:
         rec["id"] in actor.tournament_ids or rec["created_by"] == actor.user_id))
 
 
+def manages(actor: R.Actor, rec: dict) -> bool:
+    """Public form of the managing rule, for the libraries that guard their own staff operations (registration)."""
+    return _manages(actor, rec)
+
+
 def _rec(state: dict, tournament_id) -> dict:
     rec = state["tournaments"].get(tournament_id) if isinstance(tournament_id, str) else None
     if rec is None:
