@@ -23,6 +23,19 @@ T.run_series_job(store, "r1m3", run_fn, alert=notify_admin)       # games are na
 result = T.take_series_advancement(store, "r1m3")                  # once; None afterwards
 ```
 
+## Bracket and rounds (`bracket.py`, BIO-302/303, CN-011)
+
+`create_bracket` draws a single-elimination bracket once (random, recorded, never redrawn) with automatic byes for human teams; `start_round` is the Organizer's action and is allowed only when the previous round is complete; `run_round` plays the round's matches one after another (each a CN-010 series) and advances every winner exactly once; a paused game pauses the round. **House bots are refused** until the owner decides DEC-06.
+
+```python
+from backend.match_orchestrator import bracket as B
+B.create_bracket(store, "open-2026", [{"team": "team-a", "submission": "sub-a-v3"}, ...],
+                 {"play": ["DefaultSmall"], "tiebreak_normal": ["TieN"], "tiebreak_final": ["TieF1", "TieF2", "TieF3"]})
+B.start_round(store, "open-2026", 1, "org-7")             # Organizer
+B.run_round(store, "open-2026", 1, run_fn)                # worker; safe to repeat or run twice
+B.public_view(B.get_bracket(store, "open-2026"))          # what participants may see
+```
+
 States follow `docs/DATA_MODEL.md`: `scheduled -> queued -> running -> completed`, retries `running -> platform_failed -> retry_queued -> running`, bot failure `running -> bot_forfeit -> completed`. `paused` is **our** name for the state after the cap; the final name and who may resume are open decisions.
 
 ## Use
@@ -47,14 +60,16 @@ result = O.take_advancement(store, "match-17")                       # the resul
 | File | Purpose |
 |---|---|
 | `orchestrator.py` | Match and attempt state machine, retry loop, incidents and alerts, host lock, launcher adapter |
+| `bracket.py` | Bracket draw, byes, Organizer-started rounds, idempotent advancement, public view |
 | `tiebreak.py` | Series of games: tie detection, tie-break maps, coin flip, series result, public view |
 | `store.py` | `JsonFileStore`: one JSON file, an exclusive lock across processes, atomic write; a damaged file is an error, never an empty store |
 | `tests/test_orchestrator.py` | 34 tests: 30 unit tests with a fake run function, 4 real matches (`BIO_INTEGRATION=1`) |
+| `tests/test_bracket.py` | 23 tests: 22 unit, 1 real 3-team tournament (`BIO_INTEGRATION=1`) |
 | `tests/test_tiebreak.py` | 31 tests: 28 unit tests, 3 real series (`BIO_INTEGRATION=1`) |
 
 ```bash
-backend/.venvs/py3.15/bin/python -m unittest backend.match_orchestrator.tests.test_orchestrator backend.match_orchestrator.tests.test_tiebreak
-BIO_INTEGRATION=1 backend/.venvs/py3.15/bin/python -m unittest backend.match_orchestrator.tests.test_orchestrator backend.match_orchestrator.tests.test_tiebreak   # plays real matches, about 25 s
+backend/.venvs/py3.15/bin/python -m unittest backend.match_orchestrator.tests.test_orchestrator backend.match_orchestrator.tests.test_tiebreak backend.match_orchestrator.tests.test_bracket
+BIO_INTEGRATION=1 backend/.venvs/py3.15/bin/python -m unittest backend.match_orchestrator.tests.test_orchestrator backend.match_orchestrator.tests.test_tiebreak backend.match_orchestrator.tests.test_bracket   # plays real matches, about 75 s
 ```
 
 ## Not covered (and why it matters)
@@ -64,5 +79,5 @@ BIO_INTEGRATION=1 backend/.venvs/py3.15/bin/python -m unittest backend.match_orc
 - **`take_advancement` is only the first guard.** If the caller crashes after taking it and before advancing the bracket, the claim is lost. BIO-303 must make advancement idempotent on the match id.
 - **No heartbeat.** A long match that outlives its lease is taken over (see above).
 - **One match per host at a time** (the engine's fixed port). The host lock serialises matches in this package; two hosts need two engines.
-- **Not here:** bracket, byes and house bots (BIO-303), where tie-break maps come from, the qualification-cutoff draw (DEC-14), replay storage and deletion (BIO-305), the real Admin notification channel, who may resume a paused match, scheduling and the web API.
+- **Not here:** house bots (DEC-06), where tie-break maps come from, the qualification-cutoff draw (DEC-14), replay storage and deletion (BIO-305), the real Admin notification channel, who may resume a paused match, scheduling and the web API.
 - **No independent review.** Written and tested by the same assistant; the tests encode my reading of PRD SRD-010/011 and TC-04.
