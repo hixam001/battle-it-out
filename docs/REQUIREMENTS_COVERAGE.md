@@ -18,12 +18,12 @@ It does **not** provide: users, roles, tournaments, brackets, byes, house bots, 
 | Status | Count | Meaning |
 |---|---|---|
 | DONE | 11 | built and tested here (library or tool level), nothing material missing |
-| PARTIAL | 29 | built in part; the gap column says what is still ours to develop |
-| TODO | 46 | not built; no code exists |
+| PARTIAL | 30 | built in part; the gap column says what is still ours to develop |
+| TODO | 45 | not built; no code exists |
 | DEFERRED | 5 | P2, not scheduled (PRD section 5) |
 | **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 75 of the 91 still need development work |
 
-Reading this honestly: the **execution foundation** (EPIC-00 to EPIC-03: bot validation, sandbox, failure classification, logs, retry, tie-break maps) is largely built and tested, but only as libraries. **Everything that makes it a platform** (backend, auth, registration, submissions, tournament operations, notifications, deletion, website, replay lifecycle, bracket) is not built. 'DONE' does not mean accepted by the owner or reviewed independently.
+Reading this honestly: the **execution foundation** (EPIC-00 to EPIC-03: bot validation, sandbox, failure classification, logs, retry, tie-break maps) is largely built and tested, but only as libraries. **Everything that makes it a platform** (backend, auth, registration, submissions, tournament operations, notifications, deletion, website, endpoints around the replay vault) is not built. 'DONE' does not mean accepted by the owner or reviewed independently.
 
 ## Coverage matrix
 
@@ -86,7 +86,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | SRD-067 | Captaincy transfers on captain deletion | None | **TODO** | BIO-EPIC-06 | DEC-07 (no successor) |
 | SRD-068 | Team deletion after archive; Admin-only restore | None | **TODO** | BIO-EPIC-06 | - |
 | SRD-069 | Permanent tournament deletion, Admin only, audit kept | None | **TODO** | BIO-EPIC-06 | - |
-| SRD-070 | Archive deletes replays, keeps results and history | None (engine only writes the replay file) | **TODO** | BIO-305 | Replay storage and purge job |
+| SRD-070 | Archive deletes replays, keeps results and history | None (engine only writes the replay file) | **PARTIAL** | `replays.py`: archive then purge then verify, retry of a failed purge, results untouched (CN-012, 39 tests) | Archive endpoint and who may call it, scheduled `purge_pending`, vault backups and restore drill |
 | BIO-REQ-01 | Audit the Battlecode repository and scaffold | None | **DONE** | Docs, handoff, scaffold findings | - |
 | BIO-REQ-02 | Reproducible scaffold compatible with the Python target | Partly | **PARTIAL** | See SRD-002, SRD-003 | See SRD-002 |
 | BIO-REQ-03 | Execute a single-file Python bot with the engine | Provides (official runner) | **DONE** | Launcher over `runner_entry.py` | - |
@@ -94,9 +94,9 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | BIO-REQ-05 | Run two bots in an isolated environment | None | **PARTIAL** | See SRD-007 | See SRD-007 |
 | BIO-REQ-06 | Separate bot failure from platform failure | None | **DONE** | CN-006 | - |
 | BIO-REQ-07 | Automate sequential matches, results, bracket advancement | None | **PARTIAL** | Orchestrator, series, bracket and round runner | Queue/service around them, house bots (DEC-06) |
-| BIO-REQ-08 | Generate replays and keep them until archive, then delete | Partly (engine writes `.bc26`; client can view it) | **PARTIAL** | Replay path and SHA-256 recorded per game | Storage, access control, purge at archive (BIO-305); DEC-10 format and player |
+| BIO-REQ-08 | Generate replays and keep them until archive, then delete | Partly (engine writes `.bc26`; client can view it) | **PARTIAL** | Replay path and SHA-256 recorded per game; vault with hash and gzip check, access rule, 404/410, purge (CN-012) | Replay endpoint, building a `Viewer` from the session, object storage and short-lived URLs, a player (DEC-10) |
 | BIO-REQ-09 | Platform-failure retry policy | None | **PARTIAL** | See SRD-010, SRD-011 | See SRD-010/011 |
-| BIO-REQ-10 | Prove the engine path end to end before the web build | None | **PARTIAL** | Real matches, series, failure injection and a real 3-team tournament to a champion pass | TC-05 not complete: house bots, qualification draw, replay lifecycle |
+| BIO-REQ-10 | Prove the engine path end to end before the web build | None | **PARTIAL** | Real matches, series, failure injection and a real 3-team tournament to a champion pass | TC-05 not complete: house bots, qualification draw, replay endpoint and worker hand-off |
 | BIO-REQ-11 | Authentication, roles, tournament-scoped permissions | None | **TODO** | BIO-EPIC-04 | DEC-11, auth model |
 | BIO-REQ-12 | Tournament creation, approval, deadlines | None | **TODO** | BIO-EPIC-06 | - |
 | BIO-REQ-13 | Roster import, email and code validation | None | **TODO** | BIO-EPIC-05 | - |
@@ -127,7 +127,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 
 In the order the roadmap needs them (PROJECT_PLAN section 6); each line is development, none of it exists in Battlecode.
 
-1. **Finish the execution gate (EPIC-02/03):** benchmark and fix the limits (DEC-04); independent sandbox review; engine-side seed or an accepted waiver for TC-04; worker service, queue and container; Admin alert channel; house bots in the bracket (needs DEC-06; the human bracket and round runner exist); qualification draw (DEC-14); replay storage, access and purge (BIO-305, DEC-10); tie-break map storage; full simulated tournament (TC-05). The upload check itself (static check plus trial match) exists, CN-013; its upload endpoint and activation do not.
+1. **Finish the execution gate (EPIC-02/03):** benchmark and fix the limits (DEC-04); independent sandbox review; engine-side seed or an accepted waiver for TC-04; worker service, queue and container; Admin alert channel; house bots in the bracket (needs DEC-06; the human bracket and round runner exist); qualification draw (DEC-14); replay endpoint, object storage and a player (DEC-10; the vault, access rule and purge exist, CN-012); tie-break map storage; full simulated tournament (TC-05). The upload check itself (static check plus trial match) exists, CN-013; its upload endpoint and activation do not.
 2. **Backend foundation (EPIC-04, needs DEC-11):** stack, database, auth and sessions, roles and tournament scope enforced on the server (BIO-NFR-05), append-only audit log, private file storage, job queue, API from `API_CONTRACT.md`, plus the missing user/role/organizer assignment endpoints.
 3. **Registration and submissions (EPIC-05):** roster import and correction, invitation codes (DEC-01), registration rules and locks, submission upload, activation, history, download, privacy, deadline locks.
 4. **Tournament operations (EPIC-06):** approval and rejection, independent deadlines and extensions, emergency override, notifications (dashboard and email), deletion and retention lifecycle, archive.

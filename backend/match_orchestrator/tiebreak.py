@@ -18,7 +18,7 @@ that coin flip counts as TIED and the engine's pick is never used. A game decide
 ordered tie-breakers (points, robots alive, cheese) is decided.
 
 Not here: where the tie-break maps come from (TournamentMap, BIO-303/EPIC-04), the bracket, replay storage
-(BIO-305), the audit log and the screen that shows the coin flip (this module only provides `public_view`).
+(BIO-305: `replays.py`), the audit log and the screen that shows the coin flip (this module only provides `public_view`).
 """
 from __future__ import annotations
 
