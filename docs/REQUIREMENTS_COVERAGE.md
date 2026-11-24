@@ -17,11 +17,11 @@ It does **not** provide: users, roles, tournaments, brackets, byes, house bots, 
 
 | Status | Count | Meaning |
 |---|---|---|
-| DONE | 9 | built and tested here (library or tool level), nothing material missing |
-| PARTIAL | 28 | built in part; the gap column says what is still ours to develop |
-| TODO | 49 | not built; no code exists |
+| DONE | 10 | built and tested here (library or tool level), nothing material missing |
+| PARTIAL | 29 | built in part; the gap column says what is still ours to develop |
+| TODO | 47 | not built; no code exists |
 | DEFERRED | 5 | P2, not scheduled (PRD section 5) |
-| **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 77 of the 91 still need development work |
+| **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 76 of the 91 still need development work |
 
 Reading this honestly: the **execution foundation** (EPIC-00 to EPIC-03: bot validation, sandbox, failure classification, logs, retry, tie-break maps) is largely built and tested, but only as libraries. **Everything that makes it a platform** (backend, auth, registration, submissions, tournament operations, notifications, deletion, website, replay lifecycle, bracket) is not built. 'DONE' does not mean accepted by the owner or reviewed independently.
 
@@ -43,10 +43,10 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | SRD-010 | Platform failure restarts with same map and versions and a NEW seed | None | **PARTIAL** | `match_orchestrator` (CN-009) | New seed impossible: engine tie-break seed is not controllable (TC-04 not met) |
 | SRD-011 | Retry up to 10 times, then alert Admin | None | **PARTIAL** | Retry cap, incident, alert function (CN-009) | No real Admin channel; attempt-count reading (DEC-05) interim |
 | SRD-012 | Record bot versions, map, engine/runtime version, seed, attempts, result, logs | Partly (replay file only) | **PARTIAL** | Orchestrator match record, JSONL structured logs (CN-007) | JSON-file store is a stand-in (DEC-11); seed is always null |
-| SRD-020 | Single elimination, random pairings, automatic byes | None | **TODO** | BIO-303 | Needs DEC-06 and acceptance examples |
-| SRD-021 | Human teams get bye priority over house bots | None | **TODO** | BIO-303 | DEC-06 |
-| SRD-022 | House bots fill gaps but cannot advance or win | None | **TODO** | BIO-303 | DEC-06; house bots do not exist yet |
-| SRD-023 | Sequential matches, Organizer starts each round | None | **PARTIAL** | One match per host at a time (host lock); `run_match_job` | No round runner, no Organizer trigger (BIO-302) |
+| SRD-020 | Single elimination, random pairings, automatic byes | None | **DONE** | `bracket.py` (CN-011): one recorded random draw, byes spread so none meets another | Tournament and map storage; the API that creates it |
+| SRD-021 | Human teams get bye priority over house bots | None | **PARTIAL** | Byes go to human teams (CN-011) | Meaningful only once house bots exist (DEC-06) |
+| SRD-022 | House bots fill gaps but cannot advance or win | None | **TODO** | BIO-303 | Refused on purpose: placement algorithm undecided (DEC-06); house bots do not exist yet |
+| SRD-023 | Sequential matches, Organizer starts each round | None | **PARTIAL** | `bracket.start_round` / `run_round` (CN-011), host lock | Organizer trigger, authorization, queue and service (API layer) |
 | SRD-024 | Normal tie: one tie-break map | None (engine settles ties itself, then flips an unseeded coin) | **DONE** | `tiebreak.py` (CN-010) | Where tie-break maps are stored and chosen |
 | SRD-025 | Final tie: three tie-break maps in order | None | **DONE** | `tiebreak.py` (CN-010) | Reading of 'three maps' (all played, majority of wins) awaits owner confirmation |
 | SRD-026 | Still tied: 50/50 coin flip, displayed, logged, no rerolls | None (engine coin flip is unseeded and unauditable) | **PARTIAL** | `tiebreak.py`: one stored `secrets` draw, `public_view` | Screen, Admin audit log, real publishing |
@@ -93,10 +93,10 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | BIO-REQ-04 | Validate entrypoint, syntax, imports, runtime | None | **PARTIAL** | `bot_validator` | Static only: 'runtime' validity (a trial match on upload) is not built |
 | BIO-REQ-05 | Run two bots in an isolated environment | None | **PARTIAL** | See SRD-007 | See SRD-007 |
 | BIO-REQ-06 | Separate bot failure from platform failure | None | **DONE** | CN-006 | - |
-| BIO-REQ-07 | Automate sequential matches, results, bracket advancement | None | **PARTIAL** | Orchestrator and series | Bracket, rounds, queue/service (BIO-301/302/303) |
+| BIO-REQ-07 | Automate sequential matches, results, bracket advancement | None | **PARTIAL** | Orchestrator, series, bracket and round runner | Queue/service around them, house bots (DEC-06) |
 | BIO-REQ-08 | Generate replays and keep them until archive, then delete | Partly (engine writes `.bc26`; client can view it) | **PARTIAL** | Replay path and SHA-256 recorded per game | Storage, access control, purge at archive (BIO-305); DEC-10 format and player |
 | BIO-REQ-09 | Platform-failure retry policy | None | **PARTIAL** | See SRD-010, SRD-011 | See SRD-010/011 |
-| BIO-REQ-10 | Prove the engine path end to end before the web build | None | **PARTIAL** | Real matches, series and failure injection pass | No full simulated tournament (TC-05) |
+| BIO-REQ-10 | Prove the engine path end to end before the web build | None | **PARTIAL** | Real matches, series, failure injection and a real 3-team tournament to a champion pass | TC-05 not complete: house bots, qualification draw, replay lifecycle |
 | BIO-REQ-11 | Authentication, roles, tournament-scoped permissions | None | **TODO** | BIO-EPIC-04 | DEC-11, auth model |
 | BIO-REQ-12 | Tournament creation, approval, deadlines | None | **TODO** | BIO-EPIC-06 | - |
 | BIO-REQ-13 | Roster import, email and code validation | None | **TODO** | BIO-EPIC-05 | - |
@@ -127,7 +127,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 
 In the order the roadmap needs them (PROJECT_PLAN section 6); each line is development, none of it exists in Battlecode.
 
-1. **Finish the execution gate (EPIC-02/03):** benchmark and fix the limits (DEC-04); independent sandbox review; engine-side seed or an accepted waiver for TC-04; worker service, queue and container; Admin alert channel; round runner and bracket with byes and house bots (needs DEC-06); qualification draw (DEC-14); replay storage, access and purge (BIO-305, DEC-10); tie-break map storage; full simulated tournament (TC-05). Static validation of `bot.py` on upload plus a trial match.
+1. **Finish the execution gate (EPIC-02/03):** benchmark and fix the limits (DEC-04); independent sandbox review; engine-side seed or an accepted waiver for TC-04; worker service, queue and container; Admin alert channel; house bots in the bracket (needs DEC-06; the human bracket and round runner exist); qualification draw (DEC-14); replay storage, access and purge (BIO-305, DEC-10); tie-break map storage; full simulated tournament (TC-05). Static validation of `bot.py` on upload plus a trial match.
 2. **Backend foundation (EPIC-04, needs DEC-11):** stack, database, auth and sessions, roles and tournament scope enforced on the server (BIO-NFR-05), append-only audit log, private file storage, job queue, API from `API_CONTRACT.md`, plus the missing user/role/organizer assignment endpoints.
 3. **Registration and submissions (EPIC-05):** roster import and correction, invitation codes (DEC-01), registration rules and locks, submission upload, activation, history, download, privacy, deadline locks.
 4. **Tournament operations (EPIC-06):** approval and rejection, independent deadlines and extensions, emergency override, notifications (dashboard and email), deletion and retention lifecycle, archive.
