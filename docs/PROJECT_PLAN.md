@@ -1,0 +1,178 @@
+# Battle It Out --- Project Plan & Scope Statement
+
+**Version:** 1.0\
+**Status:** Working baseline\
+**Date:** 2026-11-24\
+**Audience:** project owner, contributors, and tournament stakeholders who need to know what is being built, in what order, and what is still undecided.\
+**Sources:** `PRD.md` (v1.1), `SRD.md`, `APP_FLOW.md`, `API_CONTRACT.md`, `DATA_MODEL.md`, `TEST_PLAN.md`, `PRODUCT.md`, `handoff.md`, and the code in `backend/`.
+
+> **Labels used in this document.** *Confirmed* = established in the requirement documents. *Proposed* = recommended but not approved. `[DECIDE]` = unresolved; do not assume an answer. *Observed* = checked directly in the repository or by running a command on 2026-11-24. This plan contains no calendar dates for future work on purpose: the PRD requires sprint dates to be set only after the repository audit and a hardware benchmark.
+
+## 1. Background and purpose
+
+INNOFEST needs a Battlecode-style programming competition in which participants submit a single Python bot (`bot.py`) that competes automatically in the existing Battlecode 2026 engine. It must be approachable for beginners (including participants using AI assistance) and still deep enough for experienced programmers. The platform controls registration, submissions, matches, brackets, results, notifications, and an immutable audit history.
+
+The largest early risk is technical, not visual: can the Battlecode 2026 scaffold be reproduced, run on Python 3.13, and execute participant bots safely and reliably? The plan therefore proves the execution path first and builds the website last.
+
+## 2. Objectives and success criteria
+
+| ID | Objective | Measure (from PRD §2-3) | Priority |
+|---|---|---|---|
+| BIO-G01 | Reproducible scaffold on Python 3.13 | A clean setup installs and runs the reference Python bot and a test bot with no manual patching | P0 |
+| BIO-G02 | Safe, deterministic bot execution | Two independently submitted `bot.py` files complete a match; crashes and limit violations are bot losses; engine failures are distinguishable | P0 |
+| BIO-G03 | Automated match lifecycle | A test bracket runs sequentially, records results, advances winners, applies tie-break maps, and uses the final coin flip when required | P0 |
+| BIO-G04 | Controlled tournament, registration and submission management | Admin / Organizer / Participant permission tests pass for all documented critical operations | P1 |
+| BIO-G05 | Visible, auditable outcomes | Dashboard notifications for major events; email can be disabled; audit records are immutable and retained | P1 |
+
+Success metrics (PRD §3): 100% clean-machine setup checks pass; at least 99% of valid pilot matches complete without platform-caused failure (`[DECIDE]` sample size); 100% of injected failures classified correctly; 100% of critical permission tests pass; every completed match records bot versions, map, engine version, seed, result and attempt.
+
+## 3. Scope statement
+
+### 3.1 In scope (confirmed)
+
+1. **Execution foundation (P0).** Audit and reproduce the Battlecode 2026 scaffold; Python 3.13 compatibility; one-file `bot.py` contract; bot validation; isolated worker with fixed platform-wide limits; bot-failure versus platform-failure classification; sequential matches with bracket advancement, byes, house bots, tie-break maps, coin flip, replays, and a platform-failure retry policy (up to 10, then alert Admin).
+2. **Backend and tournament operations (P1).** Authentication and roles; tournament creation, approval and lifecycle; roster import and invitation-code registration; bot submissions with version history; Admin/Organizer operations; audit log; email and dashboard notifications; deletion and retention rules; participant dashboards, bracket/results views and replay access.
+3. **Quality gate (P0 launch gate).** Security, load, backup/recovery, a pilot tournament, deployment, and runbooks.
+
+### 3.2 Out of scope for the first release (confirmed)
+
+Public landing page before the execution foundation passes its exit gate; additional bot languages; multi-file or ZIP submissions; participant-installed dependencies or custom runtimes; anonymous public results; live match streaming (unless later approved); advanced analytics and spectator features; a match-dispute workflow (unless separately approved); per-tournament execution limits (limits are global); any replacement for the Battlecode engine.
+
+### 3.3 Scope boundaries and rules that must not be bent
+
+- The Battlecode 2026 engine stays the source of game simulation (SRD-001).
+- Nothing in the website phase starts until BIO-EPIC-01 to BIO-EPIC-03 pass their exit gate.
+- Numeric limits (time, memory, instructions) come from benchmarks and are never invented.
+- Permissions are enforced on the server for every protected operation.
+- Compatibility, isolation, resource enforcement and reliability are never claimed without a test that proves them.
+
+## 4. Assumptions, constraints, dependencies
+
+**Assumptions** (not yet verified): a single worker host is sufficient for the first tournament (`[DECIDE]` load targets); the official roster arrives in an importable format (`[DECIDE]` format); organizers will operate rounds manually, as the PRD describes.
+
+**Constraints:** Python only; exactly one `bot.py`; same runtime image for every bot; no participant-installed packages; Java 21 or newer is enforced by the scaffold build (*Observed*: `build.gradle` throws below JDK 21); the scaffold's Python launcher `run.py` currently accepts only Python 3.12 (*Observed*), while the project target is 3.13.
+
+**External dependencies:** the Battlecode engine, client and Python package releases (served from `releases.battlecode.org` and `api.battlecode.org`); third-party packages on Python 3.13; worker hardware; email provider and domain; object storage; hosting.
+
+## 5. Deliverables
+
+| # | Deliverable | Epic | Exit evidence |
+|---|---|---|---|
+| D1 | Version matrix and audit of the scaffold, runner API and dependencies | BIO-EPIC-00 | Approved technical baseline and unresolved-decision register |
+| D2 | Reproducible Python 3.13 setup with pinned dependencies and smoke tests | BIO-EPIC-01 | Clean environment runs the reference Python bot and tests (TC-01) |
+| D3 | `bot.py` contract, validator, isolated runner, resource limits, failure classification, structured logs | BIO-EPIC-02 | Two independent bots complete matches; injected failures classified correctly (TC-02, TC-03, TC-04) |
+| D4 | Match and tournament automation: bracket, byes, house bots, tie-breaks, coin flip, replay lifecycle, retry and alerts | BIO-EPIC-03 | A full simulated tournament passes end to end (TC-05) |
+| D5 | Backend: auth, roles, database, API, audit, storage, job queue | BIO-EPIC-04 | API permission and persistence tests pass (TC-07) |
+| D6 | Registration and submission management | BIO-EPIC-05 | Participant flow passes with privacy and deadline rules (TC-06) |
+| D7 | Tournament operations: approval, deadlines, notifications, deletion, archive | BIO-EPIC-06 | Admin/Organizer lifecycle tests pass (TC-07, TC-08) |
+| D8 | Website and dashboards (landing page included) | BIO-EPIC-07 | Usability and end-to-end acceptance complete |
+| D9 | QA, pilot tournament, deployment, runbooks | BIO-EPIC-08 | Go-live checklist signed off; no open Blocker/Critical defects |
+| D10 | Documentation set (this plan, architecture, technical/API, README and changelog, user and admin guides) | all | Reviewed and kept in sync with the code |
+
+## 6. Work breakdown and roadmap
+
+Jira issue keys are `BIO-NNN` where the hundreds digit is the epic number; scope items in PRD §5 are requirement IDs `BIO-REQ-01..23` (see PRD §10, "ID scheme"). Only the EPIC-00 to EPIC-03 tasks are defined so far.
+
+| Phase | Epic | Priority | Defined tasks | Exit gate |
+|---|---|---|---|---|
+| 0 Discovery and baseline | BIO-EPIC-00 | P0 | BIO-001 inspect repository; BIO-002 map Python runner; BIO-003 record engine/client/package versions; BIO-004 clean-environment baseline; BIO-005 resolve `[DECIDE]` items that affect execution | Approved technical baseline and decision register |
+| 1 Scaffold modernization | BIO-EPIC-01 | P0 | BIO-101 pin dependencies; BIO-102 Python 3.13 setup; BIO-103 repair Python runner integration; BIO-104 smoke tests; BIO-105 document clean setup | Clean environment runs the reference Python bot and tests |
+| 2 Python bot execution | BIO-EPIC-02 | P0 | BIO-201 define bot contract; BIO-202 validate `bot.py`; BIO-203 run bot in isolated worker; BIO-204 enforce resource limits; BIO-205 classify bot/platform failure; BIO-206 structured logs | Two independent bots complete matches; injected failures classified |
+| 3 Match / tournament automation | BIO-EPIC-03 | P0 | BIO-301 match orchestration; BIO-302 sequential round runner; BIO-303 bracket/bye/house-bot rules; BIO-304 tie-break maps and coin flip; BIO-305 replay lifecycle; BIO-306 platform retry and Admin alert | Full simulated tournament passes |
+| 4 Backend foundation | BIO-EPIC-04 | P1 | to be broken down | API permission and persistence tests pass |
+| 5 Registration and submissions | BIO-EPIC-05 | P1 | to be broken down | Participant flow passes with privacy and deadline rules |
+| 6 Tournament operations | BIO-EPIC-06 | P1 | to be broken down | Admin/Organizer lifecycle tests pass |
+| 7 Website and participant UI | BIO-EPIC-07 | P1 | to be broken down | Usability and end-to-end acceptance complete |
+| 8 QA, pilot, production | BIO-EPIC-08 | P0 launch gate | to be broken down | Go-live checklist signed off |
+
+```mermaid
+flowchart LR
+  E0[EPIC-00<br/>Discovery] --> E1[EPIC-01<br/>Scaffold + Py 3.13]
+  E1 --> E2[EPIC-02<br/>Bot runner + sandbox]
+  E2 --> E3[EPIC-03<br/>Match automation]
+  E3 -->|execution gate| E4[EPIC-04<br/>Backend]
+  E4 --> E5[EPIC-05<br/>Registration + submissions]
+  E5 --> E6[EPIC-06<br/>Tournament ops]
+  E6 --> E7[EPIC-07<br/>Website]
+  E7 --> E8[EPIC-08<br/>QA + pilot + launch]
+```
+
+### 6.1 Current status (as of 2026-11-24)
+
+**Phase 0 is in progress; no later phase has started.**
+
+Done (evidence in git history, PRs #1 to #4, all merged):
+- Specification documents committed; duplicate Jira IDs fixed (PRD v1.1, test plan v1.1).
+- Battlecode 2026 scaffold vendored into `backend/battlecode26-scaffold/` (upstream commit `f69e2ab`).
+- `PRODUCT.md` created for the design tooling; agent/skill files are git-ignored.
+- *Observed* on 2026-11-24: `./gradlew runLocal --offline` ran a Java-vs-Java match to completion in about 2 seconds and wrote a replay.
+
+Not yet done / not verified:
+- Python 3.13 compatibility has not been tried. `run.py` requires Python exactly 3.12.
+- A Python-bot match through Gradle did not complete in two attempts (see §8, R2); this is unresolved, not a conclusion about the engine.
+- No version matrix, no pinned dependencies, no automated tests beyond a placeholder (`1 + 1`).
+
+### 6.2 Recommended next work (in order)
+
+1. **BIO-001..BIO-004:** audit the runner, record the version matrix, and establish a clean-environment baseline. Resolve the engine/Python-package version mismatch first (R2).
+2. **BIO-102:** attempt Python 3.13 in a clean environment and record the result with exact versions (TC-01).
+3. **BIO-201:** write the `bot.py` bot contract, including what a bot may import (R3).
+4. **BIO-203/204:** design the isolated worker around OS-level isolation, because the engine's own restrictions are language-level (R4).
+
+## 7. Decisions needed before work can proceed
+
+| Needed before | Decision | Source |
+|---|---|---|
+| BIO-EPIC-01 | Exact Python 3.13 patch version and supported OS matrix | DEC-03 |
+| BIO-EPIC-02 | Numeric time, memory and instruction limits (benchmark first); allowed imports for bots | DEC-04, R3 |
+| BIO-EPIC-02/03 | Retry cap: 10 total attempts (recommended) or 10 retries after the first | DEC-05 |
+| BIO-EPIC-03 | House-bot bracket algorithm; qualification-draw inputs and randomness audit | DEC-06, DEC-14 |
+| BIO-EPIC-03 | Replay format and browser playback | DEC-10 |
+| BIO-EPIC-04 | Stack, hosting, email provider, object storage; auth/session model; pagination style | DEC-11 + API contract §9 |
+| BIO-EPIC-05 | Invitation code granularity; who may upload (captain-only recommended); team size and captain rules; roster file format; upload size cap | DEC-01, DEC-02, DEC-12 |
+| BIO-EPIC-06 | Captain deleted with no successor; config-freeze deadline; account recovery and disputes; source retention | DEC-07, DEC-08, DEC-13 |
+| Before any code is published or served | **Licensing of the project given the AGPL-3.0 scaffold** (R5) | new |
+
+The full register is in PRD §11 and `PRODUCT.md`.
+
+## 8. Risk register
+
+Likelihood and impact are qualitative judgments by the author of this plan, not measurements.
+
+| ID | Risk | Evidence | Impact | Mitigation | Status |
+|---|---|---|---|---|---|
+| R1 | Python 3.13 does not work with the engine or its package, blocking the whole project target | `run.py` raises unless Python is exactly 3.12; the engine package on 3.13 is untried | High | Run TC-01 first; if 3.13 fails, bring the decision (target 3.12 vs wait for engine support) to the owner with evidence | Open |
+| R2 | Version drift between Java engine and Python package; Python-bot matches not yet reproducible | *Observed*: `engine_version.txt` = 1.2.6, installed `battlecode26` package = 1.2.2; system `python3` is 3.14.10 (rejected by `run.py`); a Gradle-launched Python-vs-Python match failed on the first attempt ("No module named battlecode26" although the venv imports it directly) and hung past 170 s on the second | High | BIO-003/BIO-004: align versions, pin them, document one working command. Do not treat the hang as an engine defect until reproduced on aligned versions | Open |
+| R3 | The engine's Python runner restricts imports more than the PRD promises | *Observed* in `battlecode26/runner.py`: a bot may import only its own modules plus `random`, `math`, `enum`, `battlecode26`; the PRD says "standard library and preinstalled libraries" | Medium | Decide the import policy (DEC-04 area) and document it in the bot contract; update PRD if the engine's rule is accepted | Open |
+| R4 | Engine-level restrictions are not host isolation | *Observed*: Python bots run in a Python process under RestrictedPython with bytecode counting and talk to the Java server over loopback TCP; PRD BIO-NFR-01 requires isolation from host services, other bots and user data | High | Add container/OS-level isolation (no network, read-only filesystem, CPU/memory/process limits) per the worker design; prove with the security tests in the test plan | Open |
+| R5 | The scaffold is licensed AGPL-3.0, and no project license or obligation analysis exists | *Observed*: `backend/battlecode26-scaffold/LICENSE` is the GNU Affero GPL v3; the repository root has no license | Medium | Owner decides the project license and checks AGPL obligations (including for a network-served platform) before publishing or deploying; this plan makes no legal conclusion | Open |
+| R6 | Weak existing validation | *Observed*: `run.py verify` only checks that `bot.py` exists and contains the text `def turn():`; the bundled Java test is `assertEquals(2, 1+1)` | Medium | BIO-202 builds real syntax/import/entrypoint/runtime validation; BIO-104 adds meaningful smoke tests | Open |
+| R7 | Vendored scaffold falls behind upstream | Upstream history is not kept; the build already reports client 1.0.7 available while 1.0.6 is configured | Low | Update deliberately via `./gradlew update` in its own PR with a re-run of the baseline | Open |
+| R8 | Unbenchmarked resource limits | The engine's default bytecode limit is 20000 but is "updated by game"; PRD limits are undecided | Medium | Benchmark on target hardware (DEC-04) before any numeric claim | Open |
+| R9 | Undecided stack, hosting, email, storage | PRD §9 lists the stack as proposed only | Medium | Approve the stack at the end of Phase 0 (DEC-11) | Open |
+| R10 | Single recorded contributor | Git history and policy show one contributor | Medium | Keep `handoff.md` current; small PRs; documented decisions | Ongoing |
+
+## 9. Governance and working agreements
+
+- **Owner:** Hisham Ahmed is the sole recorded contributor. Tournament roles (Admin, Organizer, Participant) are product roles, not project-team roles.
+- **Branching and delivery:** every task gets a branch named with Jira notation (`BIO-NNN-short-description`, or `BIO-EPIC-0N-short-description` for epic-level work), then commit, push, and a pull request. Work is never done directly on `main`.
+- **Attribution:** no co-author or generated-by lines in commits, pushes or pull requests.
+- **Start and end of every task:** read `handoff.md` and memory first; append a task-log entry to `handoff.md` at the end.
+- **Definition of done** (PRD §12): each change reports Jira ID, files changed, tests run, results, risks, and any newly discovered decision. A test counts only if it was actually run; the engine is never mocked as the sole proof of Python 3.13 compatibility.
+- **Change control:** a changed requirement updates the PRD/SRD first, then dependent documents; a new unresolved question is added to the decision register with `[DECIDE]`. Proposed choices never silently become requirements.
+- **Severity and release gate:** Blocker, Critical, Major, Minor as defined in `TEST_PLAN.md` §7. No production launch with open Blocker or Critical defects; all P0 acceptance tests pass; the pilot tournament is completed and reviewed.
+
+## 10. Reporting and review
+
+Progress is tracked in `handoff.md` (task log, next steps) and in pull requests. Each epic closes only when its exit gate evidence exists: test reports with exact versions (Python, engine, client, packages, OS, worker image digest). Review the plan at the end of each phase and whenever a `[DECIDE]` item is resolved.
+
+## 11. Document map
+
+| Need | Document |
+|---|---|
+| What the product must do | `PRD.md`, `SRD.md`, `PRODUCT.md` |
+| How the system is structured | `ARCHITECTURE.md` |
+| Code, build, database, API reference | `TECHNICAL_DOCUMENTATION.md`, `API_CONTRACT.md`, `DATA_MODEL.md` |
+| How users and screens behave | `APP_FLOW.md`, `USER_GUIDE.md`, `ADMIN_GUIDE.md` |
+| How it is verified | `TEST_PLAN.md` |
+| Current state and history | `handoff.md`, `../CHANGELOG.md`, `../README.md` |
