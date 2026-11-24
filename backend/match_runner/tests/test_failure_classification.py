@@ -246,7 +246,9 @@ class MatchesWithFailures(unittest.TestCase):
     def test_normal_match_is_completed_and_the_server_closed_first(self):
         r = self.match("cpuload_py", "cpuload_py")
         self.assertEqual((r["classification"], r["outcome"]), ("normal", "completed"))
-        self.assertEqual(r["router"]["first_end"]["leg"], "server")
+        # Which leg closes first is a race once the engine says end_game (the runners exit at once), so it is
+        # not asserted: a finished match is normal whatever closed first (found by the SR review, 1 run in 6).
+        self.assertIn(r["router"]["first_end"]["leg"], ("server", "runner:A", "runner:B"))
         self.assertNotIn("loser", r)
 
     def test_engine_server_killed_mid_match_is_a_platform_failure_with_no_loser(self):

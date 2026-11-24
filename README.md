@@ -17,6 +17,7 @@ Known open issues (details in the plan and architecture documents):
 - The engine package officially supports only Python 3.12. Python 3.12 to 3.15 (latest stable, 3.15.2) pass our tests through `backend/match_runner/`, on Linux x86_64 only; the engine's authors do not support this (`docs/CHANGE_NOTICES.md` CN-001).
 - The engine's bot sandbox is weak (it allows `open`, attribute-walk escapes and infinite loops); isolation and limits are still to be built (`docs/TECHNICAL_DOCUMENTATION.md` section 3.5).
 - Running Python bots through Gradle fails or hangs on Linux. Use `python3 backend/match_runner/launcher.py run ...` (see `backend/match_runner/README.md`); a match of the example bot takes about 3 seconds.
+- The match runner has had one self-review (`docs/SECURITY_REVIEW.md`, CN-008): five defects were fixed, two residual risks stay open, and a human or third-party review is still needed. Isolation is for Linux x86_64 only.
 - The Battlecode Java engine declares no license; written confirmation from the Battlecode team is still needed (`docs/LICENSING.md`).
 
 ## Quick start (local match)

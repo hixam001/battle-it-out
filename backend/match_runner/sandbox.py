@@ -38,6 +38,10 @@ BWRAP = "bwrap"
 TMP_SIZE_BYTES = 64 << 20
 MAX_FRAME_BYTES = 8 << 20  # a runner-side frame larger than this ends the match connection
 CONTINUATION = "  | "      # starts every line after the first of any text a runner sends (BIO-206, CN-007)
+# The engine's method numbers (battlecode26.crossplay.CrossPlayMethod): 0 is INVALID, the last is
+# RC_GET_NUMBER_CAT_TRAPS = 107. The Java server crashes on any other number, which would be reported as
+# a platform failure (SR-03, CN-008), so the router refuses them. A test compares this with the installed engine.
+MIN_METHOD, MAX_METHOD = 1, 107
 
 
 class SandboxUnavailable(Exception):
@@ -272,6 +276,10 @@ class MalformedFrame(ValueError):
     """A runner sent something that is not an engine message."""
 
 
+class ProtocolViolation(MalformedFrame):
+    """A runner sent a well-formed frame at a time the engine protocol does not allow it (SR-01, CN-008)."""
+
+
 _CONTROL = re.compile(r"[\x00-\x08\x0e-\x1f\x7f]")
 
 
@@ -328,12 +336,29 @@ def canonical_runner_frame(body: bytes) -> tuple[bytes, int]:
     params = msg.get("params") if isinstance(msg, dict) else None
     if not isinstance(method, int) or isinstance(method, bool) or not isinstance(params, list):
         raise MalformedFrame("frame is neither null nor {method: int, params: list}")
+    if not MIN_METHOD <= method <= MAX_METHOD:
+        raise ProtocolViolation(f"protocol violation: unknown engine method {method}")
     counter = [0]
     try:
         clean = {"method": method, "params": _clean(params, counter)}
         return json.dumps(clean).encode("utf-8"), counter[0]
     except RecursionError:
         raise MalformedFrame("frame is nested too deeply")
+
+
+def check_turn(team: str, is_null: bool, current: str, pending_null: dict) -> str | None:
+    """Is a frame from `team` allowed now? Returns the reason it is not, or None (SR-01, CN-008).
+
+    The Java server has ONE connection for both teams and cannot tell the runners apart, so the router must.
+    The server only ever talks to one robot at a time:
+      * a call (anything but null) comes from the runner whose turn it is (`current`);
+      * a null is the answer to a notice the router forwarded to that runner (`spawn_bot`, `destroy_bot`),
+        which may be the other team's runner (a robot of the idle team can be destroyed in the middle of a turn).
+    Anything else would be read by the server as the current robot's own message.
+    """
+    if is_null:
+        return None if pending_null.get(team, 0) > 0 else "protocol violation: null reply that was not asked for"
+    return None if team == current else "protocol violation: frame sent out of turn"
 
 
 def route_for(msg, owner: dict, current: str) -> tuple[list[str], str]:
@@ -372,8 +397,10 @@ class Router:
     match connection. Waits for both runners before it connects to the server.
     """
 
-    def __init__(self, directory: Path, port: int, connect_timeout: float = 600.0):
+    def __init__(self, directory: Path, port: int, connect_timeout: float = 600.0,
+                 turn_deadline: float | None = None):
         self.dir = Path(directory)
+        self.turn_deadline = turn_deadline   # seconds a runner may stay silent after the router handed it work
         self.paths = {"A": self.dir / "a.sock", "B": self.dir / "b.sock"}
         self.port = port
         self.connect_timeout = connect_timeout
@@ -387,6 +414,10 @@ class Router:
         self._up_lock = threading.Lock()
         self._stop = threading.Event()
         self._owner: dict[int, str] = {}
+        self._state = threading.Lock()      # guards _current, _pending_null, _waiting
+        self._current = "A"
+        self._pending_null = {"A": 0, "B": 0}
+        self._waiting: dict[str, float] = {}   # runner -> when the router last gave it something to answer
         for team, path in self.paths.items():
             srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             if path.exists():
@@ -453,7 +484,25 @@ class Router:
             return
         for team in ("A", "B"):
             threading.Thread(target=self._from_runner, args=(team,), daemon=True).start()
+        if self.turn_deadline:
+            threading.Thread(target=self._watchdog, daemon=True, name="bio-router-deadline").start()
         self._from_server()
+
+    def _watchdog(self) -> None:
+        """Host-side response deadline (SR-02, CN-008). The guard inside a runner can be frozen by the bot it
+        watches (SIGSTOP on itself, a C call that keeps the GIL), so a runner that stays silent too long after
+        being handed work is ended from here, outside every sandbox, and charged to its team."""
+        while not self._stop.wait(0.1):
+            now = time.monotonic()
+            with self._state:
+                late = sorted(t for t, t0 in self._waiting.items() if now - t0 > self.turn_deadline)
+            if late:
+                team = late[0]
+                how = f"deadline: no frame within {self.turn_deadline:g}s"
+                self._note_end(f"runner:{team}", how)
+                self.stats["error"] = self.stats["error"] or f"runner {team}: {how}"
+                self._shutdown()
+                return
 
     # -- forwarding --------------------------------------------------------------------
     def _from_runner(self, team: str):
@@ -464,6 +513,13 @@ class Router:
                 if body is None:
                     break
                 body, rewrites = canonical_runner_frame(body)   # raises MalformedFrame (a ValueError)
+                with self._state:
+                    self._waiting.pop(team, None)
+                    reason = check_turn(team, body == b"null", self._current, self._pending_null)
+                    if reason is None and body == b"null" and self._pending_null[team] > 0:
+                        self._pending_null[team] -= 1
+                if reason:
+                    raise ProtocolViolation(reason)
                 if rewrites:
                     self.stats["text_rewrites"][team] += rewrites
                 with self._up_lock:
@@ -489,6 +545,17 @@ class Router:
                 except ValueError:
                     msg = None
                 targets, current = route_for(msg, self._owner, current)
+                kind = msg.get("type") if isinstance(msg, dict) else None
+                with self._state:
+                    self._current = current
+                    if kind == "end_game":
+                        self._waiting.clear()
+                    else:
+                        now = time.monotonic()
+                        for t in targets:
+                            self._waiting[t] = now
+                            if kind in ("spawn_bot", "destroy_bot"):
+                                self._pending_null[t] += 1     # the runner answers these with null
                 data = struct.pack(">I", len(body)) + body
                 for t in targets:
                     try:

@@ -182,6 +182,18 @@ def _team_output(entries: list[dict], redact: Redactor) -> dict:
 # ------------------------------------------------------------------------------------------
 # building the events
 # ------------------------------------------------------------------------------------------
+_CRASH_PUBLIC = {   # fixed wording per kind: nothing a bot wrote ever reaches these lines
+    "runner_ended_connection": "ended during the match",
+    "runner_unresponsive": "stopped responding during the match",
+    "protocol_violation": "sent the engine a message the protocol does not allow",
+}
+_CRASH_OWN = {
+    "runner_ended_connection": "ended the connection to the engine before the match finished",
+    "runner_unresponsive": "stopped responding to the engine for too long",
+    "protocol_violation": "sent the engine a message that the protocol does not allow at that moment",
+}
+
+
 def _public_reason(result: dict, names: dict) -> str:
     """Text for the match summary that every reader sees. Never contains bot-written text."""
     c = result.get("classification")
@@ -192,7 +204,8 @@ def _public_reason(result: dict, names: dict) -> str:
         kind = _ident(v.get("kind"))
         return f"team {v.get('team')} ({names.get(v.get('team'), '?')}) forfeited: resource limit exceeded ({kind})"
     if c == "bot_crash":
-        return f"team {result.get('loser')} ({names.get(result.get('loser'), '?')}) forfeited: its bot process ended during the match"
+        what = _CRASH_PUBLIC.get(result.get("kind"), _CRASH_PUBLIC["runner_ended_connection"])
+        return f"team {result.get('loser')} ({names.get(result.get('loser'), '?')}) forfeited: its bot process {what}"
     return "platform failure: the match did not complete because of a platform fault; no result"
 
 
@@ -255,7 +268,7 @@ def build_events(result: dict, ctx: dict, server_log_text: str, redact: Redactor
     elif classification == "bot_crash":
         add("team.failure", f"team:{loser}", {
             "team": loser, "cause": "process_ended",
-            "detail": "your bot's process ended the connection to the engine before the match finished",
+            "detail": "your bot's process " + _CRASH_OWN.get(result.get("kind"), _CRASH_OWN["runner_ended_connection"]),
         })
 
     winner = result.get("winner")
