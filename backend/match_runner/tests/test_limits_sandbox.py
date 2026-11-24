@@ -259,7 +259,8 @@ def _recv_frame(sock):
 
 
 class RouterForwards(unittest.TestCase):
-    """A fake engine server and two fake runners: frames are routed, never mixed up, never altered."""
+    """A fake engine server and two fake runners: frames are routed and never mixed up. Runner frames are
+    rebuilt from their parsed content (same message, canonical bytes; see test_structured_log.py)."""
 
     def test_end_to_end_routing(self):
         srv = socket.socket()
@@ -288,7 +289,7 @@ class RouterForwards(unittest.TestCase):
                 _send_frame(engine, json.dumps({"type": "start_turn", "id": 4, "round": 1}).encode())
                 self.assertEqual(json.loads(_recv_frame(b))["round"], 1)
                 _send_frame(b, b'{"method":13,"params":[]}')
-                self.assertEqual(_recv_frame(engine), b'{"method":13,"params":[]}')
+                self.assertEqual(_recv_frame(engine), b'{"method": 13, "params": []}')   # rebuilt, same content
                 _send_frame(engine, json.dumps({"type": "destroy_bot", "id": 3}).encode())   # nested notice
                 self.assertEqual(json.loads(_recv_frame(a))["type"], "destroy_bot")
                 _send_frame(a, b"null")

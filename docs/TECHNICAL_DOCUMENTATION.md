@@ -183,15 +183,61 @@ These are facts for the bot validator (BIO-201), the sandbox (BIO-203/204) and t
 
 **Behaviour that differs from the official runner (CN-005 D4).** Because each team has its own process, bots no longer share Python module state or the global `random` stream. The example bot calls `random.seed(6147)`: in the official one-process setup both teams' bots drew from one interleaved stream (earlier runs: A wins in round 1290); now each team has an independent stream, the two example bots play identical games and the match ends in round 1310 with the engine's coin flip, whose winner varies from run to run (A in 4 of 6 runs, B in 2 of 6). No seed property was found among the server's `bc.*` settings, so replay hashes of tied games are not reproducible. Games decided by play (not by the coin flip) are not affected by this.
 
+**Failure classification (BIO-205, CN-006; *Verified* by `tests/test_failure_classification.py`).** `launcher.classify` turns the evidence of one match into one of four classifications, and `outcome` maps them to the worker contract: `normal` -> `completed`; `bot_violation` and `bot_crash` -> `bot_failure`; `platform_failure` -> `platform_failure`. Rules, in order:
+
+| # | Evidence | Result |
+|---|---|---|
+| 1 | The guard of team X recorded a limit breach | `bot_violation`, X loses |
+| 2 | A breach was recorded with no bot running (the engine itself grew) | `platform_failure` |
+| 3 | The match wall-clock timeout hit | `platform_failure` |
+| 4 | The match finished with no server errors | `normal` (whoever closed first) |
+| 5 | Unfinished, and a team's runner never connected | `platform_failure` (`runner_start_failure`) |
+| 6 | Unfinished, and a team's runner closed the engine connection first (any exit code, including 0, a signal, or a frame over 8 MiB) | `bot_crash`, that team loses, `evidence` = leg, exit status, signal |
+| 7 | Unfinished, and the engine server closed first | `platform_failure` (`engine_failure`), no loser |
+| 8 | Anything else | `platform_failure` (`unknown`) |
+
+The deciding fact is `router.first_end`, recorded by the host-side `Router`; a bot cannot forge it, whereas a line in the runner's log can be printed by the bot. When a runner dies the Java server crashes within milliseconds and prints a bug-report banner, so server error text alone is **not** used to blame the platform. Tested with real matches: a bot that calls `os._exit(3)`, `os._exit(0)`, segfaults (`faulthandler`), or kills itself with `SIGKILL` loses in either slot, with and without the sandbox; killing the engine JVM mid-match (found by its listening port and `-Dbc.game` argument, never the Gradle daemon) gives `platform_failure` with no loser. A runner that is not seen to connect, an engine-first hang-up and the other rows are covered by unit tests of the decision table. The trade-off and limits (engine-side Python crashes inside a runner are charged to the team; outside kills look the same) are in CN-006.
+
 **Known gaps (do not treat this as finished isolation):**
 
 - **No protection from a kernel or bubblewrap vulnerability.** Unprivileged user namespaces must be enabled on the host; the seccomp list is a denylist, not an allowlist, written for x86_64 only.
 - **Memory is per team process, not per robot.** All robots of one team share the team's limit.
 - **An uncaught exception in one robot does not end the match** (CN-005 D2): the engine kills that robot and continues (`allocbomb_py`); the guard counts these per team.
+- **Retries are not implemented yet:** the launcher reports `platform_failure`, the retry loop (BIO-306) does not exist. A runner killed from outside is charged to its team (CN-006).
 - **The tie-break seed is not controllable** (above), which also blocks TC-04's "retry with a new random seed".
-- **The router is trusted code on the host.** It parses only the message type and robot id; a malformed server message is forwarded to the active team. A hostile bot can still send arbitrary frames up to 8 MiB to the engine server through the router (the server is the engine's own code, part of the trusted base); flooding it is bounded by the turn time limit.
+- **The router is trusted code on the host.** Server messages are parsed only for the message type and robot id; a malformed server message is forwarded to the active team. Runner frames are validated and rebuilt (CN-007), and since CN-008 also checked for *whose turn it is* (a call only from the current runner, a null only as the answer to a forwarded `spawn_bot`/`destroy_bot`), for a known engine method number (1 to 107), and against a host-side response deadline (a silent runner is charged after `2 x max(turn, start-up limit) + 2 s`). A hostile bot can still send any valid call with any parameters, up to 8 MiB per frame, during its own turn (the server is the engine's own code, part of the trusted base); a call with bad parameters can crash the server, and who is blamed then depends on which side closes first (`docs/SECURITY_REVIEW.md` SR-03/SR-06). Flooding is bounded by the turn time limit.
 - The sandbox shows empty parent directory names of the mounted paths (for example `/home/<user>`); it does not show their contents.
 - Linux x86_64 only; one match per host (fixed port 27185 on the host side).
+
+### 3.7 Log integrity and structured match logs (BIO-206, CN-007; *Verified* by `tests/test_structured_log.py`)
+
+**Log integrity (a defect found and fixed in this task).** The engine's Java server prints a bot's `log(...)` text after a `[A: #3@2] ` prefix without escaping line breaks. Before CN-007 the launcher parsed the winner, reason and server errors from that console log with unanchored patterns and took the first match, so a bot could print `[server] ... (A) wins (round 2)` or `[server:error] ...` on a line of its own and change its own match's result or force a `platform_failure` (reproduced; the two new tests fail on the old router). Now:
+
+| Layer | What it does |
+|---|---|
+| `Router` -> `canonical_runner_frame` | Every runner frame is parsed (strict JSON: no `NaN`, no invalid UTF-8, bounded nesting) and rebuilt from the parsed value, so the engine sees exactly what was checked even if Python and Java would read the raw bytes differently. Allowed: `null` or `{method: int, params: list}`; anything else ends that runner's connection. |
+| `sanitise_text` | In every string (and key) of a frame, each line break kind (`\n \r \v \f` FS GS RS NEL U+2028 U+2029) becomes a newline plus `  | `; other control characters, including ESC, are dropped. No line after the first of any bot text can start like an engine line. |
+| `launcher.parse_result` | Patterns anchored to the start of a line (`^[server] ...`), last match wins; the end-of-match banner must be a whole line. |
+
+**Structured log.** Each `run` writes `match-<stamp>.events.jsonl` next to the replay and returns `structured_log: {path, schema, events, bytes, sha256}`. One JSON object per line, schema 1, built after the match from facts the launcher already holds (`match_log.build_events`):
+
+| Event | Visibility | Content |
+|---|---|---|
+| `match.start` | all | map, team names and submission references, engine version, Python version, `seed: null` (not controllable), the limits in force and the profile name (`approved: false`), start time |
+| `team.usage` | team:X | turns, inits, longest turn and init in ms, total turn time, uncaught exceptions, game-action exceptions |
+| `team.output` | team:X | what the team's robots logged through `log(...)` and engine error messages about them: `{round, robot, text}` entries, the first 40 and last 40 (middle omitted and counted), at most 20 lines and 500 characters each, redacted |
+| `team.failure` | team:X | only for a bot failure: `limit_exceeded` (kind, measured, limit, unit, round) or `process_ended` |
+| `match.result` | all | outcome, classification, winner and loser (side and name), round, a plain reason (engine text for a normal match, platform wording otherwise; never bot-written text), `retryable`, `replay_available` |
+| `platform.diagnostics` | staff | classification kind and detail, evidence (which side closed first, exit status, signal), Gradle and runner exits, timeout flag, router counters, sandbox and cgroup flags, per-process usage, timing, replay size and SHA-256, server errors, the engine's own `[server...]` lines |
+| `match.end` | all | event count, finish time |
+
+Every event has `schema`, `seq`, `trace_id`, `match_id` (null if none), `attempt`, `event`, `visibility`, `data`, and `ts` only where a time was actually measured (start and end; the other events are derived afterwards, not timed). Identifiers passed with `--trace-id`, `--match-id`, `--attempt`, `--submission-a/b` must match `[A-Za-z0-9._:-]{1,64}`; without `--trace-id` a random one is generated.
+
+`launcher.py logs FILE --role participant --team A|B`, `--role organizer` or `--role admin` prints the part of a log a role may read (`match_log.view`). A participant sees `all` plus their own team; an Organizer `all` plus both teams; an Admin everything including `staff`. This is the engineer's default (CN-007), not an approved rule.
+
+**Redaction (best effort, BIO-NFR-10).** `Redactor` replaces the scaffold, bot, output and repository paths, home directories, e-mail and IP addresses (except `127.0.0.1`), bearer tokens, JWTs, well-known token shapes, `password=`/`token=`-style pairs and long mixed-case/digit tokens, and drops control characters. Guard records come from a runner log that a bot can write to, so only finite numbers and short lowercase identifiers are copied from them into events.
+
+**Not done:** storage and retention of logs (DATA_MODEL `MatchLog` is still a proposal), the API endpoint, a retry loop that would write one log per attempt, and an end-to-end secret scan (the redactor is pattern based). Matches run for the tests: unit 3.12 to 3.15; integration on 3.15 including a normal match, two injection bots and a crashing bot.
 
 ## 4. Writing and running bots
 
@@ -215,7 +261,7 @@ Removed (CN-002). The Java engine server remains and is not a bot language.
 
 ### 4.3 Tests
 
-The scaffold's only test (a Java `1 + 1` placeholder) was removed with the Java bots. Tests now are the launcher's: `backend/.venvs/py3.15/bin/python -m unittest backend.match_runner.tests.test_launcher` (14 unit tests, run on 3.12 to 3.15), plus real-match integration tests with `BIO_INTEGRATION=1 python3 -m unittest backend.match_runner.tests.test_launcher` (feature bot against `expected_featuretest.txt`, and a hanging bot stopped by the timeout). The planned test strategy and eight critical cases are in `TEST_PLAN.md`.
+The scaffold's only test (a Java `1 + 1` placeholder) was removed with the Java bots. Tests now are the launcher's: `backend/.venvs/py3.15/bin/python -m unittest backend.match_runner.tests.test_launcher` (14 unit tests, run on 3.12 to 3.15), `backend.match_runner.tests.test_limits_sandbox` (limits, sandbox, router) and `backend.match_runner.tests.test_failure_classification` (BIO-205; 16 unit tests, 8 real-match tests with `BIO_INTEGRATION=1`), `backend.match_runner.tests.test_structured_log` (BIO-206; frame and text sanitising, parser forgery, redaction, event building and views, plus 4 real matches with `BIO_INTEGRATION=1`), plus real-match integration tests with `BIO_INTEGRATION=1 python3 -m unittest backend.match_runner.tests.test_launcher` (feature bot against `expected_featuretest.txt`, and a hanging bot stopped by the timeout). The planned test strategy and eight critical cases are in `TEST_PLAN.md`.
 
 ## 5. Database (proposed, not implemented)
 
@@ -258,7 +304,7 @@ Never exposed as a public HTTP endpoint; implemented behind the queue boundary.
 | Direction | Fields |
 |---|---|
 | Job input | `match_id`, `tournament_id`, `map_id` (immutable map version), `engine_version`, `runtime_image_digest`, two immutable `submission_id`/version references, `seed`, resource-limit profile id, `attempt_number`, trace/correlation id |
-| Job output | `execution_status` (`completed`, `bot_failure`, `platform_failure`), winner/loser or tie, bot failure reason, engine exit status, resource usage measurements, replay artifact reference, structured logs, and the map, seed, runtime and submission versions echoed back |
+| Job output | `execution_status` (`completed`, `bot_failure`, `platform_failure`), winner/loser or tie, bot failure reason, engine exit status, resource usage measurements, replay artifact reference, structured logs (format: section 3.7), and the map, seed, runtime and submission versions echoed back |
 
 Rules: never trust a worker-supplied team or submission relationship without checking it against the match record; a bot failure is a game result and a platform failure is a retryable incident; retries keep map and bot versions and change the seed; the retry cap alerts Admin; duplicate delivery must not publish a result or advance a bracket twice.
 

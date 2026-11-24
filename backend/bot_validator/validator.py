@@ -18,10 +18,16 @@ from __future__ import annotations
 
 import ast
 import json
+import os
+import stat
 import sys
 from pathlib import Path
 
 POLICY_PATH = Path(__file__).resolve().parent / "policy.json"
+# Safety ceiling for what the validator will even read (SR-04, CN-008). This is NOT the product's upload
+# limit (policy `max_bytes`, still an owner decision, DEC): it only keeps a hostile file from using the
+# validator's memory. A policy limit may be lower, never higher.
+HARD_READ_LIMIT = 2 << 20
 
 
 def load_policy(path: Path = POLICY_PATH) -> dict:
@@ -103,6 +109,17 @@ def validate_source(source: str, policy: dict | None = None) -> dict:
     except SyntaxError as e:
         errors.append({"code": "E-SYNTAX", "line": e.lineno, "message": f"{e.msg}"})
         return {"ok": False, "errors": errors, "warnings": warnings}
+    except (RecursionError, MemoryError, ValueError, OverflowError) as e:   # too deep or NUL bytes: not a crash
+        errors.append({"code": "E-SYNTAX", "line": None, "message": f"the source cannot be parsed ({type(e).__name__})"})
+        return {"ok": False, "errors": errors, "warnings": warnings}
+    try:
+        return _check_tree(tree, policy, errors, warnings)
+    except RecursionError:     # a tree that parses but is too deep for the visitors
+        errors.append({"code": "E-SYNTAX", "line": None, "message": "the source is nested too deeply to check"})
+        return {"ok": False, "errors": errors, "warnings": warnings}
+
+
+def _check_tree(tree: ast.AST, policy: dict, errors: list, warnings: list) -> dict:
 
     entry = policy["entry_point"]
     turns = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == entry]
@@ -165,6 +182,9 @@ def validate_path(path: Path, policy: dict | None = None) -> dict:
             problems.append(_finding("E-FILES", f"only {bot_file} is allowed; also found: {', '.join(extra)}"))
         if bot_file not in entries:
             return {"ok": False, "errors": problems, "warnings": []}
+        if (path / bot_file).is_symlink() or (path / bot_file).is_dir():   # a link or folder named bot.py
+            problems.append(_finding("E-FILES", f"{bot_file} must be a regular file, not a link or folder"))
+            return {"ok": False, "errors": problems, "warnings": []}
         result = validate_path(path / bot_file, policy)
         result["errors"] = problems + result["errors"]
         result["ok"] = not result["errors"]
@@ -172,11 +192,43 @@ def validate_path(path: Path, policy: dict | None = None) -> dict:
     if path.name != bot_file:
         return {"ok": False, "errors": [_finding("E-FILES", f"the file must be named {bot_file}, not {path.name}")],
                 "warnings": []}
+    raw = _read_regular_file(path)
+    if isinstance(raw, dict):
+        return raw
     try:
-        source = path.read_bytes().decode("utf-8")
+        source = raw.decode("utf-8")
     except UnicodeDecodeError:
         return {"ok": False, "errors": [_finding("E-ENCODING", "the file is not valid UTF-8")], "warnings": []}
     return validate_source(source, policy)
+
+
+def _read_regular_file(path: Path) -> bytes | dict:
+    """Read at most HARD_READ_LIMIT bytes from a regular file, never following a link and never blocking.
+
+    A symlink (to /dev/zero or a host file), a FIFO or a device would otherwise hang the validator or fill
+    its memory. Returns the bytes, or a finished validation result describing the refusal.
+    """
+    def refuse(code: str, message: str) -> dict:
+        return {"ok": False, "errors": [_finding(code, message)], "warnings": []}
+
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | getattr(os, "O_CLOEXEC", 0))
+    except OSError as e:     # ELOOP for a symlink, ENXIO and friends for special files
+        return refuse("E-FILES", f"{path.name} must be a regular file, not a link or special file ({e.strerror})")
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            return refuse("E-FILES", f"{path.name} must be a regular file")
+        data = os.read(fd, HARD_READ_LIMIT + 1)
+        while len(data) <= HARD_READ_LIMIT:
+            more = os.read(fd, HARD_READ_LIMIT + 1 - len(data))
+            if not more:
+                break
+            data += more
+    finally:
+        os.close(fd)
+    if len(data) > HARD_READ_LIMIT:
+        return refuse("E-SIZE", f"the file is larger than the validator's safety ceiling of {HARD_READ_LIMIT} bytes")
+    return data
 
 
 def main(argv: list[str] | None = None) -> int:

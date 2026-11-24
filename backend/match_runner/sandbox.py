@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 import os
 import platform
+import re
 import shutil
 import socket
 import struct
@@ -36,6 +37,11 @@ from pathlib import Path
 BWRAP = "bwrap"
 TMP_SIZE_BYTES = 64 << 20
 MAX_FRAME_BYTES = 8 << 20  # a runner-side frame larger than this ends the match connection
+CONTINUATION = "  | "      # starts every line after the first of any text a runner sends (BIO-206, CN-007)
+# The engine's method numbers (battlecode26.crossplay.CrossPlayMethod): 0 is INVALID, the last is
+# RC_GET_NUMBER_CAT_TRAPS = 107. The Java server crashes on any other number, which would be reported as
+# a platform failure (SR-03, CN-008), so the router refuses them. A test compares this with the installed engine.
+MIN_METHOD, MAX_METHOD = 1, 107
 
 
 class SandboxUnavailable(Exception):
@@ -266,6 +272,95 @@ def _read_frame(sock: socket.socket, quickack: bool = False) -> bytes | None:
     return _read_exact(sock, n, quickack) if n else b""
 
 
+class MalformedFrame(ValueError):
+    """A runner sent something that is not an engine message."""
+
+
+class ProtocolViolation(MalformedFrame):
+    """A runner sent a well-formed frame at a time the engine protocol does not allow it (SR-01, CN-008)."""
+
+
+_CONTROL = re.compile(r"[\x00-\x08\x0e-\x1f\x7f]")
+
+
+def sanitise_text(text: str) -> str:
+    """Make a runner-supplied string safe to print into the engine's log.
+
+    The Java server prints bot `log(...)` text after a `[A: #3@1]` prefix and does not escape line
+    breaks, so a bot could start a line with `[server] ...` and forge the engine's own output. Every
+    line break kind (`str.splitlines`: \\n \\r \\v \\f FS GS RS NEL LS PS) becomes a newline plus
+    `CONTINUATION`, so no bot-controlled line can begin like an engine line; other control characters
+    (including ESC) are dropped. A tab is kept.
+    """
+    lines = text.splitlines()
+    if len(lines) <= 1 and not _CONTROL.search(text):
+        return lines[0] if lines else ""
+    return ("\n" + CONTINUATION).join(_CONTROL.sub("", ln) for ln in lines)
+
+
+def _reject_constant(name: str):
+    raise MalformedFrame(f"non-standard JSON constant {name}")
+
+
+def _clean(value, counter: list):
+    if isinstance(value, str):
+        out = sanitise_text(value)
+        if out != value:
+            counter[0] += 1
+        return out
+    if isinstance(value, list):
+        return [_clean(v, counter) for v in value]
+    if isinstance(value, dict):
+        return {_clean(k, counter): _clean(v, counter) for k, v in value.items()}   # JSON keys are strings
+    return value
+
+
+def canonical_runner_frame(body: bytes) -> tuple[bytes, int]:
+    """Parse one runner frame and rebuild it. Returns (frame to forward, number of strings rewritten).
+
+    The server must see exactly what this function parsed. Forwarding the original bytes would let a
+    bot send JSON that Python reads one way and the Java server another (duplicate keys, comments,
+    lenient syntax). A frame is either JSON `null` (an answer to a notice) or an object with an integer
+    `method` and a list `params`; extra keys are dropped; anything else is `MalformedFrame` and ends that
+    runner's connection.
+    """
+    try:
+        msg = json.loads(body.decode("utf-8"), parse_constant=_reject_constant)
+    except (UnicodeDecodeError, RecursionError) as e:
+        raise MalformedFrame(f"frame is not valid JSON text ({type(e).__name__})")
+    except json.JSONDecodeError as e:
+        raise MalformedFrame(f"frame is not valid JSON ({e.msg})")
+    if msg is None:
+        return b"null", 0
+    method = msg.get("method") if isinstance(msg, dict) else None
+    params = msg.get("params") if isinstance(msg, dict) else None
+    if not isinstance(method, int) or isinstance(method, bool) or not isinstance(params, list):
+        raise MalformedFrame("frame is neither null nor {method: int, params: list}")
+    if not MIN_METHOD <= method <= MAX_METHOD:
+        raise ProtocolViolation(f"protocol violation: unknown engine method {method}")
+    counter = [0]
+    try:
+        clean = {"method": method, "params": _clean(params, counter)}
+        return json.dumps(clean).encode("utf-8"), counter[0]
+    except RecursionError:
+        raise MalformedFrame("frame is nested too deeply")
+
+
+def check_turn(team: str, is_null: bool, current: str, pending_null: dict) -> str | None:
+    """Is a frame from `team` allowed now? Returns the reason it is not, or None (SR-01, CN-008).
+
+    The Java server has ONE connection for both teams and cannot tell the runners apart, so the router must.
+    The server only ever talks to one robot at a time:
+      * a call (anything but null) comes from the runner whose turn it is (`current`);
+      * a null is the answer to a notice the router forwarded to that runner (`spawn_bot`, `destroy_bot`),
+        which may be the other team's runner (a robot of the idle team can be destroyed in the middle of a turn).
+    Anything else would be read by the server as the current robot's own message.
+    """
+    if is_null:
+        return None if pending_null.get(team, 0) > 0 else "protocol violation: null reply that was not asked for"
+    return None if team == current else "protocol violation: frame sent out of turn"
+
+
 def route_for(msg, owner: dict, current: str) -> tuple[list[str], str]:
     """Decide which runner(s) get a server message. Returns (targets, new current runner).
 
@@ -296,23 +391,33 @@ def route_for(msg, owner: dict, current: str) -> tuple[list[str], str]:
 class Router:
     """Host-side connector: two unix sockets (one per team's runner) <-> TCP 127.0.0.1:port (engine).
 
-    Messages from a runner go to the server unchanged, one whole frame at a time. Messages from the
+    Messages from a runner are parsed and rebuilt (`canonical_runner_frame`: validated shape, line breaks
+    in text neutralised) before they go to the server, one whole frame at a time. Messages from the
     server go to the runner chosen by `route_for`. A runner frame above MAX_FRAME_BYTES ends the
     match connection. Waits for both runners before it connects to the server.
     """
 
-    def __init__(self, directory: Path, port: int, connect_timeout: float = 600.0):
+    def __init__(self, directory: Path, port: int, connect_timeout: float = 600.0,
+                 turn_deadline: float | None = None):
         self.dir = Path(directory)
+        self.turn_deadline = turn_deadline   # seconds a runner may stay silent after the router handed it work
         self.paths = {"A": self.dir / "a.sock", "B": self.dir / "b.sock"}
         self.port = port
         self.connect_timeout = connect_timeout
-        self.stats = {"frames_to_server": 0, "frames_to_runners": 0, "error": None}
+        self.stats = {"frames_to_server": 0, "frames_to_runners": 0, "error": None,
+                      "connected": [], "first_end": None, "text_rewrites": {"A": 0, "B": 0}}
+        self._end_lock = threading.Lock()
+        self._t0 = time.monotonic()
         self._listeners: dict[str, socket.socket] = {}
         self._conns: dict[str, socket.socket] = {}
         self._up: socket.socket | None = None
         self._up_lock = threading.Lock()
         self._stop = threading.Event()
         self._owner: dict[int, str] = {}
+        self._state = threading.Lock()      # guards _current, _pending_null, _waiting
+        self._current = "A"
+        self._pending_null = {"A": 0, "B": 0}
+        self._waiting: dict[str, float] = {}   # runner -> when the router last gave it something to answer
         for team, path in self.paths.items():
             srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             if path.exists():
@@ -324,6 +429,17 @@ class Router:
         self._thread = threading.Thread(target=self._run, daemon=True, name="bio-router")
         self._thread.start()
 
+    def _note_end(self, leg: str, how: str) -> None:
+        """Remember which leg of the connection ended first (BIO-205). Only the first call counts.
+
+        This is evidence a bot cannot forge: the router sits outside every sandbox and sees the sockets
+        close, whatever the bot prints. `leg` is "runner:A", "runner:B" or "server".
+        """
+        with self._end_lock:
+            if self.stats["first_end"] is None:
+                self.stats["first_end"] = {"leg": leg, "how": how,
+                                           "after_seconds": round(time.monotonic() - self._t0, 3)}
+
     # -- connection set-up -------------------------------------------------------------
     def _accept(self, team: str) -> None:
         srv = self._listeners[team]
@@ -332,6 +448,7 @@ class Router:
         while not self._stop.is_set() and time.monotonic() < deadline:
             try:
                 self._conns[team], _ = srv.accept()
+                self.stats["connected"].append(team)
                 return
             except (socket.timeout, TimeoutError):
                 continue
@@ -367,7 +484,25 @@ class Router:
             return
         for team in ("A", "B"):
             threading.Thread(target=self._from_runner, args=(team,), daemon=True).start()
+        if self.turn_deadline:
+            threading.Thread(target=self._watchdog, daemon=True, name="bio-router-deadline").start()
         self._from_server()
+
+    def _watchdog(self) -> None:
+        """Host-side response deadline (SR-02, CN-008). The guard inside a runner can be frozen by the bot it
+        watches (SIGSTOP on itself, a C call that keeps the GIL), so a runner that stays silent too long after
+        being handed work is ended from here, outside every sandbox, and charged to its team."""
+        while not self._stop.wait(0.1):
+            now = time.monotonic()
+            with self._state:
+                late = sorted(t for t, t0 in self._waiting.items() if now - t0 > self.turn_deadline)
+            if late:
+                team = late[0]
+                how = f"deadline: no frame within {self.turn_deadline:g}s"
+                self._note_end(f"runner:{team}", how)
+                self.stats["error"] = self.stats["error"] or f"runner {team}: {how}"
+                self._shutdown()
+                return
 
     # -- forwarding --------------------------------------------------------------------
     def _from_runner(self, team: str):
@@ -377,11 +512,24 @@ class Router:
                 body = _read_frame(conn)
                 if body is None:
                     break
+                body, rewrites = canonical_runner_frame(body)   # raises MalformedFrame (a ValueError)
+                with self._state:
+                    self._waiting.pop(team, None)
+                    reason = check_turn(team, body == b"null", self._current, self._pending_null)
+                    if reason is None and body == b"null" and self._pending_null[team] > 0:
+                        self._pending_null[team] -= 1
+                if reason:
+                    raise ProtocolViolation(reason)
+                if rewrites:
+                    self.stats["text_rewrites"][team] += rewrites
                 with self._up_lock:
                     self._up.sendall(struct.pack(">I", len(body)) + body)
                 self.stats["frames_to_server"] += 1
         except (OSError, ValueError) as e:
+            self._note_end(f"runner:{team}", f"error: {e}")
             self.stats["error"] = self.stats["error"] or f"runner {team}: {e}"
+        else:
+            self._note_end(f"runner:{team}", "closed")
         finally:
             self._shutdown()
 
@@ -397,6 +545,17 @@ class Router:
                 except ValueError:
                     msg = None
                 targets, current = route_for(msg, self._owner, current)
+                kind = msg.get("type") if isinstance(msg, dict) else None
+                with self._state:
+                    self._current = current
+                    if kind == "end_game":
+                        self._waiting.clear()
+                    else:
+                        now = time.monotonic()
+                        for t in targets:
+                            self._waiting[t] = now
+                            if kind in ("spawn_bot", "destroy_bot"):
+                                self._pending_null[t] += 1     # the runner answers these with null
                 data = struct.pack(">I", len(body)) + body
                 for t in targets:
                     try:
@@ -405,7 +564,10 @@ class Router:
                         pass  # that runner is gone; the launcher sees its exit status
                 self.stats["frames_to_runners"] += 1
         except (OSError, ValueError) as e:
+            self._note_end("server", f"error: {e}")
             self.stats["error"] = self.stats["error"] or f"server: {e}"
+        else:
+            self._note_end("server", "closed")
         finally:
             self._shutdown()
 
