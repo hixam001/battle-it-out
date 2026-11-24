@@ -51,7 +51,7 @@ The engine does not restrict the following, and this policy does not change that
 `__reduce__`, `__reduce_ex__`.
 - There is **no limit on pure Python computation**: the engine's bytecode counter only charges game API calls, so `while True: pass` never ends. Wall-clock, memory and output limits are `[DECIDE]` (DEC-04) and must be enforced by the platform.
 
-Therefore the real protection is host-level: a container per match with no network, a read-only file system, CPU, memory and time limits (BIO-203/204). Until that exists, **do not run untrusted bots on a machine that holds anything of value.** If the owner later wants these warnings to become rejections, that is a change to this policy (a new change notice), not a bug fix.
+Therefore the real protection is host-level. The launcher now provides it (`docs/TECHNICAL_DOCUMENTATION.md` section 3.6, decisions in `CHANGE_NOTICES.md` CN-005): one runner process per team in a bubblewrap sandbox with no network, a read-only file system, a seccomp filter and optional cgroup limits; a wall-clock and memory watchdog; and automatic classification of a limit breach as a bot forfeit. The numeric limits are an **interim profile that was not benchmark-approved** (DEC-04), and it has not been reviewed by an independent security tester, so **do not run untrusted bots on a machine that holds anything of value** until it has been.
 
 ## 6. How the policy is kept honest
 

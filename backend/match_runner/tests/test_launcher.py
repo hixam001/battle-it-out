@@ -50,16 +50,25 @@ class Commands(unittest.TestCase):
     py = Path("/x/venv/bin/python")
 
     def test_runner_cmd(self):
-        cmd = L.build_runner_cmd(self.py, Path("/x/bots"), "a", "b", True)
+        cmd = L.build_runner_cmd(self.py, Path("/x/bots"), "A", "a", True)
         self.assertEqual(cmd[:2], ["/x/venv/bin/python", "-I"])
         self.assertTrue(cmd[2].endswith("runner_entry.py"))
         self.assertNotIn("--new-process", cmd)
         self.assertNotIn("--no-socket-tuning", cmd)
         self.assertEqual(cmd[cmd.index("--teamA") + 1], "a")
-        self.assertEqual(cmd[cmd.index("--dirB") + 1], "/x/bots")
+        self.assertEqual(cmd[cmd.index("--dirA") + 1], "/x/bots")
+        self.assertNotIn("--teamB", cmd)       # one process per team: the other slot stays "/" (no bot)
+        self.assertIn("--measure", cmd)        # no limits profile given
+        with_limits = L.build_runner_cmd(self.py, Path("/x/bots"), "B", "b", True, Path("/l.json"), Path("/s.sock"))
+        self.assertEqual(with_limits[with_limits.index("--teamB") + 1], "b")
+        self.assertEqual(with_limits[with_limits.index("--limits") + 1], "/l.json")
+        self.assertEqual(with_limits[with_limits.index("--ipc-socket") + 1], "/s.sock")
+        self.assertNotIn("--measure", with_limits)
+        with self.assertRaises(ValueError):
+            L.build_runner_cmd(self.py, Path("/x/bots"), "C", "c", True)
 
     def test_runner_cmd_without_tuning(self):
-        self.assertIn("--no-socket-tuning", L.build_runner_cmd(self.py, Path("/b"), "a", "b", False))
+        self.assertIn("--no-socket-tuning", L.build_runner_cmd(self.py, Path("/b"), "A", "a", False))
 
     def test_gradle_cmd_is_python_only(self):
         cmd = L.build_gradle_cmd(Path("/x/scaffold"), "a", "b", "DefaultSmall", Path("/o/r.bc26"), True)
@@ -139,12 +148,23 @@ class MatchIntegration(unittest.TestCase):
             expected = set((HERE / "expected_featuretest.txt").read_text().splitlines())
             self.assertEqual(sorted(lines), sorted(expected))
 
-    def test_hanging_bot_is_stopped_by_timeout(self):
+    def test_hanging_bot_is_stopped_by_overall_timeout_when_no_limits_are_set(self):
+        # Measure-only mode (no limits profile, no sandbox): only the launcher's wall-clock timeout protects.
         with tempfile.TemporaryDirectory() as out:
             res = L.run_match(L.DEFAULT_SCAFFOLD, L.resolve_python(None, None, L.load_lock()), HERE / "bots",
-                              "hang_py", "hang_py", "DefaultSmall", Path(out), 20, True, True)
+                              "hang_py", "hang_py", "DefaultSmall", Path(out), 20, True, True,
+                              sandbox=False, limits_path=None)
             self.assertTrue(res["timed_out"])
             self.assertFalse(res["ok"])
+            self.assertEqual(res["classification"], "platform_failure")
+            self.assertFalse(L.port_in_use(L.load_lock()["crossplay_port"]))
+
+    def test_hanging_bot_is_a_bot_violation_with_default_limits(self):
+        with tempfile.TemporaryDirectory() as out:
+            res = L.run_match(L.DEFAULT_SCAFFOLD, L.resolve_python(None, None, L.load_lock()), HERE / "bots",
+                              "hang_py", "hang_py", "DefaultSmall", Path(out), 60, True, True)
+            self.assertFalse(res["timed_out"])
+            self.assertEqual(res["classification"], "bot_violation")
             self.assertFalse(L.port_in_use(L.load_lock()["crossplay_port"]))
 
 

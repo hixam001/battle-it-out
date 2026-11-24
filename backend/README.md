@@ -13,8 +13,9 @@ Home of the Battle It Out execution foundation and, later, the web backend.
   (`policy.json` generated from the engine; see its `README.md` and
   `docs/BOT_POLICY.md`).
 - `match_runner/` — command-line match launcher for Python bots on Python 3.12
-  to 3.15, with pinned versions (`versions.lock.json`), environment setup and
-  tests. See its `README.md`.
+  to 3.15, with pinned versions (`versions.lock.json`), environment setup, a
+  resource guard and bubblewrap sandbox (limits are provisional), and tests.
+  See its `README.md`.
 
 ## Provenance of `battlecode26-scaffold/`
 
