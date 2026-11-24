@@ -73,7 +73,8 @@ Decisions from the owner that change or narrow what the requirement documents (P
 
 ## CN-008 — Router turn checks, a host-side response deadline, hardened validator (2026-11-24)
 
-- **Task:** self-review of `backend/match_runner` (`docs/SECURITY_REVIEW.md`, SR-01 to SR-06). Engineer's decisions under the owner's delegation (see CN-005); reversible, not owner rulings.
+- **Task:** self-review of `backend/match_runner` (`docs/SECURITY_REVIEW.md`, SR-01 to SR-06). Engineer's decisions under the owner's delegation (see CN-005).
+- **Owner confirmation (2026-11-24):** the owner confirmed that these rules stay ("The rules stay"): the sender is charged for protocol violations and for a silent runner, and the router's response deadline stands. The deadline's numeric slack (2 s plus twice the limit) was not discussed and remains tied to the benchmark (DEC-04). Still reversible by a later change notice.
 - **Defects found in my own earlier work and fixed** (each reproduced in a real sandboxed match first):
   - **SR-01 (High):** a bot could send engine calls during the other team's turn; the engine server read them as the other team's robot. Results could be manipulated (2 of 5 runs an A win in round 1, 2 of 5 a forfeit charged to the victim). The router now accepts a call only from the runner whose turn it is, and a null only as the answer to a notice it forwarded; a frame that breaks this is dropped and charged to the sender.
   - **SR-02 (Medium):** a bot could freeze its own process, and the in-process guard with it; the match then ended as a `platform_failure` after the whole-match timeout (a free replay). The router now has its own clock: a runner silent for more than `2 x max(turn, start-up limit) + 2 s` after being handed work is charged (`runner_unresponsive`).
