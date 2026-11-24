@@ -34,7 +34,7 @@ flowchart TB
 
 ### 1.2 What exists today (Observed)
 
-Only the execution foundation exists: the Battlecode 2026 scaffold at `backend/battlecode26-scaffold/`. There is no API, database, worker, or website.
+Only the execution foundation exists: the Battlecode 2026 scaffold at `backend/battlecode26-scaffold/`. There is no API, database or website; a job queue and a worker process exist as `backend/work_queue/` (CN-017) and run the upload check and tournament rounds from JSON files.
 
 | Element | What it is | Where |
 |---|---|---|
