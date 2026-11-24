@@ -13,7 +13,7 @@ DATA_MODEL "Match" and TEST_PLAN TC-04:
     worker that was replaced changes nothing, and bracket advancement can be taken exactly once.
 
 Not here: bracket and bye rules (BIO-303), tie-break maps and the coin flip (BIO-304: `tiebreak.py`), replay storage
-(BIO-305), the real notification channel for the Admin alert, the web API. See README.md.
+(BIO-305: `replays.py`), the real notification channel for the Admin alert, the web API. See README.md.
 
 States follow DATA_MODEL: scheduled -> queued -> running -> completed, with
 running -> platform_failed -> retry_queued -> running for retries. `paused` is OUR name for the state

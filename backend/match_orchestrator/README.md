@@ -36,6 +36,19 @@ B.run_round(store, "open-2026", 1, run_fn)                # worker; safe to repe
 B.public_view(B.get_bracket(store, "open-2026"))          # what participants may see
 ```
 
+## Replays (`replays.py`, BIO-305, CN-012)
+
+A vault for the engine's `.bc26` replay files (one per game) plus an index. Stored files are private (0600), checked on the way in (hash equal to the launcher's, complete gzip), and served only through the access rule: Admin any tournament, Organizer assigned ones, participant tournaments they are registered in; no access looks exactly like "no such replay"; after archive everyone gets `Gone`, Admin included. Archive marks first, then deletes, then verifies; a failed or interrupted purge is finished by `purge_pending`. Results and brackets are never touched.
+
+```python
+from backend.match_orchestrator import replays as R
+vault = R.Vault("/srv/replays", R.ReplayIndex("/srv/replays.json"))
+R.collect_bracket(vault, store, "open-2026", "open-2026")           # after each round; once per game, safe to repeat
+h = R.fetch_replay(vault, "open-2026-r1-m0-g0", R.Viewer("participant", frozenset({"open-2026"})))   # NotFound / Gone / Unavailable otherwise
+R.archive_tournament(vault, "open-2026", actor="admin-1")          # {"status": "archived", "replays_deleted": True, ...}
+R.purge_pending(vault)                                              # run from a scheduler; finishes any purge that did not complete
+```
+
 States follow `docs/DATA_MODEL.md`: `scheduled -> queued -> running -> completed`, retries `running -> platform_failed -> retry_queued -> running`, bot failure `running -> bot_forfeit -> completed`. `paused` is **our** name for the state after the cap; the final name and who may resume are open decisions.
 
 ## Use
@@ -79,5 +92,5 @@ BIO_INTEGRATION=1 backend/.venvs/py3.15/bin/python -m unittest backend.match_orc
 - **`take_advancement` is only the first guard.** If the caller crashes after taking it and before advancing the bracket, the claim is lost. BIO-303 must make advancement idempotent on the match id.
 - **No heartbeat.** A long match that outlives its lease is taken over (see above).
 - **One match per host at a time** (the engine's fixed port). The host lock serialises matches in this package; two hosts need two engines.
-- **Not here:** house bots (DEC-06), where tie-break maps come from, the qualification-cutoff draw (DEC-14), replay storage and deletion (BIO-305), the real Admin notification channel, who may resume a paused match, scheduling and the web API.
+- **Not here:** house bots (DEC-06), where tie-break maps come from, the qualification-cutoff draw (DEC-14), replay endpoint, object storage and a player (the vault, access rule and purge are `replays.py`), the real Admin notification channel, who may resume a paused match, scheduling and the web API.
 - **No independent review.** Written and tested by the same assistant; the tests encode my reading of PRD SRD-010/011 and TC-04.
