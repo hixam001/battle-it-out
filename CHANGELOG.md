@@ -6,6 +6,7 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Bot execution limits and sandbox (BIO-203/204, first version):** `backend/match_runner/guard.py` (wall-clock watchdog for turns and start-up, memory check, rlimits, usage measurements, uncaught-exception counts), `sandbox.py` (bubblewrap: no network, read-only root, only the two teams' bot folders, unix-socket bridge to the engine server), `limits.provisional.json` (**provisional, unapproved numbers**, DEC-04), automatic `normal` / `bot_violation` / `platform_failure` classification in the launcher, hostile test bots (`hang_py`, `hang_init_py`, `memhog_py`, `allocbomb_py`, `escape_py`) and tests. The sandboxed example match produces the identical replay on Python 3.12 to 3.15 in about the same time.
 - **License and notices (CN-003):** root `LICENSE` (AGPL-3.0-only, same text as the Battlecode scaffold), SPDX identifiers on our source files, `THIRD_PARTY_NOTICES.md`, `docs/LICENSING.md` (what each Battlecode component declares, AGPL obligations, open items), and a dated modification notice in the one edited scaffold file.
 - **Bot policy and validator (CN-004):** `docs/BOT_POLICY.md` and `backend/bot_validator/` (policy generated from the engine, validator with error and warning codes, 13 tests including an agreement test against the real engine runner and a drift check).
 - `backend/match_runner/`: command-line match launcher for Python bots on Python 3.12, 3.13, 3.14 and 3.15 (Linux), with pinned versions and engine-package SHA-256 in `versions.lock.json`, `setup_env.py` (reproducible environments via `uv`), `runner_entry.py` (runs the engine's runner on newer Pythons and removes socket latency), test bots, 14 unit tests and opt-in real-match integration tests. A full match of the example bot takes about 3 seconds on every tested version, down from 12 to 23 minutes, with an identical replay.
@@ -20,6 +21,7 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Changed
 
+- `launcher.py run` now runs matches inside the sandbox with the limits profile **by default** and stops the Java server shortly after the runner dies. The JSON summary gains `classification`, `loser`, `winner_by_forfeit`, `violation`, `usage`, `sandbox` and `limits_profile`. `--no-sandbox` and `--no-limits` exist for development and measurement only.
 - Jira/requirement ID scheme: PRD scope items renumbered from the duplicate `BIO-101..110`, `BIO-201..208`, `BIO-301..305` to `BIO-REQ-01..23`; PRD and test plan bumped to v1.1, and test-plan Jira references now point only at defined task keys or epic IDs (#1, 2026-11-05).
 
 ### Removed
@@ -30,7 +32,7 @@ All notable changes to this project are recorded here. The format follows [Keep 
 ### Known issues
 
 - The engine package officially supports only Python 3.12 (`Requires-Python <3.13`). Python 3.12 to 3.15 pass our tests through `runner_entry.py`; this is unsupported by the engine's authors and was tested on Linux x86_64 only.
-- The engine's bot sandbox allows `open`, attribute-walk escapes and infinite loops; it offers no wall-clock or CPU limit for pure Python code. The validator only warns about them (same policy as Battlecode).
+- The engine's bot sandbox allows `open`, attribute-walk escapes and infinite loops; it offers no wall-clock or CPU limit for pure Python code. The validator only warns about them (same policy as Battlecode). The launcher's guard and sandbox contain these on the host, but both teams still share one process, the numeric limits are unapproved, and there is no seccomp or cgroup layer (`docs/TECHNICAL_DOCUMENTATION.md` section 3.6).
 - The Battlecode Java engine declares no license; written confirmation is needed from the Battlecode team (`docs/LICENSING.md`).
 - The scaffold's Gradle task for Python bots fails on Linux as shipped (wrong `python3` from `PATH`; `--new-process` start-up deadlock; missing class directory now that Java bots are gone). Use the launcher.
 - The only automated test is a placeholder (`1 + 1`); the scaffold's Python `verify` checks only for the text `def turn():`.

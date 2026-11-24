@@ -1,0 +1,14 @@
+{
+  "_status": "PROVISIONAL - NOT APPROVED. PRD BIO-NFR-02 / DEC-04 require benchmarked numbers that the owner approves. These values only make enforcement testable; replace them after a benchmark with realistic bots, maps and hardware, then record the approval in docs/CHANGE_NOTICES.md.",
+  "_basis": "Chosen as generous multiples of what was measured on 2026-11-24 (Python 3.15.2, Linux x86_64, DefaultSmall, example bot + CPU-load bot + feature-test bot, 1290-1310 rounds): longest turn 19 ms (limit is 52x), longest init 1.4 ms (limit ~1400x), peak RSS 22 MiB (limit 23x), VmPeak 329 MiB (limit 12x), CPU 2.4 s per match (limit 375x). Three small bots are NOT a representative benchmark.",
+  "limits": {
+    "turn_wall_seconds": 1.0,
+    "init_wall_seconds": 2.0,
+    "memory_rss_mb": 512,
+    "address_space_mb": 4096,
+    "cpu_seconds": 900,
+    "open_files": 256,
+    "output_bytes": 16777216,
+    "max_tasks": 512
+  }
+}

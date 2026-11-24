@@ -139,12 +139,23 @@ class MatchIntegration(unittest.TestCase):
             expected = set((HERE / "expected_featuretest.txt").read_text().splitlines())
             self.assertEqual(sorted(lines), sorted(expected))
 
-    def test_hanging_bot_is_stopped_by_timeout(self):
+    def test_hanging_bot_is_stopped_by_overall_timeout_when_no_limits_are_set(self):
+        # Measure-only mode (no limits profile, no sandbox): only the launcher's wall-clock timeout protects.
         with tempfile.TemporaryDirectory() as out:
             res = L.run_match(L.DEFAULT_SCAFFOLD, L.resolve_python(None, None, L.load_lock()), HERE / "bots",
-                              "hang_py", "hang_py", "DefaultSmall", Path(out), 20, True, True)
+                              "hang_py", "hang_py", "DefaultSmall", Path(out), 20, True, True,
+                              sandbox=False, limits_path=None)
             self.assertTrue(res["timed_out"])
             self.assertFalse(res["ok"])
+            self.assertEqual(res["classification"], "platform_failure")
+            self.assertFalse(L.port_in_use(L.load_lock()["crossplay_port"]))
+
+    def test_hanging_bot_is_a_bot_violation_with_default_limits(self):
+        with tempfile.TemporaryDirectory() as out:
+            res = L.run_match(L.DEFAULT_SCAFFOLD, L.resolve_python(None, None, L.load_lock()), HERE / "bots",
+                              "hang_py", "hang_py", "DefaultSmall", Path(out), 60, True, True)
+            self.assertFalse(res["timed_out"])
+            self.assertEqual(res["classification"], "bot_violation")
             self.assertFalse(L.port_in_use(L.load_lock()["crossplay_port"]))
 
 

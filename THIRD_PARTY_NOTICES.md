@@ -11,6 +11,7 @@ The project's own code is licensed under the **GNU Affero General Public License
 | RestrictedPython 8.1 | `backend/.venvs/` | ZPL-2.1 | No |
 | flatbuffers 24.3.25 | `backend/.venvs/` | Apache-2.0 | No |
 | Gradle wrapper (`gradle-wrapper.jar`, Gradle 8.10) | `backend/battlecode26-scaffold/gradle/wrapper/` | Apache-2.0 (Gradle's published license; not re-verified from the file) | Yes (part of the vendored scaffold) |
+| bubblewrap (`bwrap`) 0.13.1 | Run as an external program by `backend/match_runner/sandbox.py`; installed from the OS package manager | LGPL-2.1-or-later (package metadata on the development machine) | No (not bundled; if it is ever shipped in an image, follow its license) |
 | Libraries shaded into the engine jar (for example Jackson, FastDoubleParser, Java-WebSocket) | inside the engine jar | Their own licenses, shipped inside the jar under `META-INF/` | No |
 
 The MIT license requires its copyright and permission notice to accompany copies of the package. The project does not redistribute the package: it is downloaded from the official release URL at setup time. If it is ever bundled (for example in a container image), include the package's notice.

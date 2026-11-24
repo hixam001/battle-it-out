@@ -22,7 +22,7 @@ battle-it-out/
 │       USER_GUIDE.md  ADMIN_GUIDE.md
 ├── backend/
 │   ├── README.md                provenance and local notes for the vendored scaffold
-│   ├── match_runner/            match launcher, pinned versions, env setup, tests (BIO-003/004)
+│   ├── match_runner/            match launcher, guard, sandbox, pinned versions, env setup, tests (BIO-003/004, BIO-203/204)
 │   ├── .venvs/ .cache/          git-ignored; created by match_runner/setup_env.py
 │   └── battlecode26-scaffold/   Battlecode 2026 scaffold (upstream f69e2ab + local edits)
 │       ├── build.gradle  gradle.properties  gradlew  gradlew.bat  gradle/wrapper/
@@ -157,9 +157,36 @@ Every row is a full match through `launcher.py` in a fresh environment built by 
 | `().__class__.__base__.__subclasses__()` | **allowed**: attribute access is not guarded, the usual route out of such sandboxes |
 | `setattr`, `delattr` | available |
 | `dict`, `sum`, `min`, `max`, `map`, `filter`, `any`, `all`, `super`, `type`, `object`, `property`, `next`, `iter`, `getattr`, `print`, `classmethod`, `staticmethod` | **not defined** (`NameError`); dict literals, comprehensions, `sorted`, `zip`, `enumerate`, `set`, `range`, `len`, `abs`, `pow`, `round`, `divmod` work |
-| `while True: pass` in `turn()` | **never stops**: the match hangs until the launcher's timeout (the `hang_py` bot; runner killed, port freed) |
+| `while True: pass` in `turn()` | **never stops inside the engine**: the match hangs until something outside ends it. The launcher's guard now does (section 3.6) |
 
-These are facts for the bot validator (BIO-201), the sandbox (BIO-203/204) and the limits (DEC-04): the engine gives no protection against file access or a runaway bot, so the platform must enforce host-level isolation and wall-clock limits itself, and the allowed-builtins list is far narrower than the PRD's "standard library".
+These are facts for the bot validator (BIO-201), the sandbox (BIO-203/204) and the limits (DEC-04): the engine gives no protection against file access or a runaway bot, so the platform must enforce host-level isolation and wall-clock limits itself (done in section 3.6, with the gaps listed there), and the allowed-builtins list is far narrower than the PRD's "standard library".
+
+### 3.6 Bot execution limits and sandbox (*Verified* by tests, 2026-11-24, Linux x86_64, bubblewrap 0.13.1)
+
+`backend/match_runner/` now runs every match under (1) a **resource guard** inside the runner process and (2) a **bubblewrap sandbox** around it. Both are on by default; `--no-sandbox` (development only) and `--no-limits` (measure only) turn them off.
+
+**Why a guard is needed (read from `battlecode26/runner.py` and `__main__.py`).** Every robot of both teams is a thread of one runner process. The main thread waits for a turn with `Event.wait()` and no timeout, and a bot's top-level code is `exec()`d on the main thread. A bot with `while True: pass` therefore hangs the whole match, and nothing limits memory.
+
+| Layer | What it does | Evidence |
+|---|---|---|
+| Guard watchdog thread (`guard.py`) | Ends the process with a `BIO-GUARD-VIOLATION` record when one robot's turn or start-up exceeds the wall-clock limit, or resident memory exceeds the limit while that robot runs. A thread, not an exception, so bot code cannot catch it | `hang_py` (endless turn) and `hang_init_py` (endless import) forfeit in about 3 s, naming the right team, round and robot; `memhog_py` forfeits at about 555 MiB |
+| Memory check at the end of every activity | A short allocation can finish between two polls; the team whose turn pushed memory over the limit is charged | `memhog_py`, 3 of 3 runs attribute to the right team |
+| Operating-system limits (`resource.setrlimit`) | Address space, CPU seconds, open files, file size (also caps the runner log), core dumps off, and processes plus threads (`RLIMIT_NPROC`, only inside the sandbox's private user namespace where counting starts at zero) | `allocbomb_py` (one 4-billion-element list) gets `MemoryError` and only that robot dies; the escape bot's fork loop stops at 508 children against a limit of 512 |
+| Sandbox (`sandbox.py`, bubblewrap) | New user, PID, IPC, UTS and network namespaces; all capabilities dropped; killed with the launcher; read-only root; only `/usr`, the interpreter, the venv, the match runner directory and **the two teams' own bot folders** mounted, read-only; private size-capped `/tmp`; no home directory, no repository, no other participants' bots | The hostile `escape_py` bot (uses the attribute-walk hole to reach the real `__import__`, `os` and `socket`) could not read a canary file outside the sandbox, could not reach a TCP listener on the host's loopback (0 hits), had no route to the internet, could not write to `/usr` or the bot directory, and saw 2 processes |
+| Engine bridge | The sandbox has no network at all. The runner connects to the engine over one bind-mounted unix socket; the launcher forwards it to the Java server on `127.0.0.1:27185` unchanged (`TCP_NODELAY` and `TCP_QUICKACK` set so latency stays as before) | Sandboxed example match: same round (1290) and **same replay SHA-256** as the unsandboxed runs, on Python 3.12, 3.13, 3.14 and 3.15; 3.4 to 3.7 s |
+
+**Results** leave the runner as single lines on stdout (`BIO-GUARD-VIOLATION {json}`, `BIO-GUARD-USAGE {json}`), which the launcher reads from the runner log. There is no writable state directory in the sandbox. The launcher classifies each run: `normal`, `bot_violation` (names `loser` and `winner_by_forfeit`; the engine winner is withheld because the engine never finished the game) or `platform_failure` (timeout, runner or server crash, a limit breached while no robot was running). A `platform_failure` never produces a winner. When the runner dies, the launcher stops the Java server about 3 s later instead of waiting for its own timeout.
+
+**Limits profile.** `backend/match_runner/limits.provisional.json` holds one platform-wide profile (every field required, no hidden defaults): `turn_wall_seconds` 1.0, `init_wall_seconds` 2.0, `memory_rss_mb` 512, `address_space_mb` 4096, `cpu_seconds` 900, `open_files` 256, `output_bytes` 16 MiB, `max_tasks` 512. **These numbers are provisional and not approved** (PRD BIO-NFR-02, DEC-04). They are generous multiples of what three small bots used (longest turn 19 ms, start-up 1.4 ms, peak RSS 22 MiB, VmPeak 329 MiB, 4 threads, 2.4 s CPU per match); three small bots are not a representative benchmark. Every match records its measurements in `usage` (per team: turns, longest turn, total turn time, start-up time, uncaught exceptions; process: peak RSS, VmPeak, peak threads, CPU) so the owner can approve real numbers.
+
+**Known gaps (do not treat this as finished isolation):**
+
+- **Both teams share one process.** The guard and the other team's bot objects live in the same process as a hostile bot, so a bot that reaches `os`/`ctypes` through the attribute-walk hole can tamper with the guard, forge a record, or read the other team's code. The sandbox protects the *host*, not team B from team A. Closing this needs one runner process per team plus a message router in front of the Java server; this is the recommended next step (BIO-203).
+- **No seccomp filter and no cgroup limits.** Memory and process limits are enforced by the guard and rlimits, not by the kernel's cgroups; a kernel or bubblewrap vulnerability is out of scope. Unprivileged user namespaces must be enabled on the host.
+- **Memory is charged per process, not per team**, so when both teams hold memory the one whose turn crosses the limit is charged.
+- **An uncaught exception in one robot does not end the match**: the engine kills that robot and continues (`allocbomb_py`). The guard counts these per team (`exceptions`, `game_action_exceptions`), but whether they should cost the match is a decision for the owner (TC-04 says "bot crash"; it does not say how many robots).
+- The sandbox shows empty parent directory names of the mounted paths (for example `/home/<user>`); it does not show their contents.
+- Linux x86_64 only; bubblewrap 0.13.1; one match per host (fixed port 27185 on the host side).
 
 ## 4. Writing and running bots
 
