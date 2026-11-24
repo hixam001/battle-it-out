@@ -17,13 +17,14 @@ INNOFEST "Battle It Out" is a Battlecode-2026-style programming competition. Par
 
 ## 3. Repository state (as of 2026-11-05, after task BIO-EPIC-00 integration)
 
-- Branch `BIO-EPIC-00-backend-scaffold-integration` (PR open against `main`; `main` = `27439bc Initial commit` until merged).
+- `main` includes PR #1 (merged 2026-11-05, `b9e1be2`): docs, Jira ID fix, scaffold integration. Current work branch: `BIO-EPIC-00-security-audit-skill` (see task log, 2026-11-24).
 - Layout: `docs/` (six spec docs), `backend/` (home of the execution foundation and future web backend), `backend/battlecode26-scaffold/` (vendored Battlecode 2026 scaffold, **now tracked by this repo — no nested git**), `handoff.md`, `.github/modernize/java-upgrade/` (tool-use hook scripts; `.gitignore` = `**/*`), `README.md` (title only).
 - `backend/README.md` records provenance: upstream `battlecode/battlecode26-scaffold` commit `f69e2ab872a0061c9d4a684aa1dd798a0829da85`; upstream history not kept (updates are manual merges). Backup of the original nested `.git` was only kept in the session scratchpad (temporary) — it is just upstream history; re-clone upstream if ever needed.
 - Local modifications imported with the scaffold: `engine_version.txt` 1.2.4→1.2.6 (from `./gradlew update`), rewritten `src/examplefuncsplayer/RobotPlayer.java`. `client_version.txt` = 1.0.6 (upstream now offers client 1.0.7).
 - Scaffold files: `build.gradle`, `gradle.properties` (defaults: java vs java, map `DefaultSmall`), Java player `src/examplefuncsplayer/RobotPlayer.java`, Python player `src/examplefuncsplayer_py/bot.py` (`from battlecode26 import *`, `turn()` with global `rc`), test `test/examplefuncsplayer/RobotPlayerTest.java`, `run.py`.
 - `run.py` **hard-requires Python exactly 3.12** (`REQUIRED_PYTHON_VERSION = (3, 12)`) and pip-installs the engine from `.temp/`.
 - Ignored/local only (not in git): `.venv` (uv CPython 3.12.15, `battlecode26` imports OK; its `activate` script still hardcodes an older path `/home/hixam/Downloads/Innofest/battlecode26-scaffold/.venv` — recreate the venv rather than relying on `activate`), `.gradle`, `build/`, `client/` (AppImage), `matches/`, `.temp/`.
+- Agent skill installed (2026-11-24): `security-audit` from `cloudflare/security-audit-skill` (upstream commit `c1c8a8c1471069fb0e188eeaff69b8e8db6564a8`) at `.agents/skills/security-audit/` (20 files: markdown guides + 4 Node `.cjs` validators using only fs/path/util), `.claude/skills/security-audit` symlink to it, `skills-lock.json` pins source/commit/hash. Guidance mode by default; the full six-phase audit and its artifact files only run when explicitly requested (output goes outside the repo, default `~/security-audit-skill/<repo>/run-N`). Installer scan: Gen Safe, Socket 0 alerts, Snyk "Med Risk". To update: `npx skills add https://github.com/cloudflare/security-audit-skill --skill security-audit`.
 - Editor note: the VS Code Java/NetBeans extension may recreate `docs/battlecode26-scaffold/.gradle/nb-cache` at the old path; delete it and reopen the project from `backend/battlecode26-scaffold`.
 
 ### Jira / requirement ID scheme (fixed in PRD v1.1, TEST_PLAN v1.1)
@@ -97,3 +98,13 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Decisions made by owner: vendor scaffold into backend and build on top of it; fix reused Jira IDs. Decisions I made (reversible): layout `backend/battlecode26-scaffold/`; `BIO-REQ-nn` naming; epic-level branch name.
 - Still open: all `[DECIDE]` items (§5); Python 3.13 compatibility still unverified.
 
+
+
+### 2026-11-24 — BIO-EPIC-00: install `security-audit` agent skill
+- Branch `BIO-EPIC-00-security-audit-skill` (epic-level; no Jira task key exists for tooling). Started from updated `main` (`b9e1be2`, PR #1 merged). `handoff.md` previously said PR #1 was open; corrected.
+- Command run (as given by owner): `npx skills add https://github.com/cloudflare/security-audit-skill --skill security-audit`. Exit 0.
+- Before running: confirmed the repo exists under the `cloudflare` org (MIT, not archived), read `SKILL.md` (first ~120 lines) and grepped the `.cjs` validators for network/exec/eval calls (none; only `fs`, `path`, `util`). After: compared installed `SKILL.md` and both validators byte-for-byte with upstream (identical); grepped all companion docs for injection/exfiltration patterns (only vulnerability-class descriptions; no URLs).
+- Files added: `.agents/skills/security-audit/**`, `.claude/skills/security-audit` (symlink), `skills-lock.json`.
+- Tests run: none beyond the checks above; the skill itself was not executed and the bundled `*.test.cjs` suites were not run. No audit of this repo has been done yet.
+- Risks: skills run with full agent permissions (installer warning) and its prompts steer the agent, so treat updates as code review items; Snyk rated it "Med Risk" (details at skills.sh, not reviewed); I read only part of `SKILL.md` and skimmed the rest by grep, not line by line. Skill is not visible to the current session until a new session starts.
+- Decisions: none needed. Open items unchanged (all `[DECIDE]`s; Python 3.13 unverified). Suggested follow-up when ready: a scoped `security-audit` run on `backend/` once bot execution/sandbox code exists (BIO-EPIC-02).
