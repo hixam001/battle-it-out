@@ -25,6 +25,6 @@ All notable changes to this project are recorded here. The format follows [Keep 
 ### Known issues
 
 - Python 3.13 compatibility is unverified; the scaffold launcher `run.py` accepts only Python 3.12.
-- A Python-bot match started through Gradle did not complete in testing on 2026-11-24 (engine 1.2.6 versus installed Python package 1.2.2 is one suspected factor; not confirmed).
+- The Gradle Python-bot path fails on Linux as shipped (wrong `python3` from `PATH`; `--new-process` start-up deadlock). A manual launch works and was verified with a full Python-vs-Python match on 2026-11-24 (see `docs/TECHNICAL_DOCUMENTATION.md` section 3.2). Throughput is about 1.6 to 1.8 rounds per second.
 - The only automated test is a placeholder (`1 + 1`); the scaffold's Python `verify` checks only for the text `def turn():`.
 - The scaffold is AGPL-3.0 and the project has no license of its own yet.

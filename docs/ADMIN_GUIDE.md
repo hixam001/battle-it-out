@@ -108,8 +108,8 @@ These are the operator-level tasks that exist now. Everything below was checked 
 Cautions:
 
 - `run.py` accepts only **Python 3.12**; the machine's default Python may be newer and will be refused.
-- The installed Python engine package (1.2.2 when checked) does not match the configured engine (1.2.6). Aligning and pinning versions is open work (BIO-003, BIO-101).
-- Running Python bots through Gradle did not complete in testing; do not rely on it for a demo yet.
+- The Python engine package reports itself as `1.2.2` while the engine is `1.2.6`. This is not drift: the official 1.2.6 release artifact contains package 1.2.2 (checked by hash on 2026-11-24). Pinning the exact versions and artifact hash is still open work (BIO-003, BIO-101).
+- Running Python bots through Gradle does not work as shipped on Linux (PATH and a start-up deadlock, see `TECHNICAL_DOCUMENTATION.md` section 3.2) and is slow (about 1 to 2 rounds per second in testing); do not rely on it for a demo yet.
 - A hung run can leave a stray `python -m battlecode26` process; stop only your own process by PID, because editors and Gradle daemons also run Java.
 
 ## 9. Decisions an Admin should help close before launch

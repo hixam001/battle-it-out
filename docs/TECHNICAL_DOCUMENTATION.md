@@ -49,7 +49,7 @@ The backend described in later sections (API, database, worker) does not exist y
 | Virtual environment | The scaffold expects the engine's Python package (`battlecode26`) and `RestrictedPython` in the interpreter that runs bots | *Verified*: local `.venv` is CPython 3.12.15 with `battlecode26` 1.2.2 and `RestrictedPython` 8.1 |
 | Network (first build) | Gradle downloads the engine/client from `releases.battlecode.org`; the Python package comes from `.temp/battlecode.tar.gz` | Offline runs need a warm cache; a cold-clone build was **not** tested |
 
-**Version facts to keep in mind** (*Verified*): `engine_version.txt` = `1.2.6`, `client_version.txt` = `1.0.6`, installed Python package `battlecode26` = `1.2.2`. These disagree, and the build reports that client `1.0.7` is available. Treat aligning and pinning them as BIO-003/BIO-101.
+**Version facts to keep in mind** (*Verified*): `engine_version.txt` = `1.2.6`, `client_version.txt` = `1.0.6`, installed Python package `battlecode26` = `1.2.2`. The package number is not drift: the official release artifact for engine 1.2.6 (`releases.battlecode.org/maven/org/battlecode/battlecode26-python/1.2.6/battlecode.tar.gz`) contains package 1.2.2, and the copy in `.temp/` is byte-identical to it (SHA-256 `bf52c038...8b03f9`, checked 2026-11-24). Side effect: `run.py install_current_version` compares `1.2.2` with `1.2.6` and so reinstalls the package on every `runLocal` with a Python team. The build also reports that client `1.0.7` is available (server says `release_version_client` 1.0.7, `release_version_public` 1.2.6). Pinning the versions and the artifact hash is BIO-003/BIO-101.
 
 ## 3. Build, run and configuration
 
@@ -84,7 +84,29 @@ cd backend/battlecode26-scaffold
 
 Observed result: `examplefuncsplayer (A) wins (round 860)`, reason "The winning team destroyed all of the enemy team's rat kings", about 2 seconds, replay about 61 KB. Without `-Preplay`, the replay goes to `matches/<teamA>-vs-<teamB>-on-<maps>.bc26` (name truncated to 80 characters) and overwrites a file of the same name.
 
-**Python bots through Gradle: not verified.** The intended invocation, from the build file, is `./gradlew runLocal -PlanguageA=python -PteamA=examplefuncsplayer_py -PlanguageB=python -PteamB=examplefuncsplayer_py` with a Python 3.12 environment first on `PATH`. In two attempts it either failed (`No module named battlecode26` when started by Gradle although `.venv/bin/python -c "import battlecode26"` succeeds) or ran past 170 seconds with no output. Do not document this as working until it has been reproduced on aligned engine and package versions (see `ARCHITECTURE.md` A-02). Two cautions found while trying: (1) `runLocal` depends on `installPyLocal`, which would reinstall the Python package when versions differ; (2) a hung run can leave a `python -m battlecode26` process behind, so check `ps` and stop only your own process.
+**Python bots: verified on 2026-11-24 only with a manual launch, not with the shipped Gradle command.** The intended command, `./gradlew runLocal -PlanguageA=python -PteamA=examplefuncsplayer_py -PlanguageB=python -PteamB=examplefuncsplayer_py`, does not work as shipped on Linux. Two causes were established by running it and reading the code:
+
+1. **Wrong interpreter.** `build.gradle` starts `python3` from `PATH`. Here that is the system Python 3.14, which has no `battlecode26` package and is rejected by `run.py`, hence `No module named battlecode26` / `Python 3.12 is required`. Putting `.venv/bin` first on `PATH` fixes it, but an already running Gradle daemon keeps the `PATH` it started with (observed: the first retry still failed until `--no-daemon` was used).
+2. **Start-up deadlock.** `runPyLocal` calls the runner with `--new-process`. The spawned runner inherits Gradle's output pipe and retries `127.0.0.1:27185` until the Java server accepts, but the Java server task is ordered after `runPyLocal` and Gradle waits for the pipe to close. Result: no output until the timeout. (The Windows branch uses `DETACHED_PROCESS`, which avoids this; the Linux branch does not.)
+
+**Workaround that worked** (Python 3.12 venv, engine 1.2.6, package 1.2.2): start the runner yourself in the background with its output redirected, then run only the server task.
+
+```bash
+cd backend/battlecode26-scaffold
+.venv/bin/python -m battlecode26 --teamA examplefuncsplayer_py --teamB examplefuncsplayer_py \
+    --dirA "$PWD/src" --dirB "$PWD/src" > /path/outside/repo/runner.log 2>&1 < /dev/null &
+PATH="$PWD/.venv/bin:$PATH" ./gradlew runJavaLocal --no-daemon --offline \
+    -PlanguageA=python -PlanguageB=python -PteamA=examplefuncsplayer_py -PteamB=examplefuncsplayer_py \
+    -Preplay=/path/outside/repo/match.bc26
+```
+
+The runner exits by itself when the server ends the game. If you abort, stop the runner by its PID.
+
+*Observed result* of one full control match (`examplefuncsplayer_py` against itself on `DefaultSmall`): `examplefuncsplayer_py (A) wins (round 1290)`, reason "The winning team destroyed all of the enemy team's rat kings", Gradle exit 0, 706 seconds, replay about 64 KB, no stray processes afterwards. Caveat: this run used a small wrapper that sets `TCP_NODELAY` and merges the two writes of each message on the Python side (see below); the unpatched runner was only run for partial matches (23 rounds in the first 30 s versus 46 with the patch, including JVM start-up), so the unpatched full-match time and outcome were not measured. The wrapper only changes socket behaviour, but outcome equality was not tested.
+
+**Throughput is low.** About 1.6 to 1.8 rounds per second (a full match needs minutes, against about 2 seconds for Java-vs-Java), with the runner at about 0.3% CPU, so the time is spent waiting, not computing. Each message is sent as a 4-byte length followed by the JSON body in two `sendall` calls and neither the Python client nor the Java `CrossPlay` server sets `TCP_NODELAY` (read from the Python source and `javap` output of the 1.2.6 jar). That is a plausible cause, supported by the roughly 2x gain from the wrapper, but the remaining delay is not explained. This matters for DEC-04 (time limits) and for tournament scheduling: do not size match time budgets from the Java baseline.
+
+Two further cautions: (1) `runLocal` with a Python team depends on `installPyLocal`, which reinstalls the package on every run because it compares package metadata `1.2.2` with `engine_version.txt` `1.2.6`; (2) a hung run can leave a `python -m battlecode26` process behind, so check `ps` and stop only your own process by PID.
 
 ### 3.3 Configuration properties (`gradle.properties` plus `-P` overrides)
 
@@ -289,7 +311,7 @@ Errors: `400` malformed, `403` not allowed to upload, `409` deadline closed, `41
 | `RuntimeError: Python 3.12 is required.` | `run.py` accepts only Python 3.12; system Python here is 3.14 | Use the project's 3.12 interpreter (for example `.venv/bin/python run.py ...`) |
 | `The engine must be run using >= Java 21 JDK` | JDK older than 21 | Install JDK 21 or newer |
 | `Player is not valid!` from `run.py verify` | `src/<team>/bot.py` missing or lacks `def turn():` (the Java example package has no `bot.py`) | Verify the Python example (`--p1 examplefuncsplayer_py`) |
-| `No module named battlecode26` when Gradle starts a Python team | The interpreter Gradle launches differs from the environment where the package is installed (cause not fully established) | Unresolved; see section 3.2 and `ARCHITECTURE.md` A-02 |
+| `No module named battlecode26` when Gradle starts a Python team | `build.gradle` runs `python3` from `PATH`, which is not the venv | Put `.venv/bin` first on `PATH` and run Gradle with `--no-daemon` (a running daemon keeps its old `PATH`); see section 3.2 |
 | A run hangs and a `python -m battlecode26` process stays alive | Python runner waiting for the engine (cause not established) | Stop your own stray process by PID; do not kill other Java processes (editors and Gradle daemons use them) |
 | Existing replay overwritten | Default replay path is `matches/<teamA>-vs-<teamB>-on-<maps>.bc26` | Pass `-Preplay=<path>` |
 | Build prints "NEW BATTLECODE VERSION AVAILABLE" | Published client or engine is newer than the configured version | Informational; update deliberately with `./gradlew update` in its own PR and re-run the baseline |
