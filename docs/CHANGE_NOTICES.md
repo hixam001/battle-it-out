@@ -84,3 +84,17 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Trade-offs chosen on purpose:** the deadline slack (2 s plus twice the limit) is a guess and a heavily loaded host could charge a healthy runner; the 2 MiB validator ceiling is a safety limit for the validator itself, not the upload cap (`max_bytes` stays an owner decision); a frame with a valid method number and bad parameters is still attributed by which side closed the connection first.
 - **Not fixed:** SR-06 (server-side Java exceptions are not counted as server errors) and the parameter-type residual in SR-03. A human or third-party review is still open.
 - **Replaces:** nothing in the PRD. It makes CN-006's rule ("a bot cannot dodge a loss by breaking the match") true for three more ways of breaking it.
+
+## CN-009 — Match jobs with platform retry and an Admin incident (2026-11-24)
+
+- **Task:** BIO-306 and the core of BIO-301/302, in `backend/match_orchestrator/` (library only; no service, queue, API or database). Engineer's decisions under the owner's delegation (see CN-005); every item below is reversible by a later notice.
+- **D1. Retry cap = 10 attempts in total** (the first plus nine retries), the DEC-05 recommendation. SRD-011 says "retry up to 10 times", which can also mean 11 attempts; the code takes `max_attempts` as a parameter (1 to 100). Only platform failures count; a bot failure ends the match.
+- **D2. State after the cap is called `paused`** (DATA_MODEL left the name and the resume authority open). An incident `retry_cap_reached` is stored and the alert function is called. `resume_paused(match, actor, extra_attempts)` exists as a mechanism; **who may call it is not decided here**.
+- **D3. A worker that disappears counts as a platform failure** (`worker_lost`) once its lease expires, and counts towards the cap, so a poison match cannot loop forever.
+- **D4. A launcher answer is accepted only if it is consistent.** A winner without `ok: true` (non-zero exit, timeout) is retried instead of published, because the replay may be incomplete. Anything malformed is a platform failure; the platform never invents a winner.
+- **D5. Configuration errors do not retry.** A missing bot folder or failed version check pauses the match at once (`configuration_error`). Port busy and host-lock timeout stay retryable.
+- **D6. A match is played with the exact submission versions stored when it was created**; folders are `bots_dir/<submission reference>`, which an upload service must make immutable.
+- **Behaviour change in `backend/match_runner`:** `launcher.PortBusyError` (a subclass of `LauncherError`) is raised for a busy loopback port; nothing else changed.
+- **Not met, and why:** TC-04 requires "a new random seed" per retry. The engine's tie-break seed cannot be controlled (CN-005), so attempts record `seed: null` and a retry replays the same inputs. The orchestrator already passes a seed to the run function when one is supplied (`seed_fn`), so this needs only an engine-side change. The Admin alert has no real channel yet (notifications are a later epic): it is a function parameter, and an undelivered incident stays pending.
+- **Still open:** DEC-11 (the JSON file store is a stand-in), BIO-303/304/305, who may resume a paused match, lease length versus match length (no heartbeat), and an independent review.
+- **Replaces:** nothing in the PRD. It implements SRD-010/011, DATA_MODEL "Match" and the idempotency rule for worker jobs (API_CONTRACT section 8).
