@@ -107,9 +107,9 @@ These are the operator-level tasks that exist now. Everything below was checked 
 
 Cautions:
 
-- `run.py` accepts only **Python 3.12**; the machine's default Python may be newer and will be refused.
-- The Python engine package reports itself as `1.2.2` while the engine is `1.2.6`. This is not drift: the official 1.2.6 release artifact contains package 1.2.2 (checked by hash on 2026-11-24). Pinning the exact versions and artifact hash is still open work (BIO-003, BIO-101).
-- Running Python bots through Gradle does not work as shipped on Linux (PATH and a start-up deadlock, see `TECHNICAL_DOCUMENTATION.md` section 3.2) and is slow (about 1 to 2 rounds per second in testing); do not rely on it for a demo yet.
+- The scaffold's `run.py` accepts only **Python 3.12**; use the match launcher instead, which runs on 3.12 to 3.15 (`backend/match_runner/README.md`).
+- The Python engine package reports itself as `1.2.2` while the engine is `1.2.6`. This is not drift: the official 1.2.6 release artifact contains package 1.2.2 (checked by hash on 2026-11-24). The versions and artifact hash are pinned in `backend/match_runner/versions.lock.json` and checked on every launch.
+- Running Python bots through Gradle does not work as shipped on Linux. Use `backend/match_runner/launcher.py` instead (see `TECHNICAL_DOCUMENTATION.md` section 3.2). A full Python match of the example bot takes about 3 seconds. The engine does not stop a bot that never returns, so the launcher's timeout is the only protection until the platform has its own limits (DEC-04).
 - A hung run can leave a stray `python -m battlecode26` process; stop only your own process by PID, because editors and Gradle daemons also run Java.
 
 ## 9. Decisions an Admin should help close before launch

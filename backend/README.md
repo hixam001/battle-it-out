@@ -9,6 +9,9 @@ Home of the Battle It Out execution foundation and, later, the web backend.
   the backend is built on (the project does not replace the Battlecode engine).
   Planned additions (bot validator, runner/sandbox, match orchestration, API)
   are added next to it under `backend/`, following the epics in `docs/PRD.md`.
+- `match_runner/` — command-line match launcher for Python bots on Python 3.12
+  to 3.15, with pinned versions (`versions.lock.json`), environment setup and
+  tests. See its `README.md`.
 
 ## Provenance of `battlecode26-scaffold/`
 
@@ -20,10 +23,15 @@ Home of the Battle It Out execution foundation and, later, the web backend.
 - Local changes made before import (present in the first commit):
   - `engine_version.txt`: `1.2.4` -> `1.2.6` (written by `./gradlew update`).
   - `src/examplefuncsplayer/RobotPlayer.java`: rewritten example bot.
+- Local changes made later (2026-11-24, `docs/CHANGE_NOTICES.md` CN-002): the Java
+  example bot and the Java placeholder test were removed, and `gradle.properties`
+  defaults now name the Python example (`examplefuncsplayer_py`, `python`).
 
 ## Local setup notes
 
-- `run.py` currently requires Python exactly 3.12 (project target is 3.13; not
-  yet verified, see `handoff.md`).
+- The scaffold's `run.py` requires Python exactly 3.12 and is not used by the
+  match launcher, which runs the engine on Python 3.12 to 3.15
+  (`match_runner/README.md`, `docs/CHANGE_NOTICES.md` CN-001).
 - Generated/local directories (`.venv`, `.gradle`, `build`, `client`, `matches`,
-  `.temp`) are git-ignored and recreated by the scaffold tooling.
+  `.temp`) are git-ignored and recreated by the scaffold tooling. `backend/.venvs/`
+  and `backend/.cache/` (created by `match_runner/setup_env.py`) are git-ignored too.

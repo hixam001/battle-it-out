@@ -4,6 +4,8 @@
 **Status:** Baseline test strategy\
 **Date:** 2026-11-05
 
+> **Owner change notice (2026-11-24):** the Python runtime target is now the latest stable CPython (3.15.2 tested; 3.13 remains in the matrix) and Java bots are removed (the Java engine server stays). See [`CHANGE_NOTICES.md`](CHANGE_NOTICES.md). The text below is unchanged.
+
 ## 1. Test objectives
 
 Prove that the Battlecode scaffold is reproducible, Python 3.13

@@ -6,6 +6,8 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- `backend/match_runner/`: command-line match launcher for Python bots on Python 3.12, 3.13, 3.14 and 3.15 (Linux), with pinned versions and engine-package SHA-256 in `versions.lock.json`, `setup_env.py` (reproducible environments via `uv`), `runner_entry.py` (runs the engine's runner on newer Pythons and removes socket latency), test bots, 14 unit tests and opt-in real-match integration tests. A full match of the example bot takes about 3 seconds on every tested version, down from 12 to 23 minutes, with an identical replay.
+- `docs/CHANGE_NOTICES.md`: CN-001 (latest stable Python, 3.15.2, replaces the 3.13 target) and CN-002 (Java bots removed); notices added to the PRD, SRD, TEST_PLAN and APP_FLOW headers.
 - **Documentation set** (this change): `docs/PROJECT_PLAN.md`, `docs/ARCHITECTURE.md`, `docs/TECHNICAL_DOCUMENTATION.md`, `docs/USER_GUIDE.md`, `docs/ADMIN_GUIDE.md`, a full `README.md`, and this changelog.
 - `PRODUCT.md`: product context for design tooling, derived from the requirement documents (#4, 2026-11-24).
 - Root `.gitignore` ignoring `.claude/settings.local.json`, `.claude/skills/`, `.claude/agents/`, `.agents/`, and `skills-lock.json` (#4, 2026-11-24).
@@ -20,11 +22,13 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Removed
 
+- Java bot support (CN-002): the Java example bot `src/examplefuncsplayer/RobotPlayer.java`, the Java placeholder test, the Java defaults in `gradle.properties`, and the Java options of the launcher. The Java engine server is the game engine and stays.
 - Agent and skill files (`.claude/skills/`, `.claude/agents/`, `.agents/`, `skills-lock.json`) are no longer tracked by git; the files stay on each developer's machine. Reinstall locally with the install commands recorded in `handoff.md` (#4, 2026-11-24).
 
 ### Known issues
 
-- Python 3.13 compatibility is unverified; the scaffold launcher `run.py` accepts only Python 3.12.
-- The Gradle Python-bot path fails on Linux as shipped (wrong `python3` from `PATH`; `--new-process` start-up deadlock). A manual launch works and was verified with a full Python-vs-Python match on 2026-11-24 (see `docs/TECHNICAL_DOCUMENTATION.md` section 3.2). Throughput is about 1.6 to 1.8 rounds per second.
+- The engine package officially supports only Python 3.12 (`Requires-Python <3.13`). Python 3.12 to 3.15 pass our tests through `runner_entry.py`; this is unsupported by the engine's authors and was tested on Linux x86_64 only.
+- The engine's bot sandbox allows `open`, attribute-walk escapes and infinite loops; it offers no wall-clock or CPU limit for pure Python code.
+- The scaffold's Gradle task for Python bots fails on Linux as shipped (wrong `python3` from `PATH`; `--new-process` start-up deadlock; missing class directory now that Java bots are gone). Use the launcher.
 - The only automated test is a placeholder (`1 + 1`); the scaffold's Python `verify` checks only for the text `def turn():`.
 - The scaffold is AGPL-3.0 and the project has no license of its own yet.

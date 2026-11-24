@@ -39,8 +39,7 @@ Only the execution foundation exists: the Battlecode 2026 scaffold at `backend/b
 | Element | What it is | Where |
 |---|---|---|
 | Java engine server | `battlecode.server.Main`, started by the Gradle task `runJavaLocal` in headless mode; simulates the game and writes a replay file (`.bc26`) | engine jar `org.battlecode:battlecode26-java` (version from `engine_version.txt`, 1.2.6 at time of writing) |
-| Java bots | Packages under `src/<team>/RobotPlayer.java` implementing `run(RobotController rc)` | `src/examplefuncsplayer/` |
-| Python bot runner | `python -m battlecode26`, a separate process that loads `src/<team>/*.py` and drives each bot turn | Python package `battlecode26` (installed in `.venv`, version 1.2.2 at time of writing) |
+| Python bot runner | `backend/match_runner/runner_entry.py` (wraps the engine's `battlecode26.play()`), a separate process that loads `<bots dir>/<team>/*.py` and drives each bot turn | Python package `battlecode26` 1.2.2 in `backend/.venvs/py<version>`, Python 3.12 to 3.15 tested |
 | Python bots | Directory `src/<team>/` containing `bot.py` with a `turn()` function | `src/examplefuncsplayer_py/bot.py` |
 | Launcher | `run.py` (install/update engine package, verify a player, run cross-play, zip a submission) and `build.gradle` (build, run, version, update tasks) | scaffold root |
 | Client | Desktop replay viewer, downloaded by `./gradlew build` into `client/` | optional, git-ignored |
@@ -64,7 +63,7 @@ sequenceDiagram
   J-->>G: winner and reason printed to console
 ```
 
-What was verified by running it: a **Java-vs-Java** match (`./gradlew runLocal --offline`) finished in about 2 seconds, team A won in round 860 ("destroyed all of the enemy team's rat kings"), and a 61 KB replay was written. A **Python-bot match through Gradle did not complete**: the first attempt failed with `No module named battlecode26`, the second produced no output until a 170-second timeout. The cause is not established; two candidate factors are the engine/package version mismatch (1.2.6 versus 1.2.2) and the Gradle task ordering for Python teams. See §6, A-02.
+What was verified by running it (2026-11-24): through `backend/match_runner/launcher.py`, the example Python bot against itself finishes in about 3 seconds on Python 3.12, 3.13, 3.14 and 3.15 (team A wins in round 1290, "destroyed all of the enemy team's rat kings"; identical replay on every version). The scaffold's own Gradle task for Python bots fails on Linux (wrong `python3`, start-up deadlock; `TECHNICAL_DOCUMENTATION.md` §3.2), which is why the launcher exists. Java bots were removed (CN-002); the Java engine server is the game engine and stays.
 
 ### 1.4 The engine's Python execution model (Observed by reading `battlecode26/runner.py`, `crossplay.py`, `__main__.py`)
 
@@ -250,8 +249,8 @@ Services are containerized; the worker runs on separate hardware or at least a s
 
 | ID | Issue | Why it matters | Next step |
 |---|---|---|---|
-| A-01 | Python 3.13 is the target, but `run.py` accepts only 3.12 and the engine package on 3.13 is untried | Blocks the P0 goal BIO-G01 | TC-01 in a clean environment (BIO-102) |
-| A-02 | The Gradle Python path launches `python3` from `PATH` (system 3.14), deadlocks on `--new-process`, and is latency-bound; the Python package `1.2.2` is the content of the official 1.2.6 release | Python bots are the product; the path must run reliably | Pin versions and artifact hash; start the runner and server from our own launcher instead of the Gradle Exec task; measure throughput (BIO-003/004) |
+| A-01 | The engine package officially supports only Python 3.12 (`Requires-Python <3.13`, `main()` rejects others); 3.12 to 3.15 work through our own entry point, tested on one OS | Unsupported by the engine's authors; may break with a new engine or Python release | Keep `versions.lock.json` pins; re-run the matrix on every engine or Python change (`TECHNICAL_DOCUMENTATION.md` §3.5); confirm 3.15.2 and the OS matrix with the owner (DEC-03, CN-001) |
+| A-02 | The Gradle Python path launches `python3` from `PATH` (system 3.14), deadlocks on `--new-process`, and needs a class directory that no longer exists; the Python package `1.2.2` is the content of the official 1.2.6 release | Python bots are the product; the path must run reliably | Done: `backend/match_runner/` pins versions and the artifact hash, starts runner and server itself, and removes the 12 to 23 minute socket stalls (matches now take about 3 s) (BIO-003/004) |
 | A-03 | Engine import allowlist (`random`, `math`, `enum`, `battlecode26`, own modules) conflicts with the PRD wording "standard library and preinstalled libraries" | Defines what participants may write | Decide the policy and update the bot contract (BIO-201) |
 | A-04 | Language-level sandbox only | Hostile-code risk | Container isolation and security tests (BIO-203/204) |
 | A-05 | AGPL-3.0 scaffold license; no project license | May affect how the platform is distributed and served | Owner decision before publishing or deploying |
