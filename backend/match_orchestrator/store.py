@@ -30,7 +30,17 @@ def empty_state() -> dict:
     return {"schema": SCHEMA, "matches": {}, "incidents": []}
 
 
+def _layout_ok(state) -> bool:
+    return isinstance(state, dict) and state.get("schema") == SCHEMA \
+        and isinstance(state.get("matches"), dict) and isinstance(state.get("incidents"), list)
+
+
 class JsonFileStore:
+    # Another kind of store file (the replay index) reuses the lock, atomic write and "never start from a
+    # damaged file" rules by replacing these two.
+    _empty = staticmethod(empty_state)
+    _layout_ok = staticmethod(_layout_ok)
+
     def __init__(self, path: Path):
         self.path = Path(path)
         self.lock_path = self.path.with_name(self.path.name + ".lock")
@@ -39,13 +49,12 @@ class JsonFileStore:
         try:
             raw = self.path.read_text(encoding="utf-8")
         except FileNotFoundError:
-            return empty_state()
+            return self._empty()
         try:
             state = json.loads(raw)
         except ValueError as e:
             raise StoreError(f"{self.path} is not valid JSON ({e}); refusing to start from an empty store") from e
-        if not isinstance(state, dict) or state.get("schema") != SCHEMA \
-                or not isinstance(state.get("matches"), dict) or not isinstance(state.get("incidents"), list):
+        if not self._layout_ok(state):
             raise StoreError(f"{self.path} has an unknown layout or schema (expected schema {SCHEMA})")
         return state
 
