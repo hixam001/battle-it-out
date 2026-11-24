@@ -66,6 +66,10 @@ class LauncherError(Exception):
     pass
 
 
+class PortBusyError(LauncherError):
+    """The engine's fixed loopback port is taken: transient, unlike a missing bot or a failed version check."""
+
+
 def load_lock(path: Path = LOCK_PATH) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -358,7 +362,7 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
     # slack for a loaded host. Without limits there is nothing to base it on.
     turn_deadline = (2 * max(limits.turn_wall_seconds, limits.init_wall_seconds) + 2.0) if limits else None
     if port_in_use(port):
-        raise LauncherError(f"loopback port {port} is already in use (another match running?)")
+        raise PortBusyError(f"loopback port {port} is already in use (another match running?)")
 
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%d-%H%M%S")

@@ -41,6 +41,7 @@ Checked on 2026-11-24 on Python 3.12, 3.13, 3.14 and 3.15: the example match fin
 | `docs/` | Specifications (PRD, SRD, API contract, data model, test plan, app flow) and guides |
 | `backend/battlecode26-scaffold/` | Vendored Battlecode 2026 scaffold (Python example bot, Gradle build, `run.py`) |
 | `backend/match_runner/` | Match launcher, pinned environments, test bots |
+| `backend/match_orchestrator/` | Match jobs with platform retry, incidents, exactly-once result (library) |
 | `backend/bot_validator/` | Bot validator and the engine-derived bot policy |
 | `LICENSE`, `THIRD_PARTY_NOTICES.md` | AGPL-3.0 and third-party notices |
 | `backend/README.md` | Provenance and local notes for the scaffold |
