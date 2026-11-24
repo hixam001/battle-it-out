@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 # Test bot: never returns from turn(). Shows whether the engine limits pure-Python computation.
 from battlecode26 import *
 

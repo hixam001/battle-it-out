@@ -17,7 +17,7 @@ Known open issues (details in the plan and architecture documents):
 - The engine package officially supports only Python 3.12. Python 3.12 to 3.15 (latest stable, 3.15.2) pass our tests through `backend/match_runner/`, on Linux x86_64 only; the engine's authors do not support this (`docs/CHANGE_NOTICES.md` CN-001).
 - The engine's bot sandbox is weak (it allows `open`, attribute-walk escapes and infinite loops); isolation and limits are still to be built (`docs/TECHNICAL_DOCUMENTATION.md` section 3.5).
 - Running Python bots through Gradle fails or hangs on Linux. Use `python3 backend/match_runner/launcher.py run ...` (see `backend/match_runner/README.md`); a match of the example bot takes about 3 seconds.
-- The scaffold is licensed under AGPL-3.0; the project's own license is not yet decided.
+- The Battlecode Java engine declares no license; written confirmation from the Battlecode team is still needed (`docs/LICENSING.md`).
 
 ## Quick start (local match)
 
@@ -38,7 +38,10 @@ Checked on 2026-11-24 on Python 3.12, 3.13, 3.14 and 3.15: the example match fin
 | Path | What it is |
 |---|---|
 | `docs/` | Specifications (PRD, SRD, API contract, data model, test plan, app flow) and guides |
-| `backend/battlecode26-scaffold/` | Vendored Battlecode 2026 scaffold (Java and Python example bots, Gradle build, `run.py`) |
+| `backend/battlecode26-scaffold/` | Vendored Battlecode 2026 scaffold (Python example bot, Gradle build, `run.py`) |
+| `backend/match_runner/` | Match launcher, pinned environments, test bots |
+| `backend/bot_validator/` | Bot validator and the engine-derived bot policy |
+| `LICENSE`, `THIRD_PARTY_NOTICES.md` | AGPL-3.0 and third-party notices |
 | `backend/README.md` | Provenance and local notes for the scaffold |
 | `PRODUCT.md` | Product context for design tooling, derived from the docs |
 | `handoff.md` | Current state, working rules, and task log: read this first |
@@ -70,4 +73,4 @@ Documents label what is confirmed, proposed (needs approval), and unresolved (`[
 
 ## License
 
-The repository root has no license file yet. `backend/battlecode26-scaffold/` is under the **GNU Affero General Public License v3** (see its `LICENSE`). Choosing the project license and understanding the obligations that come with the scaffold's license is an open decision; see `docs/PROJECT_PLAN.md` risk R5.
+The project is licensed under the **GNU Affero General Public License v3.0 only** (`LICENSE`), the same license as the Battlecode scaffold it builds on (`docs/CHANGE_NOTICES.md` CN-003). Third-party components and the licenses they declare are in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md); obligations and open items (copyright holder, participant terms, the Java engine's missing license, the source offer for a network-served site) are in [`docs/LICENSING.md`](docs/LICENSING.md). This is not legal advice.

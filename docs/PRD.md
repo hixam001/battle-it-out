@@ -7,7 +7,7 @@
 **Requirement notation:** Jira-style Epics/Stories, priorities, and
 Given/When/Then acceptance criteria.
 
-> **Owner change notice (2026-11-24):** the Python runtime target is now the latest stable CPython (3.15.2 tested; 3.13 remains in the matrix) and Java bots are removed (the Java engine server stays). See [`CHANGE_NOTICES.md`](CHANGE_NOTICES.md). The text below is unchanged.
+> **Owner change notice (2026-11-24):** the Python runtime target is now the latest stable CPython (3.15.2 tested; 3.13 remains in the matrix) Java bots are removed (the Java engine server stays), the project license is AGPL-3.0 (same as the Battlecode scaffold) and the bot rules are the engine's own (imports `random`, `math`, `enum`, `battlecode26` only; this replaces any "standard library" wording). See [`CHANGE_NOTICES.md`](CHANGE_NOTICES.md) CN-001 to CN-004. The text below is unchanged.
 
 > **Decision discipline:** "Confirmed" means established in project
 > discussions. "Proposed" means a recommended implementation approach

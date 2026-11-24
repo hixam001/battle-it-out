@@ -9,6 +9,9 @@ Home of the Battle It Out execution foundation and, later, the web backend.
   the backend is built on (the project does not replace the Battlecode engine).
   Planned additions (bot validator, runner/sandbox, match orchestration, API)
   are added next to it under `backend/`, following the epics in `docs/PRD.md`.
+- `bot_validator/` — static check of a `bot.py` against the engine's own bot policy
+  (`policy.json` generated from the engine; see its `README.md` and
+  `docs/BOT_POLICY.md`).
 - `match_runner/` — command-line match launcher for Python bots on Python 3.12
   to 3.15, with pinned versions (`versions.lock.json`), environment setup and
   tests. See its `README.md`.

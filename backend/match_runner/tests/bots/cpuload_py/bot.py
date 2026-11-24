@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 # Test bot: pure-Python CPU load each turn (no game API calls except round number).
 from battlecode26 import *
 

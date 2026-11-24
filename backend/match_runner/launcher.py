@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Match launcher for the Battlecode scaffold (BIO-003 / BIO-004).
 
 Participants write Python bots only. This launcher starts the engine's Python runner
