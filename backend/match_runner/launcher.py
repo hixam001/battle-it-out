@@ -59,6 +59,9 @@ FINISHED_RE = re.compile(r"^\[server\] -+ Match Finished -+\s*$", re.MULTILINE)
 SERVER_ERROR_RE = re.compile(r"^\[server:(?:warning|error)\] (?!\(Stacktrace Error\)$)(.+)$", re.MULTILINE)
 
 
+TEAM_DIR_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+
+
 class LauncherError(Exception):
     pass
 
@@ -254,9 +257,16 @@ def classify(result: dict, violation: dict | None, runner_exit: int | None, time
         if leg.startswith("runner:"):
             loser = leg.split(":", 1)[1]
             ex = describe_exit((runner_exits or {}).get(loser))
-            return {"classification": "bot_crash", "kind": "runner_ended_connection",
+            how = str(end.get("how") or "")
+            if how.startswith("deadline"):      # the router's own clock: the bot cannot stop it (SR-02)
+                kind, what = "runner_unresponsive", "stopped answering"
+            elif "protocol violation" in how:   # sent a frame the engine protocol does not allow now (SR-01/03)
+                kind, what = "protocol_violation", "broke the engine protocol"
+            else:
+                kind, what = "runner_ended_connection", "ended the engine connection first"
+            return {"classification": "bot_crash", "kind": kind,
                     "loser": loser, "winner_by_forfeit": _other(loser),
-                    "detail": f"team {loser}'s process ended the engine connection first ({end.get('how')})",
+                    "detail": f"team {loser}'s process {what} ({how})",
                     "evidence": {"first_end": end, **ex}}
         if leg == "server":
             return {"classification": "platform_failure", "kind": "engine_failure",
@@ -322,6 +332,8 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
     if problems:
         raise LauncherError("version check failed: " + "; ".join(problems))
     for t in (team_a, team_b):
+        if not TEAM_DIR_RE.match(t):      # SR-05: a name is a folder name, never a path
+            raise LauncherError(f"team folder name {t!r} must match {TEAM_DIR_RE.pattern}")
         if not (bots_dir / t).is_dir():
             raise LauncherError(f"bot directory not found: {bots_dir / t}")
     limits = None
@@ -342,6 +354,9 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
         if cgroup and not sandbox_mod.cgroup_available():
             raise LauncherError("--require-cgroup: no usable `systemd-run --user` scope on this host")
     port = lock["crossplay_port"]
+    # The router's own response deadline (SR-02): twice the longest per-activity limit plus two seconds of
+    # slack for a loaded host. Without limits there is nothing to base it on.
+    turn_deadline = (2 * max(limits.turn_wall_seconds, limits.init_wall_seconds) + 2.0) if limits else None
     if port_in_use(port):
         raise LauncherError(f"loopback port {port} is already in use (another match running?)")
 
@@ -359,7 +374,7 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
 
     names = {"A": team_a, "B": team_b}
     sock_dir = Path(tempfile.mkdtemp(prefix="bio-ipc-"))  # short path: unix socket paths are limited
-    router = sandbox_mod.Router(sock_dir, port)
+    router = sandbox_mod.Router(sock_dir, port, turn_deadline=turn_deadline)
     seccomp_fds: list[int] = []
     cmds: dict[str, list[str]] = {}
     for side in ("A", "B"):
