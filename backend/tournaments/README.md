@@ -45,4 +45,4 @@ python3 -m unittest backend.tournaments.tests.test_tournaments backend.tournamen
 
 ## Not done
 
-The API and authentication; real Organizer assignments (the creating Organizer counts as assigned); registration and rosters (the timer's default team list is "teams that uploaded"); notifications; a timer process; cleanup of the data other libraries hold for a deleted tournament; the database (DEC-11); independent review.
+The API and authentication; real Organizer assignments (the creating Organizer counts as assigned); a timer that is wired by default to the roster (pass `registration=` to `tick`; the fallback is still "teams that uploaded"); notifications; a timer process; cleanup of the data other libraries hold for a deleted tournament; the database (DEC-11); independent review.

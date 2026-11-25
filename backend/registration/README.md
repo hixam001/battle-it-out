@@ -16,7 +16,7 @@ codes = G.issue_codes(reg, organizer, "cup1")                 # plaintext codes 
 G.claim(reg, "cup1", email, code, user_id, source=client_ip)  # right pair: consumes the code, locks the entry
 G.confirm_email(reg, "cup1", user_id)                         # after the email is verified: registered
 actor = G.actor_for(reg, user_id)                             # registry.Actor with teams, captain_of, tournaments
-G.registered_teams(reg, "cup1")                               # for scheduler.tick(teams_of=...)
+G.registered_teams(reg, "cup1")                               # or scheduler.tick(..., registration=reg) (CN-021)
 ```
 
 | Function | Who | What |
