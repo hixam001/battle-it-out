@@ -32,15 +32,17 @@ from typing import Callable
 from backend.match_orchestrator import bracket as B
 from backend.match_orchestrator import orchestrator as O
 from backend.match_orchestrator import replays as P
+from backend.registration import registration as G
 from backend.submission_registry import registry as R
 from backend.tournament_flow import flow as F
 from backend.tournaments import tournaments as T
 
 
 def teams_with_uploads(flow: F.Flow, tournament_id: str) -> list[str]:
-    """The default list of teams: every team that has uploaded anything to this tournament. Until registration
-    exists, nothing knows a team that never uploaded; such a team would have been excluded anyway ("no active
-    bot"), the only difference is that it is not named in the exclusion list."""
+    """The fallback list of teams when no registration is given: every team that has uploaded anything to this
+    tournament. Nothing here knows a team that never uploaded; such a team would have been excluded anyway ("no
+    active bot"), the only difference is that it is not named in the exclusion list. With a registration
+    (`tick(registration=...)`) the list is `registration.registered_teams` instead."""
     teams = flow.registry.store.snapshot()["teams"]
     return sorted(t for t, rec in teams.items() if rec["tournament_id"] == tournament_id)
 
@@ -61,10 +63,19 @@ def _incident(flow: F.Flow, tournament_id: str, kind: str, detail: str, t: float
 
 def tick(reg: T.Tournaments, flow: F.Flow, *, catalogue: dict[str, str], engine_version: str,
          vault: P.Vault | None = None, alert: Callable[[dict], None] | None = None,
-         teams_of: Callable[[str], list[str]] | None = None, rng=None,
+         teams_of: Callable[[str], list[str]] | None = None, registration: G.Registration | None = None, rng=None,
          now: Callable[[], float] = time.time, by: str = "scheduler") -> dict:
-    """One pass. Returns `{"opened": [...], "completed": [...], "waiting": {id: [teams]}, "blocked": {id: reason},
+    """One pass. Which teams are drawn: `teams_of(tournament_id)` if given, else the teams with a registered
+    member in `registration` (the roster is the authority: a registered team without a bot is named in the
+    exclusion list, and a team that is not on the roster is never drawn), else the teams that uploaded. Giving
+    both `teams_of` and `registration` is a `ValueError`: two sources would silently disagree. Returns `{"opened": [...], "completed": [...], "waiting": {id: [teams]}, "blocked": {id: reason},
     "housekeeping": {...}, "alerts": n}`. The bracket id is the tournament id (one bracket per tournament)."""
+    if teams_of is not None and registration is not None:
+        raise ValueError("give teams_of or registration, not both")
+    if registration is not None:
+        if registration.tournaments is not reg:
+            raise ValueError("the registration belongs to another tournament record")
+        teams_of = lambda tid: G.registered_teams(registration, tid)      # noqa: E731
     teams_of = teams_of or (lambda tid: teams_with_uploads(flow, tid))
     report = {"opened": [], "completed": [], "waiting": {}, "blocked": {}}
     t = now()
@@ -89,7 +100,7 @@ def _open(reg, flow, rec, teams_of, catalogue, engine_version, rng, now, by, rep
         raise F.FlowError("the tournament has no map pool; an Admin or its Organizer must set one")
     teams = teams_of(tid)
     if not teams:
-        raise F.FlowError("no team has uploaded a bot; nothing can be drawn")
+        raise F.FlowError("no team to draw (none registered or none uploaded); nothing can be drawn")
     try:
         F.open_bracket(flow, tid, tid, list(teams), rec["map_pool_id"], catalogue, engine_version,
                        deadline_at=rec["deadlines"][T.SUBMISSION], now=now, rng=rng)

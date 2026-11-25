@@ -10,6 +10,7 @@ import unittest
 
 from backend.match_orchestrator import bracket as B
 from backend.match_orchestrator import replays as P
+from backend.registration import registration as G
 from backend.submission_registry import registry as R
 from backend.tournament_flow import flow as F
 from backend.tournament_flow.tests.test_flow import BOT, DEADLINE, ENGINE, BracketBase, captain
@@ -234,6 +235,119 @@ class Finishing(SchedBase):
         self.tick()
         self.assertEqual(B.get_bracket(self.flow.store, "t1")["rounds"][0]["status"], "ready")
         self.assertEqual(J.list_jobs(self.flow.queue, J.QUEUED), [])
+
+
+def _row(email, team, n, role):
+    return {"email": email, "team_key": team, "team_name": team.upper(), "member_number": n, "role": role}
+
+
+class Registered(SchedBase):
+    """The draw starts from the roster (CN-021): participants register with a code, a captain uploads with the
+    Actor the registration hands out, and the tick draws the registered teams."""
+
+    def setUp(self):
+        super().setUp()
+        self.roster = G.Registration.at(self.dir / "registration.json", self.treg)
+        self.users = {}
+
+    def register(self, teams=("ta", "tb", "tc"), confirm=True):
+        rows = [_row(f"{t}@uni.edu", t, 1, "captain") for t in teams]
+        G.import_roster(self.roster, ADMIN, "t1", rows, now=self.clock)
+        codes = {}
+        for item in G.issue_codes(self.roster, ADMIN, "t1", now=self.clock)["issued"]:
+            codes[item["entry_id"]] = item["code"]
+        by_email = {e["email"]: e["id"] for e in G.list_roster(self.roster, ADMIN, "t1")}
+        for t in teams:
+            user = f"user-{t}"
+            G.claim(self.roster, "t1", f"{t}@uni.edu", codes[by_email[f"{t}@uni.edu"]], user, now=self.clock)
+            if confirm:
+                G.confirm_email(self.roster, "t1", user, now=self.clock)
+            self.users[t] = user
+
+    def upload(self, team):
+        actor = G.actor_for(self.roster, self.users[team])
+        return F.upload(self.flow, actor, team, "t1", "bot.py", BOT, idempotency_key="k1", deadline_at=DEADLINE,
+                        now=self.clock)
+
+    def draw(self):
+        self.check_all()
+        self.clock.t = DEADLINE
+        return self.tick(registration=self.roster)
+
+    def test_the_registered_teams_are_drawn_and_a_registered_team_without_a_bot_is_named_as_excluded(self):
+        self.register()
+        self.upload("ta")
+        self.upload("tb")
+        out = self.draw()
+        self.assertEqual((out["opened"], out["blocked"]), (["t1"], {}))
+        self.assertEqual(self.snap()["pins"]["t1"]["teams"], {"ta": "ta-v1", "tb": "tb-v1", "tc": None})
+        self.assertEqual(sorted(e["team"] for e in B.get_bracket(self.flow.store, "t1")["teams"]), ["ta", "tb"])
+
+    def test_a_team_that_is_not_on_the_roster_is_not_drawn_even_if_it_has_a_bot(self):
+        self.register(("ta", "tb"))
+        self.upload("ta")
+        self.upload("tb")
+        self.up_to("t1", "tx")                                  # an upload that did not come from a registration
+        out = self.draw()
+        self.assertEqual(out["opened"], ["t1"])
+        self.assertEqual(sorted(self.snap()["pins"]["t1"]["teams"]), ["ta", "tb"])
+
+    def test_a_captain_who_has_not_verified_the_email_cannot_upload_and_is_not_drawn(self):
+        self.register(("ta", "tb"))
+        self.upload("ta")
+        self.upload("tb")
+        self.register_unverified()
+        with self.assertRaises(R.NotFound):
+            self.upload("tc")
+        out = self.draw()
+        self.assertEqual(sorted(self.snap()["pins"]["t1"]["teams"]), ["ta", "tb"])
+        self.assertEqual(out["opened"], ["t1"])
+
+    def register_unverified(self):
+        rows = [_row("tc@uni.edu", "tc", 1, "captain")]
+        G.import_roster(self.roster, ADMIN, "t1", rows, now=self.clock)
+        entry = next(e for e in G.list_roster(self.roster, ADMIN, "t1") if e["email"] == "tc@uni.edu")
+        code = G.issue_codes(self.roster, ADMIN, "t1", [entry["id"]], now=self.clock)["issued"][0]["code"]
+        G.claim(self.roster, "t1", "tc@uni.edu", code, "user-tc", now=self.clock)       # claimed, not confirmed
+        self.users["tc"] = "user-tc"
+
+    def test_with_nobody_registered_the_tournament_is_blocked_with_one_incident(self):
+        self.clock.t = DEADLINE
+        out = self.tick(registration=self.roster)
+        self.assertIn("t1", out["blocked"])
+        self.assertEqual(len(self.incidents()), 1)
+        self.assertEqual(self.status(), "registration_open")
+
+    def test_one_registered_team_with_a_bot_is_not_enough(self):
+        self.register(("ta", "tb"))
+        self.upload("ta")
+        out = self.draw()
+        self.assertIn("only 1 team(s)", out["blocked"]["t1"])
+        self.assertEqual(self.snap()["pins"], {})                # nothing pinned: an extension can still fix it
+
+    def test_the_whole_way_from_roster_to_a_completed_tournament(self):
+        self.register(("ta", "tb", "tc"))
+        self.upload("ta")
+        self.upload("tb")
+        self.assertEqual(self.draw()["opened"], ["t1"])
+        F.start_round(self.flow, "t1", 1, "org-1", now=self.clock)
+        self.play("t1")
+        out = self.tick(registration=self.roster)
+        self.assertEqual((out["completed"], self.status()), (["t1"], "completed"))
+
+    def test_both_sources_at_once_are_refused(self):
+        with self.assertRaises(ValueError):
+            self.tick(registration=self.roster, teams_of=lambda tid: ["ta"])
+
+    def test_a_registration_of_another_tournament_record_is_refused(self):
+        other = G.Registration.at(self.dir / "other.json", T.Tournaments.at(self.dir / "other-t.json"))
+        with self.assertRaises(ValueError):
+            self.tick(registration=other)
+
+    def test_without_a_registration_the_teams_that_uploaded_are_still_the_default(self):
+        self.ready(("ta", "tb"))
+        self.clock.t = DEADLINE
+        self.assertEqual(self.tick()["opened"], ["t1"])
 
 
 if __name__ == "__main__":
