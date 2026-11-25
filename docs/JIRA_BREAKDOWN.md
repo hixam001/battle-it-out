@@ -29,7 +29,7 @@ These keep their original keys. They are listed because later epics wait for the
 | BIO-303 | House bots and their bracket algorithm; the qualification cutoff draw (SRD-027) | Refused on purpose; no draw | Owner first: DEC-06, DEC-14 |
 | BIO-306 | New random seed on a retry (TC-04); a real Admin alert channel | Seed is not controllable in the engine; alert is a function | Engine change or an accepted waiver; BIO-409 for the channel |
 | BIO-305 | Replay endpoint, object storage, player | Vault and access rule only (CN-012) | BIO-408, BIO-605, DEC-10 |
-| BIO-102 | Python 3.13 and 3.15 never run on the development machine | Passed on 3.12 and 3.14 here | BIO-804 (CI matrix), DEC-03 |
+| BIO-102 | Python 3.13 and 3.15 never run on the development machine | **Done by hand 2026-11-25 (CN-025):** the whole suite passes on 3.12 to 3.15, unit and real games, through `backend/run_tests.py --matrix`; what is left is running it automatically | BIO-804 (CI matrix), DEC-03 |
 
 ---
 
@@ -119,7 +119,7 @@ These keep their original keys. They are listed because later epics wait for the
 ## Order that the dependencies allow
 
 1. **Owner answers that unlock work:** DEC-11 (BIO-401), then DEC-06, DEC-14, DEC-04, DEC-07, DEC-10, DEC-12, DEC-13 in the order the tasks above need them. Confirming the change-notice defaults listed in `handoff.md` removes the rest of the open questions.
-2. **Stack-neutral work that does not wait:** the API contract gap of BIO-406 (users, roles, Organizer assignments), Admin alert design and service wiring on the current JSON stores, the Python 3.13 and 3.15 runs, and the written parts of BIO-805 and BIO-806.
+2. **Stack-neutral work that does not wait:** the API contract gap of BIO-406 (users, roles, Organizer assignments), Admin alert design and service wiring on the current JSON stores, and the written parts of BIO-805 and BIO-806.
 3. **Critical path:** BIO-401 → BIO-402/404 → BIO-403/405/406/407/408 → BIO-409 → BIO-410 (epic 04 exit) → epic 05 and 06 endpoints in parallel → BIO-701 and the screens → BIO-801 to BIO-808.
 
 ## Keeping this file true
