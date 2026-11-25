@@ -18,6 +18,7 @@ Home of the Battle It Out execution foundation and, later, the web backend.
 - `tournament_flow/` — the steps that join registry, queue, pins, bracket and round: upload queues its check, pins then draw after the deadline, round start re-hashes the pinned bots, housekeeping (`docs/CHANGE_NOTICES.md` CN-018)
 - `tournaments/` — the tournament record and its rules: approval, rejection, two deadlines with history, edits frozen by deadline, Admin extension and emergency override (each with its notice), archive, delete, role-based visibility, and `scheduler.tick` that draws the bracket at the submission deadline, from the roster when given `registration=` (`docs/CHANGE_NOTICES.md` CN-019, CN-021).
 - `registration/` — the official roster, one single-use invitation code per participant, claiming a place with email and code (wrong attempts consume nothing and are limited), the lock after registration, and the participant `Actor` (teams, captain-of) for the submission registry (`docs/CHANGE_NOTICES.md` CN-020).
+- `notifications/` — dashboard notifications (always created), the email preference, fixed templates for the major events and an email outbox with leases, retry and give-up; the email provider is passed in (`docs/CHANGE_NOTICES.md` CN-022).
 - `match_runner/` — command-line match launcher for Python bots on Python 3.12
   to 3.15, with pinned versions (`versions.lock.json`), environment setup, a
   resource guard and bubblewrap sandbox (limits are provisional), and tests.

@@ -724,6 +724,29 @@ def registered_teams(reg: Registration, tournament_id: str) -> list[str]:
     return sorted({e["team_key"] for e in b["entries"].values() if e["status"] == REGISTERED})
 
 
+def account_ids(reg: Registration, tournament_id: str, team_id: str | None = None, *,
+                verified_only: bool = False) -> list[str]:
+    """The accounts that hold a place in the tournament (optionally in one team), sorted: who a notice about the
+    tournament or the team goes to. By default an account that claimed a place but has not verified its email
+    is included (a deadline change concerns it too); `verified_only=True` lists registered members only."""
+    tid = _tid(tournament_id)
+    b = reg.store.snapshot()["tournaments"].get(tid, {"entries": {}})
+    ok = (REGISTERED,) if verified_only else (PENDING, REGISTERED)
+    return sorted({e["user_id"] for e in b["entries"].values()
+                   if e["status"] in ok and e["user_id"] and (team_id is None or e["team_key"] == team_id)})
+
+
+def official_email(reg: Registration, user_id: str) -> str | None:
+    """The official roster email of an account, or None. A stand-in for the account layer (EPIC-04), which will
+    own the address a participant verified; used only to address email notifications, never stored elsewhere."""
+    user = _user(user_id)
+    for b in reg.store.snapshot()["tournaments"].values():
+        for e in b["entries"].values():
+            if e["user_id"] == user:
+                return e["email"]
+    return None
+
+
 def team_view(reg: Registration, actor: R.Actor | None, tournament_id: str, team_id: str) -> dict:
     """The team and its registered members (`GET /teams/{id}`): no emails, no codes. A member of the team and
     the staff of the tournament see it; anybody else is told there is no such team."""
