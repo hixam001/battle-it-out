@@ -27,6 +27,7 @@ Severity follows the skill's anchors; likelihood and impact are stated for each 
 - **Fix (CN-008):** `sandbox.py` `check_turn`. A call (anything but null) is accepted only from the runner whose turn it is; a null is accepted only when the router has forwarded a `spawn_bot` or `destroy_bot` notice to that runner and has not yet seen the answer. A frame that breaks the rule is not forwarded, ends that runner's connection and is charged to the sender (the router knows which socket it came from; a bot cannot forge that).
 - **After the fix:** 3 of 3 runs `bot_crash`, loser A, `kind: protocol_violation`, about 2 s; B untouched.
 - **Residual:** within its own turn a bot may still send any valid call, which is the engine's API and not a boundary.
+- **Follow-up (CN-025, 2026-11-25):** "3 of 3 runs" was too small a sample. Re-running the suite on Python 3.13 to 3.15 showed an intermittent case: the router refused the frame and recorded the violation, but the engine had already logged the game as finished, so `classify` said `normal` and the hostile team won. Now a protocol violation seen by the router is charged to the sender whether or not a result was logged. 120 real matches since then: no failure.
 
 ## SR-02: a bot can freeze its own guard (Medium)
 

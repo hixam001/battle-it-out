@@ -52,6 +52,37 @@ class Rules(unittest.TestCase):
     def classify(self, result, violation=None, exit_=None, timeout=False, r=None, exits=None):
         return L.classify(result, violation, exit_, timeout, r, exits)
 
+    def test_a_protocol_violation_loses_even_when_the_engine_logged_a_finished_game(self):
+        # CN-025: the router refused the frame, but the engine had already printed a result (the
+        # sender may even be its "winner"). Found as an intermittent failure on Python 3.13-3.15.
+        violation = ended("runner:A", "error: protocol violation: frame sent out of turn")
+        for side, other in (("A", "B"), ("B", "A")):
+            end = ended(f"runner:{side}", "error: protocol violation: frame sent out of turn")
+            c = self.classify(CLEAN, exit_=0, r=router(end))
+            self.assertEqual((c["classification"], c["kind"], c["loser"], c["winner_by_forfeit"]),
+                             ("bot_crash", "protocol_violation", side, other))
+        self.assertEqual(self.classify(UNFINISHED, r=router(violation))["kind"], "protocol_violation")
+
+    def test_a_protocol_violation_by_the_runner_after_a_server_end_is_not_charged_twice(self):
+        # the server ended first: first_end names the server, so nobody is charged for a finished game
+        c = self.classify(CLEAN, exit_=0, r=router(ended("server", "closed")))
+        self.assertEqual(c["classification"], "normal")
+
+    def test_only_a_protocol_violation_overrides_a_finished_game(self):
+        for how in ("closed", "error: reset", "deadline 12s"):
+            c = self.classify(CLEAN, exit_=0, r=router(ended("runner:A", how)))
+            self.assertEqual(c["classification"], "normal", how)
+
+    def test_a_violation_of_the_guard_still_comes_first(self):
+        end = ended("runner:B", "error: protocol violation: frame sent out of turn")
+        c = self.classify(CLEAN, violation={"team": "A", "kind": "memory"}, exit_=70, r=router(end))
+        self.assertEqual((c["classification"], c["loser"]), ("bot_violation", "A"))
+
+    def test_a_match_timeout_still_comes_before_a_protocol_violation(self):
+        end = ended("runner:A", "error: protocol violation: frame sent out of turn")
+        c = self.classify(CLEAN, timeout=True, r=router(end))
+        self.assertEqual(c["classification"], "platform_failure")
+
     def test_a_clean_finished_match_is_normal_whatever_closed_first(self):
         c = self.classify(CLEAN, exit_=0, r=router(ended("server")))
         self.assertEqual(c["classification"], "normal")

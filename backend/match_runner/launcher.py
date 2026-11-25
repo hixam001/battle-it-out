@@ -221,6 +221,29 @@ def _other(side: str) -> str:
     return "B" if side == "A" else "A"
 
 
+def _router_protocol_violation(router: dict) -> bool:
+    """True when the router's first recorded end is a runner that sent a frame the protocol forbids."""
+    end = router.get("first_end") or {}
+    return str(end.get("leg", "")).startswith("runner:") and "protocol violation" in str(end.get("how") or "")
+
+
+def _runner_fault(end: dict, runner_exits: dict | None) -> dict:
+    """`bot_crash` verdict for the runner whose connection the router saw end first."""
+    loser = end["leg"].split(":", 1)[1]
+    ex = describe_exit((runner_exits or {}).get(loser))
+    how = str(end.get("how") or "")
+    if how.startswith("deadline"):      # the router's own clock: the bot cannot stop it (SR-02)
+        kind, what = "runner_unresponsive", "stopped answering"
+    elif "protocol violation" in how:   # sent a frame the engine protocol does not allow now (SR-01/03)
+        kind, what = "protocol_violation", "broke the engine protocol"
+    else:
+        kind, what = "runner_ended_connection", "ended the engine connection first"
+    return {"classification": "bot_crash", "kind": kind,
+            "loser": loser, "winner_by_forfeit": _other(loser),
+            "detail": f"team {loser}'s process {what} ({how})",
+            "evidence": {"first_end": end, **ex}}
+
+
 def classify(result: dict, violation: dict | None, runner_exit: int | None, timed_out: bool,
              router: dict | None = None, runner_exits: dict | None = None) -> dict:
     """Decide who is responsible (BIO-205). Never invents a winner for a platform failure.
@@ -229,7 +252,9 @@ def classify(result: dict, violation: dict | None, runner_exit: int | None, time
     anything else is a platform failure that may be retried):
       1. The guard recorded a limit breach by a team -> `bot_violation`; with no team -> platform.
       2. The wall-clock timeout of the whole match hit -> platform.
-      3. The match finished and nothing failed -> `normal`.
+      3. The router saw a runner send a frame the protocol forbids at that moment -> `bot_crash` for
+         that team, even if the engine had already logged a result (CN-025).
+      3b. The match finished and nothing failed -> `normal`.
       4. The match did NOT finish. With router evidence, who ended the connection first decides:
            * a team's runner never connected            -> platform (the platform failed to start it);
            * a team's runner ended it first             -> `bot_crash`: that team loses;
@@ -250,6 +275,11 @@ def classify(result: dict, violation: dict | None, runner_exit: int | None, time
         return {"classification": "platform_failure", "kind": "match_timeout",
                 "detail": "match wall-clock timeout, no bot violation recorded"}
     finished_ok = result["finished"] and not result["server_errors"]
+    if router is not None and _router_protocol_violation(router):
+        # The router refused a frame the protocol does not allow at that moment. Whether the engine
+        # had logged a result already makes no difference: a team must not win a game by breaking the
+        # protocol, and which side ends first is only timing (found on Python 3.13, 3.14, 3.15; CN-025).
+        return _runner_fault(router["first_end"], runner_exits)
     if router is not None and not finished_ok:
         connected = set(router.get("connected") or [])
         missing = sorted({"A", "B"} - connected)
@@ -259,19 +289,7 @@ def classify(result: dict, violation: dict | None, runner_exit: int | None, time
         end = router.get("first_end") or {}
         leg = end.get("leg", "")
         if leg.startswith("runner:"):
-            loser = leg.split(":", 1)[1]
-            ex = describe_exit((runner_exits or {}).get(loser))
-            how = str(end.get("how") or "")
-            if how.startswith("deadline"):      # the router's own clock: the bot cannot stop it (SR-02)
-                kind, what = "runner_unresponsive", "stopped answering"
-            elif "protocol violation" in how:   # sent a frame the engine protocol does not allow now (SR-01/03)
-                kind, what = "protocol_violation", "broke the engine protocol"
-            else:
-                kind, what = "runner_ended_connection", "ended the engine connection first"
-            return {"classification": "bot_crash", "kind": kind,
-                    "loser": loser, "winner_by_forfeit": _other(loser),
-                    "detail": f"team {loser}'s process {what} ({how})",
-                    "evidence": {"first_end": end, **ex}}
+            return _runner_fault(end, runner_exits)
         if leg == "server":
             return {"classification": "platform_failure", "kind": "engine_failure",
                     "detail": "the engine server ended the connection first",

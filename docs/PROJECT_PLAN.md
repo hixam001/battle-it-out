@@ -103,18 +103,18 @@ flowchart LR
 
 **The execution foundation (BIO-EPIC-00 to BIO-EPIC-03) is built as tested libraries; the platform around it (BIO-EPIC-04 and later) is not.** The source of truth is [`REQUIREMENTS_COVERAGE.md`](REQUIREMENTS_COVERAGE.md): 17 requirements done, 50 partial, 19 not built, 5 deferred (of 91).
 
-Built and tested (evidence: change notices CN-001 to CN-023, pull requests #1 to #30, all merged):
+Built and tested (evidence: change notices CN-001 to CN-025, pull requests #1 to #31, all merged):
 - Pinned, reproducible match runner on Python 3.12 to 3.15 (Linux x86_64), per-team sandbox and limits (interim numbers), failure classification, structured logs.
 - Bot validator, upload check with a trial match, submission registry (versions, activation, deadline lock, privacy).
 - Match orchestration with retry, tie-break maps and coin flip, single-elimination bracket with byes, replay vault and archive purge, worker queue, the flow between upload and round.
 - Tournament lifecycle and deadline timer, roster, invitation codes and registration, notifications and their sources.
 - All of the above are **libraries with JSON-file stores**: no HTTP API, database, accounts, website, running services or worker image exist.
 
-Not done (see `JIRA_BREAKDOWN.md` for the tasks): the backend foundation (needs DEC-11), the endpoints around each library, deletion and retention, the website, load and recovery tests, an independent security review, the pilot, and the owner decisions DEC-04, DEC-06, DEC-07, DEC-10, DEC-11, DEC-13, DEC-14. Python 3.13 and 3.15 were not run on the development machine in the later tasks (3.12 and 3.14 were).
+Not done (see `JIRA_BREAKDOWN.md` for the tasks): the backend foundation (needs DEC-11), the endpoints around each library, deletion and retention, the website, load and recovery tests, an independent security review, the pilot, and the owner decisions DEC-04, DEC-06, DEC-07, DEC-10, DEC-11, DEC-13, DEC-14. The whole backend suite was run on Python 3.12, 3.13, 3.14 and 3.15 on 2026-11-25 (CN-025); there is still no CI.
 
 ### 6.2 Recommended next work (in order)
 
-The proposed tasks, their dependencies and the order they allow are in [`JIRA_BREAKDOWN.md`](JIRA_BREAKDOWN.md). In short: (1) the owner answers DEC-11 so that BIO-EPIC-04 can start, and the decisions that block the open parts of BIO-EPIC-02 and BIO-EPIC-03 (DEC-04, DEC-06, DEC-14); (2) stack-neutral work meanwhile (the API contract gap for users, roles and Organizer assignments, service wiring, the Python 3.13 and 3.15 runs, licensing and runbook text); (3) the backend foundation, then the endpoints of BIO-EPIC-05 and BIO-EPIC-06, then the website, then the launch gate.
+The proposed tasks, their dependencies and the order they allow are in [`JIRA_BREAKDOWN.md`](JIRA_BREAKDOWN.md). In short: (1) the owner answers DEC-11 so that BIO-EPIC-04 can start, and the decisions that block the open parts of BIO-EPIC-02 and BIO-EPIC-03 (DEC-04, DEC-06, DEC-14); (2) stack-neutral work meanwhile (the API contract gap for users, roles and Organizer assignments, service wiring, licensing and runbook text); (3) the backend foundation, then the endpoints of BIO-EPIC-05 and BIO-EPIC-06, then the website, then the launch gate.
 
 ## 7. Decisions needed before work can proceed
 

@@ -32,7 +32,7 @@ python3 backend/match_runner/launcher.py run --team-a examplefuncsplayer_py --te
     --out-dir /tmp/bio-match                                          # prints a JSON summary; replay and logs in --out-dir
 ```
 
-Checked on 2026-11-24 on Python 3.12, 3.13, 3.14 and 3.15: the example match finishes in about 3 seconds (team A wins in round 1290) with the same replay on every version. Other versions: `setup_env.py 3.14` and `--python-version 3.14`. The cold-clone `./gradlew build` was not tested.
+All backend tests: `python3 backend/run_tests.py` (this Python), `--matrix` (every Python of the lock), `--integration` (real games); 751 tests pass on 3.12, 3.13, 3.14 and 3.15 (2026-11-25). Checked on 2026-11-24 on Python 3.12, 3.13, 3.14 and 3.15: the example match finishes in about 3 seconds (team A wins in round 1290) with the same replay on every version. Other versions: `setup_env.py 3.14` and `--python-version 3.14`. The cold-clone `./gradlew build` was not tested.
 
 ## Repository layout
 
