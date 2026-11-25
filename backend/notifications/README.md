@@ -31,12 +31,24 @@ N.deliver_emails(c, send=provider, address_of=lookup)              # {"sent", "r
 - **Privacy.** The store holds user ids, not addresses (`address_of` is asked at send time; `registration.official_email` is the stand-in until accounts exist). Provider errors are stored without anything that looks like an address. A notification is readable and markable only by its recipient; anybody else, and a missing id, get the same `NotFound`. Admin reads delivery records (no address).
 - **Deletion.** `purge_tournament` (Admin, `confirm`, only after the tournament was deleted) removes its notifications and deliveries; the audit keeps ids and counts.
 
+## Sources (CN-023)
+
+`sources.py` turns events of the other libraries into `notify` calls, from ids only (no caller-built text):
+
+| Function | Event | Told |
+|---|---|---|
+| `validation_result(center, roster, registry, submission_id)` | check ended `valid` (and active) or `invalid`; inconclusive is not news | verified members of the team |
+| `round_results(center, roster, store, bracket_id, round_no)` | each decided match: `match_result`, `qualified` (not in the final; also a bye), `eliminated` | verified members of each team |
+| `draw_exclusions(center, roster, tournament_id, teams)` | `team_excluded` and `registration_excluded` (claimed, email never verified) | the team's accounts; the unfinished claimants |
+
+Wiring: `check_submission_handler(..., on_decided=)`, `run_round_handler(..., on_round=)`, `scheduler.tick(..., notifications=, registration=)` (notices go out before the tournament is marked running), and `python3 -m backend.work_queue.service --data-dir D --notify run` (needs `tournaments.json`, `registration.json`, `notifications.json` in `D`). Every call is idempotent by event key.
+
 ## Tests
 
 ```
-python3 -m unittest backend.notifications.tests.test_notifications -v
+python3 -m unittest backend.notifications.tests.test_notifications backend.notifications.tests.test_sources -v
 ```
 
 ## Not done
 
-The HTTP API; a real email provider and its templates in HTML or other languages; calling `notify` from the places that know the event (validation result, match result, qualification, elimination, exclusion, announcements: only the extension and override notices have an adapter); mandatory security or account emails (open decision); account deletion (SRD-065..067); the database (DEC-11); independent review.
+The HTTP API; a real email provider and its templates in HTML or other languages; the announcement event (an Organizer writes it; needs the API) and calling `notify_notice` after `extend_deadline`/`emergency_override` (the caller still has to); the worker and timer as running services started with `--notify`; mandatory security or account emails (open decision); account deletion (SRD-065..067); the database (DEC-11); independent review.

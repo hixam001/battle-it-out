@@ -22,7 +22,8 @@ CHECK_RETRY_WAIT = 60.0          # a claim held by a live worker, or a round ano
 
 
 def check_submission_handler(reg: R.Registry, check: Callable[[Path], dict], *,
-                             now: Callable[[], float] = time.time) -> Callable[[dict, Context], dict]:
+                             now: Callable[[], float] = time.time,
+                             on_decided: Callable[[str], object] | None = None) -> Callable[[dict, Context], dict]:
     """Run the upload check for one version (`check` is normally `trial.check_submission` with a game player).
 
     * valid / rejected: done (the registry has recorded it and applied the activation rule).
@@ -30,6 +31,11 @@ def check_submission_handler(reg: R.Registry, check: Callable[[Path], dict], *,
       not blamed and nothing becomes active. After the cap the job is dead and staff get an incident.
     * a version nobody can serve (missing, damaged) is permanent: the registry already stored the incident.
     * the check could not run at all (`CheckError`, a crash) is a failure of the job, retried up to the cap.
+
+    `on_decided(submission_id)` is called whenever the version is found `valid` or `invalid`, also when this job
+    did not run the check itself (a retry after a crash finds the verdict stored and still reports it). It must
+    be safe to repeat (`notifications.sources.validation_result` is). If it raises, the job fails and is retried;
+    the verdict is already stored and is not run again.
     """
     def handle(payload: dict, ctx: Context) -> dict:
         sid = payload["submission_id"]
@@ -43,16 +49,20 @@ def check_submission_handler(reg: R.Registry, check: Callable[[Path], dict], *,
             rec = reg.store.snapshot()["submissions"].get(sid)
             if rec is not None and rec["validation_status"] == R.VALIDATING:
                 raise Defer(CHECK_RETRY_WAIT, "another worker holds the check")
+            if on_decided is not None and rec is not None and rec["validation_status"] in (R.VALID, R.INVALID):
+                on_decided(sid)
             return {"submission_id": sid, "status": rec["validation_status"] if rec else "unknown", "ran": False}
         if view["validation_status"] == R.INCONCLUSIVE:
             raise RuntimeError("the check was inconclusive (the platform could not tell); trying again later")
+        if on_decided is not None:
+            on_decided(sid)
         return {"submission_id": sid, "status": view["validation_status"], "active": view["is_active"], "ran": True}
     return handle
 
 
 def run_round_handler(store: JsonFileStore, run_fn: Callable[[O.AttemptContext], dict], *,
                       alert: Callable[[dict], None] | None = None, now: Callable[[], float] = time.time,
-                      **job_kwargs) -> Callable[[dict, Context], dict]:
+                      on_round: Callable[[str, int], object] | None = None, **job_kwargs) -> Callable[[dict, Context], dict]:
     """Play a started round (`bracket.run_round`).
 
     * round completed: done.
@@ -60,6 +70,10 @@ def run_round_handler(store: JsonFileStore, run_fn: Callable[[O.AttemptContext],
       the incident and an operator must resume the game; they then enqueue the round again.
     * another worker is playing a match of the round: wait and look again.
     * the round was never started, or the bracket is unknown: permanent.
+
+    `on_round(bracket_id, round_no)` is called after every pass that played something or found the round
+    settled, for the games decided so far (`notifications.sources.round_results` tells each decided match once,
+    however often this runs). If it raises, the job fails and is retried; games already played are not replayed.
     """
     def handle(payload: dict, ctx: Context) -> dict:
         try:
@@ -67,6 +81,8 @@ def run_round_handler(store: JsonFileStore, run_fn: Callable[[O.AttemptContext],
                               alert=alert, now=now, **job_kwargs)
         except B.BracketError as e:
             raise Permanent(str(e)) from e
+        if on_round is not None:
+            on_round(payload["bracket_id"], payload["round_no"])
         if out["skipped"] == "running_elsewhere":
             raise Defer(CHECK_RETRY_WAIT, "another worker is playing a match of this round")
         return {"bracket_id": payload["bracket_id"], "round_no": payload["round_no"], "round_status": out["status"],

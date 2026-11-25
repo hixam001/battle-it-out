@@ -32,6 +32,8 @@ from typing import Callable
 from backend.match_orchestrator import bracket as B
 from backend.match_orchestrator import orchestrator as O
 from backend.match_orchestrator import replays as P
+from backend.notifications import notifications as N
+from backend.notifications import sources as NS
 from backend.registration import registration as G
 from backend.submission_registry import registry as R
 from backend.tournament_flow import flow as F
@@ -63,27 +65,37 @@ def _incident(flow: F.Flow, tournament_id: str, kind: str, detail: str, t: float
 
 def tick(reg: T.Tournaments, flow: F.Flow, *, catalogue: dict[str, str], engine_version: str,
          vault: P.Vault | None = None, alert: Callable[[dict], None] | None = None,
-         teams_of: Callable[[str], list[str]] | None = None, registration: G.Registration | None = None, rng=None,
+         teams_of: Callable[[str], list[str]] | None = None, registration: G.Registration | None = None,
+         notifications: N.Notifications | None = None, rng=None,
          now: Callable[[], float] = time.time, by: str = "scheduler") -> dict:
     """One pass. Which teams are drawn: `teams_of(tournament_id)` if given, else the teams with a registered
     member in `registration` (the roster is the authority: a registered team without a bot is named in the
     exclusion list, and a team that is not on the roster is never drawn), else the teams that uploaded. Giving
-    both `teams_of` and `registration` is a `ValueError`: two sources would silently disagree. Returns `{"opened": [...], "completed": [...], "waiting": {id: [teams]}, "blocked": {id: reason},
+    both `teams_of` and `registration` is a `ValueError`: two sources would silently disagree. With
+    `notifications` (which needs `registration`, the audience) the draw tells the excluded teams and the
+    unfinished registrations (`sources.draw_exclusions`) **before** the tournament is marked running, so a
+    failure to notify leaves the tournament open, blocked with an incident, and the next tick tries again (the
+    notices are idempotent). Returns `{"opened": [...], "completed": [...], "waiting": {id: [teams]}, "blocked": {id: reason},
     "housekeeping": {...}, "alerts": n}`. The bracket id is the tournament id (one bracket per tournament)."""
     if teams_of is not None and registration is not None:
         raise ValueError("give teams_of or registration, not both")
+    if notifications is not None and registration is None:
+        raise ValueError("notifications need a registration: it says who the teams' members are")
     if registration is not None:
         if registration.tournaments is not reg:
             raise ValueError("the registration belongs to another tournament record")
         teams_of = lambda tid: G.registered_teams(registration, tid)      # noqa: E731
     teams_of = teams_of or (lambda tid: teams_with_uploads(flow, tid))
-    report = {"opened": [], "completed": [], "waiting": {}, "blocked": {}}
+    tell = None
+    if notifications is not None:
+        tell = lambda tid, excluded: NS.draw_exclusions(notifications, registration, tid, excluded, now=now)  # noqa: E731
+    report = {"opened": [], "completed": [], "waiting": {}, "blocked": {}, "excluded": {}}
     t = now()
     for rec in sorted(reg.store.snapshot()["tournaments"].values(), key=lambda r: r["id"]):
         tid = rec["id"]
         try:
             if rec["status"] == T.OPEN and rec["deadlines"][T.SUBMISSION] <= t:
-                _open(reg, flow, rec, teams_of, catalogue, engine_version, rng, now, by, report)
+                _open(reg, flow, rec, teams_of, catalogue, engine_version, rng, now, by, report, tell)
             elif rec["status"] == T.RUNNING:
                 _finish(reg, flow, rec, now, by, report)
         except Exception as e:                      # one tournament's trouble must not stop the others
@@ -94,7 +106,7 @@ def tick(reg: T.Tournaments, flow: F.Flow, *, catalogue: dict[str, str], engine_
     return out
 
 
-def _open(reg, flow, rec, teams_of, catalogue, engine_version, rng, now, by, report) -> None:
+def _open(reg, flow, rec, teams_of, catalogue, engine_version, rng, now, by, report, tell) -> None:
     tid = rec["id"]
     if not rec["map_pool_id"]:
         raise F.FlowError("the tournament has no map pool; an Admin or its Organizer must set one")
@@ -102,11 +114,15 @@ def _open(reg, flow, rec, teams_of, catalogue, engine_version, rng, now, by, rep
     if not teams:
         raise F.FlowError("no team to draw (none registered or none uploaded); nothing can be drawn")
     try:
-        F.open_bracket(flow, tid, tid, list(teams), rec["map_pool_id"], catalogue, engine_version,
-                       deadline_at=rec["deadlines"][T.SUBMISSION], now=now, rng=rng)
+        drawn = F.open_bracket(flow, tid, tid, list(teams), rec["map_pool_id"], catalogue, engine_version,
+                               deadline_at=rec["deadlines"][T.SUBMISSION], now=now, rng=rng)
     except R.PendingChecks as e:
         report["waiting"][tid] = list(e.teams)
         return
+    if drawn["excluded"]:
+        report["excluded"][tid] = list(drawn["excluded"])
+    if tell is not None:
+        tell(tid, drawn["excluded"])
     T.mark_running(reg, tid, by, now=now)
     report["opened"].append(tid)
 
