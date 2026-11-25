@@ -73,7 +73,7 @@ Public landing page before the execution foundation passes its exit gate; additi
 
 ## 6. Work breakdown and roadmap
 
-Jira issue keys are `BIO-NNN` where the hundreds digit is the epic number; scope items in PRD §5 are requirement IDs `BIO-REQ-01..23` (see PRD §10, "ID scheme"). Only the EPIC-00 to EPIC-03 tasks are defined so far.
+Jira issue keys are `BIO-NNN` where the hundreds digit is the epic number; scope items in PRD §5 are requirement IDs `BIO-REQ-01..23` (see PRD §10, "ID scheme"). The EPIC-00 to EPIC-03 tasks are defined below; the proposed tasks of EPIC-04 to EPIC-08 are in [`JIRA_BREAKDOWN.md`](JIRA_BREAKDOWN.md) (CN-024).
 
 | Phase | Epic | Priority | Defined tasks | Exit gate |
 |---|---|---|---|---|
@@ -81,11 +81,11 @@ Jira issue keys are `BIO-NNN` where the hundreds digit is the epic number; scope
 | 1 Scaffold modernization | BIO-EPIC-01 | P0 | BIO-101 pin dependencies; BIO-102 Python 3.13 setup; BIO-103 repair Python runner integration; BIO-104 smoke tests; BIO-105 document clean setup | Clean environment runs the reference Python bot and tests |
 | 2 Python bot execution | BIO-EPIC-02 | P0 | BIO-201 define bot contract; BIO-202 validate `bot.py`; BIO-203 run bot in isolated worker; BIO-204 enforce resource limits; BIO-205 classify bot/platform failure; BIO-206 structured logs | Two independent bots complete matches; injected failures classified |
 | 3 Match / tournament automation | BIO-EPIC-03 | P0 | BIO-301 match orchestration; BIO-302 sequential round runner; BIO-303 bracket/bye/house-bot rules; BIO-304 tie-break maps and coin flip; BIO-305 replay lifecycle; BIO-306 platform retry and Admin alert | Full simulated tournament passes |
-| 4 Backend foundation | BIO-EPIC-04 | P1 | to be broken down | API permission and persistence tests pass |
-| 5 Registration and submissions | BIO-EPIC-05 | P1 | to be broken down | Participant flow passes with privacy and deadline rules |
-| 6 Tournament operations | BIO-EPIC-06 | P1 | to be broken down | Admin/Organizer lifecycle tests pass |
-| 7 Website and participant UI | BIO-EPIC-07 | P1 | to be broken down | Usability and end-to-end acceptance complete |
-| 8 QA, pilot, production | BIO-EPIC-08 | P0 launch gate | to be broken down | Go-live checklist signed off |
+| 4 Backend foundation | BIO-EPIC-04 | P1 | BIO-401 to BIO-410 (proposed): stack decision, schema, store adapters, API skeleton, accounts and sessions, roles and scope, audit log, private storage, services, permission tests | API permission and persistence tests pass |
+| 5 Registration and submissions | BIO-EPIC-05 | P1 | BIO-501 to BIO-508 (proposed): roster, codes, teams, upload, submission reads, privacy tests, TC-06 flow, account recovery | Participant flow passes with privacy and deadline rules |
+| 6 Tournament operations | BIO-EPIC-06 | P1 | BIO-601 to BIO-611 (proposed): tournament, deadline, bracket and round endpoints, Admin trouble tools, replays and logs, archive jobs, notifications, deletion lifecycle, audit read, lifecycle tests | Admin/Organizer lifecycle tests pass |
+| 7 Website and participant UI | BIO-EPIC-07 | P1 | BIO-701 to BIO-709 (proposed): frontend foundation, account, dashboard, submission, bracket and replay, Organizer, Admin screens, acceptance; landing page deferred | Usability and end-to-end acceptance complete |
+| 8 QA, pilot, production | BIO-EPIC-08 | P0 launch gate | BIO-801 to BIO-808 (proposed): security and independent review, reliability and load, backups, deployment and CI, runbooks, licensing and terms, pilot, sign-off | Go-live checklist signed off |
 
 ```mermaid
 flowchart LR
@@ -99,27 +99,22 @@ flowchart LR
   E7 --> E8[EPIC-08<br/>QA + pilot + launch]
 ```
 
-### 6.1 Current status (as of 2026-11-24)
+### 6.1 Current status (as of 2026-11-25)
 
-**Phase 0 is in progress; no later phase has started.**
+**The execution foundation (BIO-EPIC-00 to BIO-EPIC-03) is built as tested libraries; the platform around it (BIO-EPIC-04 and later) is not.** The source of truth is [`REQUIREMENTS_COVERAGE.md`](REQUIREMENTS_COVERAGE.md): 17 requirements done, 50 partial, 19 not built, 5 deferred (of 91).
 
-Done (evidence in git history, PRs #1 to #4, all merged):
-- Specification documents committed; duplicate Jira IDs fixed (PRD v1.1, test plan v1.1).
-- Battlecode 2026 scaffold vendored into `backend/battlecode26-scaffold/` (upstream commit `f69e2ab`).
-- `PRODUCT.md` created for the design tooling; agent/skill files are git-ignored.
-- *Observed* on 2026-11-24: full Python-vs-Python matches on Python 3.12, 3.13, 3.14 and 3.15 through `backend/match_runner/launcher.py` (about 3 s each; same replay on all four for the example bot).
+Built and tested (evidence: change notices CN-001 to CN-023, pull requests #1 to #30, all merged):
+- Pinned, reproducible match runner on Python 3.12 to 3.15 (Linux x86_64), per-team sandbox and limits (interim numbers), failure classification, structured logs.
+- Bot validator, upload check with a trial match, submission registry (versions, activation, deadline lock, privacy).
+- Match orchestration with retry, tie-break maps and coin flip, single-elimination bracket with byes, replay vault and archive purge, worker queue, the flow between upload and round.
+- Tournament lifecycle and deadline timer, roster, invitation codes and registration, notifications and their sources.
+- All of the above are **libraries with JSON-file stores**: no HTTP API, database, accounts, website, running services or worker image exist.
 
-Not yet done / not verified:
-- Exact Python patch and OS matrix (DEC-03): only Linux x86_64 was tested. Bot sandbox, isolation and time limits are not solved: the engine allows `open`, attribute-walk escapes and infinite loops (`TECHNICAL_DOCUMENTATION.md` §3.5).
-- A Python-bot match through Gradle did not complete in two attempts (see §8, R2); this is unresolved, not a conclusion about the engine.
-- No version matrix, no pinned dependencies, no automated tests beyond a placeholder (`1 + 1`).
+Not done (see `JIRA_BREAKDOWN.md` for the tasks): the backend foundation (needs DEC-11), the endpoints around each library, deletion and retention, the website, load and recovery tests, an independent security review, the pilot, and the owner decisions DEC-04, DEC-06, DEC-07, DEC-10, DEC-11, DEC-13, DEC-14. Python 3.13 and 3.15 were not run on the development machine in the later tasks (3.12 and 3.14 were).
 
 ### 6.2 Recommended next work (in order)
 
-1. **BIO-001..BIO-004:** audit the runner, record the version matrix, and establish a clean-environment baseline. Resolve the engine/Python-package version mismatch first (R2).
-2. **BIO-102:** attempt Python 3.13 in a clean environment and record the result with exact versions (TC-01).
-3. **BIO-201:** write the `bot.py` bot contract, including what a bot may import (R3).
-4. **BIO-203/204:** design the isolated worker around OS-level isolation, because the engine's own restrictions are language-level (R4).
+The proposed tasks, their dependencies and the order they allow are in [`JIRA_BREAKDOWN.md`](JIRA_BREAKDOWN.md). In short: (1) the owner answers DEC-11 so that BIO-EPIC-04 can start, and the decisions that block the open parts of BIO-EPIC-02 and BIO-EPIC-03 (DEC-04, DEC-06, DEC-14); (2) stack-neutral work meanwhile (the API contract gap for users, roles and Organizer assignments, service wiring, the Python 3.13 and 3.15 runs, licensing and runbook text); (3) the backend foundation, then the endpoints of BIO-EPIC-05 and BIO-EPIC-06, then the website, then the launch gate.
 
 ## 7. Decisions needed before work can proceed
 

@@ -594,11 +594,11 @@ Each ID below has exactly one meaning across all project documents.
 -   **Epics:** `BIO-EPIC-00` to `BIO-EPIC-08` (table above).
 -   **Jira issue keys:** `BIO-NNN`, where the hundreds digit is the epic
     number (`BIO-001`--`BIO-005` = EPIC-00, `BIO-1NN` = EPIC-01, ...,
-    `BIO-8NN` = EPIC-08). Only EPIC-00 to EPIC-03 tasks are defined in
-    the breakdown below. Tasks for EPIC-04 to EPIC-08 receive keys when
-    those epics are broken down; until then documents refer to the epic
-    ID. If the tracker assigns different numbers, update the breakdown
-    and the references to it, never reuse a number for a second meaning.
+    `BIO-8NN` = EPIC-08). EPIC-00 to EPIC-03 tasks are defined in the
+    breakdown below. The tasks of EPIC-04 to EPIC-08 are proposed in
+    [`JIRA_BREAKDOWN.md`](JIRA_BREAKDOWN.md) (CN-024, 2026-11-25). If
+    the tracker assigns different numbers, update the breakdown and the
+    references to it, never reuse a number for a second meaning.
 -   **Requirement IDs:** `BIO-REQ-01` to `BIO-REQ-23` identify the scope
     items in §5. They are requirements, not Jira issues, in the same way
     as `BIO-G01`, `BIO-NFR-01`, and `DEC-01`.
