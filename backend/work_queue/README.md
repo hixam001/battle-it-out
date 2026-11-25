@@ -54,4 +54,4 @@ BIO_INTEGRATION=1 python3 -m unittest backend.work_queue.tests.test_handlers.Wor
 
 ## Not done
 
-No API or scheduler (nothing enqueues a check when a participant uploads, and nothing calls `purge_pending`, `verify_pins` or notification jobs); more than one host (the engine port and the JSON stores assume one); a container or image for the worker; a real Admin alert channel; the orchestrator's own per-attempt lease (2400 s) is not renewed, so a single match longer than that is still treated as lost; the database (DEC-11); no independent review.
+No API or scheduler (nothing enqueues a check when a participant uploads, and nothing calls `purge_pending`, `verify_pins` or `deliver_emails`; the handlers tell the teams only with `--notify`, CN-023); more than one host (the engine port and the JSON stores assume one); a container or image for the worker; a real Admin alert channel; the orchestrator's own per-attempt lease (2400 s) is not renewed, so a single match longer than that is still treated as lost; the database (DEC-11); no independent review.
