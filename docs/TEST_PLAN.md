@@ -124,6 +124,12 @@ coin flip, visibly recorded and audited. - Qualification draw occurs
 only after scores/slots finalized; displayed and logged. - Winners
 advance exactly once.
 
+Scoped HTTP result checks (BIO-603 / CN-034) exercise pending draws, real
+stored bracket advancement, byes, a paused match without a result and a recorded
+four-game final resolved by coin flip. Repeated reads preserve the result and
+stored draw. Current sessions, access revocation, archived history and generic
+hidden/missing refusals are tested with disposable PostgreSQL accounts.
+
 ### TC-06 --- Registration, invitations, and deadline transitions
 
 **Jira:** BIO-EPIC-05 / BIO-EPIC-06\

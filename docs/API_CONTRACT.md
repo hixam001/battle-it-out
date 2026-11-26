@@ -610,12 +610,30 @@ decision.
 **Access:** authenticated tournament participant/staff with access.\
 **Success:** bracket, match statuses, scores, advancement.
 
+**Implemented (BIO-603 / CN-034):** `GET /api/v1/tournaments/{id}/bracket/`
+returns `tournament_id` and a `bracket` object once a draw is stored. The bracket
+contains the recorded draw, registered playoff teams, map-pool ID when recorded,
+rounds, pairings, byes, game IDs/status, advancement and champion. The `bracket`
+field is `null` before a draw. Scores require additional engine result data.
+
 ### GET `/matches/{match_id}`
 
 **Purpose:** Match details/result.\
 **Access:** authenticated user with tournament access.\
 **Success:** teams, map, status, result, tie-break details, bot version
 identifiers; no source code.
+
+**Implemented (BIO-603 / CN-034):** `GET /api/v1/matches/{match_id}/` takes
+a game ID exposed by the bracket pairing's `series.games`. The response contains
+`tournament_id`, selected `match_id`, `round_number` and the enclosing `series`.
+The series reports the two pinned version IDs, maps, ordered game outcomes,
+winner/result type and recorded coin flip when applicable. A drawn/paused game
+without a decision has a `null` result. Engine scores, raw paths, diagnostics,
+and replay availability are outside this projection.
+
+Both reads use current participant membership, explicit Organizer assignment or
+Admin scope. Archived tournaments retain results. Missing, deleted and hidden
+objects return the same `404`. Responses are private and non-cacheable.
 
 ### GET `/matches/{match_id}/replay`
 

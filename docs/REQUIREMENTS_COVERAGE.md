@@ -18,8 +18,8 @@ It does **not** provide: users, roles, tournaments, brackets, byes, house bots, 
 | Status | Count | Meaning |
 |---|---|---|
 | DONE | 17 | built and tested here (library or tool level), nothing material missing |
-| PARTIAL | 61 | built in part; the gap column says what is still ours to develop |
-| TODO | 13 | not built; no code exists |
+| PARTIAL | 62 | built in part; the gap column says what is still ours to develop |
+| TODO | 12 | not built; no code exists |
 | DEFERRED | 0 | No whole requirement remains deferred; owner activated BIO-REQ-19–23 (CN-028) |
 | **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 74 of the 91 still need development work |
 
@@ -49,9 +49,9 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | SRD-023 | Sequential matches, Organizer starts each round | None | **PARTIAL** | `bracket.start_round` / `run_round` (CN-011), host lock; `tournament_flow.start_round` starts and queues a round, `work_queue` plays it (CN-017, CN-018) | Authorization of the Organizer (API layer) |
 | SRD-024 | Normal tie: one tie-break map | None (engine settles ties itself, then flips an unseeded coin) | **DONE** | `tiebreak.py` (CN-010); `maps.py` map pool: 1 tie-break map, distinct from the played maps, pinned by SHA-256 (CN-014) | Organizer-chosen pool in tournament storage; custom maps |
 | SRD-025 | Final tie: three tie-break maps in order | None | **DONE** | `tiebreak.py` (CN-010); `maps.py`: 3 distinct tie-break maps per pool (CN-014) | Reading of 'three maps' (all played, majority of wins) awaits owner confirmation |
-| SRD-026 | Still tied: 50/50 coin flip, displayed, logged, no rerolls | None (engine coin flip is unseeded and unauditable) | **PARTIAL** | `tiebreak.py`: one stored `secrets` draw, `public_view` | Screen, Admin audit log, real publishing |
+| SRD-026 | Still tied: 50/50 coin flip, displayed, logged, no rerolls | None (engine coin flip is unseeded and unauditable) | **PARTIAL** | Stored one-time draw and safe series projection (CN-010); scoped HTTP results show the persisted flip (CN-034) | Complete bracket/results UI and unified Admin audit |
 | SRD-027 | Qualification cutoff tie: automatic draw, shown, logged, no reruns | None | **TODO** | - | Draw inputs and audit method undecided (DEC-14) |
-| SRD-028 | Results publish automatically to authenticated users | None | **TODO** | BIO-EPIC-04/07 | Needs auth, API, UI |
+| SRD-028 | Results publish automatically to authenticated users | None | **PARTIAL** | Scoped HTTP reads expose stored results and bracket progression as soon as workers record them, including after archive (CN-034) | Complete bracket and match-history screens, score fields and end-to-end publication acceptance |
 | SRD-030 | Admin and Organizer create tournament drafts | None | **PARTIAL** | `tournaments.create`: Admin or Organizer, idempotent, both deadlines checked, a participant refused (CN-019) | API, authentication and the Organizer assignment record (the creating Organizer counts as assigned until it exists) |
 | SRD-031 | Organizer tournaments need Admin approval | None | **PARTIAL** | `submit_for_approval` (creator only) and `approve` (Admin, `confirm`); an Organizer's draft cannot be approved unsubmitted (CN-019) | API; publication to participants waits for registration (EPIC-05) |
 | SRD-032 | Rejection with reason; edit and resubmit | None | **PARTIAL** | `reject` needs a reason and keeps it; the Organizer edits a rejected tournament and resubmits; every decision is kept (CN-019) | API; the Organizer is not notified of the rejection (no notifications yet) |
@@ -93,7 +93,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | BIO-REQ-04 | Validate entrypoint, syntax, imports, runtime | None | **DONE** | `bot_validator` + `submission_check` trial match on both sides (CN-013) | Wiring into upload and activation is BIO-REQ-14 |
 | BIO-REQ-05 | Run two bots in an isolated environment | None | **PARTIAL** | See SRD-007 | See SRD-007 |
 | BIO-REQ-06 | Separate bot failure from platform failure | None | **DONE** | CN-006 | - |
-| BIO-REQ-07 | Automate sequential matches, results, bracket advancement | None | **PARTIAL** | Orchestrator, series, bracket/round runner, queue/flow and interim service commands (CN-009–027) | Production deployment/API, house bots (DEC-06), qualification draw (DEC-14) |
+| BIO-REQ-07 | Automate sequential matches, results, bracket advancement | None | **PARTIAL** | Orchestrator, series, bracket/round runner, queue/flow and interim service commands (CN-009–027); scoped results/bracket reads (CN-034) | Production deployment, round/generate mutations, house bots (DEC-06), qualification draw (DEC-14) |
 | BIO-REQ-08 | Generate replays and keep them until archive, then delete | Partly (engine writes `.bc26`; client can view it) | **PARTIAL** | Replay path and SHA-256 recorded per game; vault with hash and gzip check, access rule, 404/410, purge (CN-012) | Replay endpoint, building a `Viewer` from the session, object storage and short-lived URLs, a player (DEC-10) |
 | BIO-REQ-09 | Platform-failure retry policy | None | **PARTIAL** | See SRD-010, SRD-011 | See SRD-010/011 |
 | BIO-REQ-10 | Prove the engine path end to end before the web build | None | **PARTIAL** | Real matches, series, failure injection, a real 3-team tournament and a 5-team simulation with byes, forfeit, tie-breaks, replays and archive pass (CN-015) | TC-05 not complete: house bots, qualification draw, replay endpoint and worker hand-off |

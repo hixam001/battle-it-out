@@ -412,3 +412,20 @@ Decisions from the owner that change or narrow what the requirement documents (P
   execution/production gates remain. Coverage evidence updates for SRD-060/061/
   064, BIO-REQ-16 and BIO-NFR-07; statuses stay 17 DONE / 61 PARTIAL / 13 TODO /
   0 DEFERRED. No new product/provider/hosting approval is inferred.
+
+## CN-034 — Scoped bracket and game results (2026-11-26)
+
+- **BIO-603:** added current-scope, read-only tournament bracket and
+  per-game result endpoints. Read the persisted draw, pairings, byes,
+  current game states, advancement, pinned version IDs, ordered tie-break
+  games and recorded coin flip. A visible tournament with no draw returns
+  a null bracket. Archived results remain readable; hidden, deleted and
+  missing records share a generic `404`.
+- **Verification:** 64 Django tests passed with disposable PostgreSQL,
+  including seven new result cases for scope, revocation, archived history,
+  byes, paused games, serialized decisions and stable repeated reads. All
+  51 selected bracket/series unit cases passed, with four expected real-engine
+  skips in unit mode. Django system and migration-drift checks passed.
+- **Coverage:** SRD-028 advances to PARTIAL. Counts are 17 DONE / 62 PARTIAL /
+  12 TODO / 0 DEFERRED. Bracket/round mutations, map-pool selection,
+  raw engine scores, full results UI and production acceptance remain open.
