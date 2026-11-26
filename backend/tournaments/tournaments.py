@@ -482,10 +482,12 @@ def open_registration(reg: Tournaments, actor: R.Actor | None, tournament_id: st
         return _view(rec, actor)
 
 
-def mark_running(reg: Tournaments, tournament_id: str, by: str, *, now: Callable[[], float] = time.time) -> dict:
+def mark_running(reg: Tournaments, tournament_id: str, by: str, *,
+                 prepare: Callable[[dict], None] | None = None, now: Callable[[], float] = time.time) -> dict:
     """The system moved the tournament to `running` because its bracket was drawn. Needs the submission
     deadline to have passed (nothing is drawn earlier) and a registered, published tournament. Repeating it
-    on a running tournament changes nothing."""
+    on a running tournament changes nothing. A draw callback receives the current open tournament under its
+    store lock so an ordinary edit or deadline extension cannot race bracket generation."""
     if not isinstance(by, str) or not by:
         raise Invalid("mark_running needs the acting system or user")
     with reg.store.transaction() as state:
@@ -496,6 +498,11 @@ def mark_running(reg: Tournaments, tournament_id: str, by: str, *, now: Callable
             raise Conflict(f"a tournament that is {rec['status']} cannot start running")
         if rec["deadlines"][SUBMISSION] > now():
             raise Conflict("the submission deadline has not passed")
+        if prepare is not None:
+            if rec["status"] != OPEN:
+                raise Conflict("registration must be open to generate a bracket")
+            _check_audit_capacity(state)
+            prepare(copy.deepcopy(rec))
         _move(rec, RUNNING, state, now(), by, "mark_running")
         return _view(rec, None)
 

@@ -509,3 +509,21 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Remaining:** matched worker-output and backup policy, production purge
   supervision, staging restore after real archive and permanent-delete workflow.
   Coverage evidence advances without changing the requirement statuses.
+
+## CN-038 — Complete bracket and round APIs (2026-11-26)
+
+- **BIO-603:** adds staff map-pool selection, confirmed single-tournament
+  draw, and idempotent sequential round start. Bracket and match read
+  projections include wins by side from recorded outcomes. Raw engine point
+  totals and complete results UI remain separate.
+- Manual draw shares the scheduler's deadline, verified roster, map catalogue,
+  pinning and exclusion-notice workflow. The tournament lock keeps deadline
+  changes out of the draw and reserves the lifecycle audit entry. Invalid map
+  hashes are checked before pinning. Only an explicit start queues a round.
+- The API uses the existing current Admin/explicit Organizer scope and CSRF.
+  Paused rounds require their operator workflow, and repeat starts share one
+  queue job. The web process reads maps from the configured engine JAR;
+  execution stays with the existing worker.
+- All 85 Django tests and system/migration-drift checks passed. The 164 selected
+  scheduler, flow, map and service integration cases passed with temporary
+  output and real engine games. SRD-023 advances to DONE.

@@ -270,15 +270,15 @@ def text(body, key, limit):
     return value.strip()
 
 
-def mutate(request, tid, action):
-    key = request.headers.get('Idempotency-Key', '')
-    if not R.KEY_RE.fullmatch(key):
+def mutate(request, tid, action, *, idempotency_key=None, staff=False):
+    key = request.headers.get('Idempotency-Key', '') if idempotency_key is None else idempotency_key
+    if not isinstance(key, str) or not R.KEY_RE.fullmatch(key):
         raise ValidationError('A safe Idempotency-Key of 1–128 characters is required.')
     fingerprint = hashlib.sha256(json.dumps([request.method, request.path, request.data], sort_keys=True, default=str).encode()).hexdigest()
     with transaction.atomic():
         current_user = get_user_model().objects.select_for_update().get(pk=request.user.pk)
         request.user.is_active, request.user.is_superuser = current_user.is_active, current_user.is_superuser
-        D.tournament(request.user, tid)  # current scope again, including before stored-response delivery
+        D.tournament(request.user, tid, staff=staff)  # current scope, including before stored-response delivery
         receipt = Receipt.objects.filter(user=request.user, key=key).first()
         if receipt:
             if receipt.fingerprint != fingerprint:
