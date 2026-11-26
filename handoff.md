@@ -553,3 +553,26 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   requirement statuses are unchanged; backlog categories 1–5 and 7–9 are
   byte-for-byte unchanged, with category 6 reconciled to this implementation.
   No generated/runtime/frontend/agent artifacts are included.
+
+### 2026-11-26 — BIO-805: interim operator runbook
+
+- Cut `BIO-805-interim-operator-runbooks` from fetched `origin/main` at
+  `22ec3dc` while PRs #39 and #40 were open against main. Read the merged
+  project memory/handoff and checked the current service, web and policy
+  interfaces. The runbook focuses on the existing single-host setup.
+- Added `docs/OPERATIONS_RUNBOOK.md` for incident status, paused matches,
+  dead jobs, email failures, deadline requests, purge, backup/restore and
+  key rotation. Updated `USER_GUIDE.md` and `ADMIN_GUIDE.md` for current
+  provisioned accounts, console features and unfinished Admin actions.
+- Rehearsed PostgreSQL and filesystem capture/checksum/restore using private
+  disposable fixtures. Verified scoped login, a submission digest, match and
+  dispute references, email preference, readable active replay and absent
+  archived artifact. A local signing-key replacement refused an old session
+  and allowed fresh CSRF login. The rehearsal check uses the registry's
+  `content_hash` field. All 18 real-game service integration tests, 34 queue
+  tests and 53 tournament tests passed. Temporary clusters stopped after
+  verification. No external provider or production state was used.
+- Updated test/Jira evidence, service/root documentation, CN-033 and shared
+  memory. The 91 statuses and nine backlog categories remain. Production
+  restore, approved adapters, runbook sign-off, and operational mutation
+  authority remain. Next independent candidate is BIO-603 bracket HTTP reads.

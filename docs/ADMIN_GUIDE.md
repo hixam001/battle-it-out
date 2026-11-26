@@ -1,10 +1,21 @@
 # Battle It Out --- Admin Guide
 
-**Version:** 1.0\
-**Date:** 2026-11-24\
+**Version:** 1.1\
+**Date:** 2026-11-26\
 **Audience:** the platform Admin (global role) and whoever operates the platform. Participants and Organizers: see [`USER_GUIDE.md`](USER_GUIDE.md).
 
-> **Read this first: the platform does not exist yet.** Sections 1 to 7 describe the Admin role **as specified** in `PRD.md`, `SRD.md`, `APP_FLOW.md`, `API_CONTRACT.md` and `DATA_MODEL.md`; nothing here can be clicked today. Where a procedure is a recommendation of this guide and not a documented rule, it says **Recommended**. Items marked **`[DECIDE]`** are unresolved. Section 8 is the only part that applies to the repository as it exists now, and it lists only what was checked on 2026-11-24.
+## Current console
+
+Sign in with the provisioned platform Admin account and open **Operations**.
+The page shows service counts, current incidents, dead jobs and recent feature
+audit events. Use the [interim operations runbook](OPERATIONS_RUNBOOK.md) for
+triage, deadline requests, purge checks and a staging recovery rehearsal. The
+console is read-only for those operational incidents. **Match disputes** lets
+you review cases in the selected tournament and record a resolution.
+
+The rest of this guide describes the planned Admin workflow and the current
+library behavior where identified. Deployment and owner decisions are tracked
+in [project memory](PROJECT_MEMORY.md).
 
 ## 1. What the Admin is responsible for
 
@@ -65,8 +76,8 @@ Tournament states: `draft -> pending_approval -> approved -> registration_open -
 | What happened | Meaning | System behavior | Admin action |
 |---|---|---|---|
 | Bot crash, timeout, or limit violation | A game result | Bot loses; opponent advances; no rematch | None; explain if asked |
-| Engine or worker failure | A platform incident | Same map and bot versions, new seed, retry | Watch for the cap |
-| Retry cap reached (10; total attempts versus retries is `[DECIDE]`) | Operational problem | Automatic retry stops, you are alerted, the match pauses | Investigate and resume. **The paused state's name and who may resume it are `[DECIDE]`** |
+| Engine or worker failure | A platform incident | Retry with the same map and pinned bot versions. Engine seed control is open | Watch for the cap |
+| Retry cap reached (current default 10 total attempts) | Operational problem | Automatic retry stops, you are alerted, the match pauses | Follow the incident runbook. Resume authority and the authenticated mutation route remain open |
 | Replay missing before archive | Processing failure | Participants see "unavailable"; staff incident created | Check storage and worker logs |
 
 ### 5.3 Ties
@@ -91,11 +102,11 @@ You do not decide ties. Normal ties use one tie-break map, finals use three in o
 - **Notifications:** dashboard notifications are mandatory and independent of email. Email delivery attempts and failures are recorded and retried. Email provider, templates, and which security emails are mandatory are `[DECIDE]`.
 - **Privacy:** other teams' source code stays private throughout. An Organizer assigned to a tournament may view and download that tournament's source; you may too.
 - **Roles and assignments:** the navigation map lists a screen for user, role, and Organizer assignment, but **`API_CONTRACT.md` currently defines no endpoints for it**. This is a gap to close before the backend epic (BIO-EPIC-04). Whether a user may hold several roles is `[DECIDE]`.
-- **Account recovery, resend verification email, and disputes** are not specified yet (`[DECIDE]`, DEC-13).
+- **Account recovery and verification resend** remain open (DEC-13). Private dispute review is available in the feature console; appeal and outcome-correction policy remain open.
 
 ## 8. Working with the repository today
 
-These are the operator-level tasks that exist now. Everything below was checked on 2026-11-24 unless marked otherwise.
+These scaffold commands are historical engine checks from 2026-11-24. Use the current [Python launcher](../backend/match_runner/README.md) for local bot matches.
 
 | Task | Command (from `backend/battlecode26-scaffold/`) | Notes |
 |---|---|---|
@@ -109,7 +120,7 @@ Cautions:
 
 - The scaffold's `run.py` accepts only **Python 3.12**; use the match launcher instead, which runs on 3.12 to 3.15 (`backend/match_runner/README.md`).
 - The Python engine package reports itself as `1.2.2` while the engine is `1.2.6`. This is not drift: the official 1.2.6 release artifact contains package 1.2.2 (checked by hash on 2026-11-24). The versions and artifact hash are pinned in `backend/match_runner/versions.lock.json` and checked on every launch.
-- Running Python bots through Gradle does not work as shipped on Linux. Use `backend/match_runner/launcher.py` instead (see `TECHNICAL_DOCUMENTATION.md` section 3.2). A full Python match of the example bot takes about 3 seconds. The engine does not stop a bot that never returns, so the launcher's timeout is the only protection until the platform has its own limits (DEC-04).
+- Running Python bots through Gradle does not work as shipped on Linux. Use `backend/match_runner/launcher.py` instead (see `TECHNICAL_DOCUMENTATION.md` section 3.2). A full Python match of the example bot takes about 3 seconds. The project launcher supplies per-team sandboxing and interim execution limits. Benchmark approval remains DEC-04.
 - A hung run can leave a stray `python -m battlecode26` process; stop only your own process by PID, because editors and Gradle daemons also run Java.
 
 ## 9. Decisions an Admin should help close before launch

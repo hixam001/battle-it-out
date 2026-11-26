@@ -338,8 +338,10 @@ with current code and the coverage matrix; nothing here is closed by intake.
    live/analytics/submission/dispute/operations console now exist. Branding,
    usability, formal accessibility/nonvisual play-by-play and full FLOW-01–08
    acceptance remain; production capacity/outage/concurrency/multi-host tests,
-   backups/recovery, deployment/TLS, CI matrix/real-engine checks, runbooks, pilot
-   and go-live approval are still open. No release dates before the benchmark.
+   target-host backups/recovery, deployment/TLS, CI matrix/real-engine checks,
+   runbook adoption/sign-off, pilot and go-live approval remain open. CN-033
+   supplies an interim runbook and console guide with disposable restore and
+   web signing-key rehearsal. No release dates before the benchmark.
 9. **Owner/legal and follow-up scope:** written Battlecode Java-engine license
    clarification, copyright holder, participant terms and network source offer;
    reconcile proposed Jira numbering/create real issues; decide client pin
@@ -416,7 +418,7 @@ records unresolved role/provisioning decisions; none is an implemented default.
 | [ARCHITECTURE.md](ARCHITECTURE.md), [TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md) | Design boundaries, runner/worker mechanics, commands and troubleshooting |
 | [PROJECT_PLAN.md](PROJECT_PLAN.md), [JIRA_BREAKDOWN.md](JIRA_BREAKDOWN.md), [REQUIREMENTS_COVERAGE.md](REQUIREMENTS_COVERAGE.md) | Roadmap, dependencies and evidence-based completion |
 | [TEST_PLAN.md](TEST_PLAN.md), [SECURITY_REVIEW.md](SECURITY_REVIEW.md), [BOT_POLICY.md](BOT_POLICY.md) | Acceptance gates, self-review residuals, actual bot contract |
-| [USER_GUIDE.md](USER_GUIDE.md), [ADMIN_GUIDE.md](ADMIN_GUIDE.md) | Planned full core flows; CN-028 feature console is implemented separately |
+| [USER_GUIDE.md](USER_GUIDE.md), [ADMIN_GUIDE.md](ADMIN_GUIDE.md), [OPERATIONS_RUNBOOK.md](OPERATIONS_RUNBOOK.md) | Current feature console, planned Admin flows and interim service runbook (CN-033) |
 | [LICENSING.md](LICENSING.md), [../THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md), [../LICENSE](../LICENSE) | AGPL-3.0-only project and open component/launch obligations |
 | [../handoff.md](../handoff.md), [../CHANGELOG.md](../CHANGELOG.md), package READMEs and source | Task history and actual implementation; older narrative can be stale |
 
@@ -536,3 +538,24 @@ full PostgreSQL migration and every retained execution gate remain open. All
 91 statuses stay **17 DONE / 61 PARTIAL / 13 TODO / 0 DEFERRED**; all nine complete
 backlog categories above remain. No public skill or generated graph/index update
 is needed; repository Markdown is the durable memory destination.
+
+## CN-033 continuation evidence
+
+BIO-805 starts at merged `origin/main` `22ec3dc` on
+`BIO-805-interim-operator-runbooks`. [OPERATIONS_RUNBOOK.md](OPERATIONS_RUNBOOK.md)
+covers current health and status commands, incident triage, deadline/purge
+escalation and isolated backup, recovery and key rotation. The current
+Admin/participant/Organizer guides reflect the merged feature console from
+that base. Resume, revive and deadline mutation are still trusted library
+operations with role/HTTP workflow follow-up. No new operations policy is set.
+
+A disposable PostgreSQL/file fixture verified backup checksums and restore,
+current account scope, byte-identical source and digest, match/dispute
+references, preferences and retained/archived replay state. An old web session
+failed after a disposable signing-key change and fresh CSRF login passed.
+Service integration all 18 passed in 33.445 s (real games and archive);
+34 work-queue and 53 tournament tests passed. Production time/capacity claims,
+provider/target-host outage drills, recovery objectives and runbook sign-off
+remain pending. All 91 requirement statuses and all nine backlog categories
+remain. Independent next work can expose the existing bracket state to scoped
+HTTP reads (BIO-603).

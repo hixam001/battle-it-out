@@ -310,6 +310,17 @@ execution runner does not discover these modules.
 -   [ ] Destructive actions require reason and confirmation.
 -   [ ] Audit log is available only within role scope.
 
+### Interim operations rehearsal (BIO-805 / CN-033)
+
+The [operations runbook](OPERATIONS_RUNBOOK.md) records status triage,
+incident escalation and staging restore steps for the current reference setup.
+A disposable PostgreSQL and file-state restore verified fixture scope, source
+digest, match/dispute references, notification preferences and archived vault
+files. A local signing-key change invalidated an old session and accepted a
+fresh CSRF login. The service lifecycle suite exercises real engine games,
+purge recovery and injected send/alert failures. Target-host, provider and
+production restore acceptance remain open.
+
 ## 6. Known limitations / unresolved test inputs
 
 -   Python 3.13 compatibility is a target until TC-01 passes.
