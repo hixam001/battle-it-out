@@ -686,3 +686,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   production build and all five Playwright tests. Tests used disposable
   PostgreSQL, local services and temporary replay paths. No provider or
   production environment was used.
+
+### 2026-11-27 — BIO-610: role-scoped audit feeds
+
+- Cut BIO-610-scoped-audit-log from fetched origin/main at d66b95d.
+  Read project memory, the latest handoff and the audit requirements,
+  existing API contract, data model, tests and event sources.
+- Added read-only tournament and Admin global audit APIs. The endpoints
+  combine the existing audit stores, order entries by timestamp/source/
+  sequence, and return bounded offset pages. Current verified team and
+  assigned Organizer permissions apply. The Admin global filter retains
+  access to deletion records and omits free-form or secret fields.
+- All 85 Django tests passed on disposable PostgreSQL in 8.496 s, including
+  six new scope, retention, pagination and redaction cases. System and
+  migration-drift checks passed. This change adds no database migration.
+- Updated the Admin and web guides, endpoint contract, test plan, coverage,
+  Jira, changelog, CN-042 and project memory. All 91 statuses and nine
+  backlog categories remain. Production audit migration, series/incident
+  coverage and the dedicated Admin screen remain.

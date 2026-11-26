@@ -99,6 +99,8 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET/POST | `/tournaments/{id}/disputes/` | Team-private dispute list/create tied to a real match |
 | GET/POST | `/tournaments/{id}/disputes/{uuid}/` | Team/staff comments and review transitions with optimistic revision |
 | GET | `/admin/operations/` | Admin-only counts, safe incident metadata, dead jobs and recent feature audit events |
+| GET | `/tournaments/{id}/audit-logs/` | Current tournament scope, role-specific redacted audit, bounded pages |
+| GET | `/admin/audit-logs/` | Admin-only audit with bounded pages and optional tournament filter, including deleted tournament history |
 
 Analytics never changes results. Engine coin-flip picks count as tied games;
 series coin flips count separately. Byes do not inflate played games or wins.

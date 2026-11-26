@@ -54,6 +54,10 @@ remaining backlog after every task.
 - CN-032–035 add native replay downloads, the interim operations runbook,
   bracket/game history reads and confirmed archive with retryable vault purge.
   Browser replay playback, full results screens and production recovery remain open.
+- CN-042 completes the BIO-610 read APIs for scoped tournament audit and
+  Admin global audit over existing event stores. Verified participants see
+  their teams' audit and public tournament events. Admins can filter
+  retained deletion audit by tournament ID.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -288,6 +292,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    errors/request IDs and process liveness. CN-026's full administration
    proposal remains open. Legacy creator fallback remains outside these scoped
    feature routes and must be replaced before the full role API is implemented.
+   CN-042 reads current-role scoped audit across the existing stores. Permanent
+   migration and integration with series history and incidents remain open.
 2. **Service operation:** deploy/supervise the CN-027/028 worker, maintenance,
    email, alert and web processes; approve/implement real email/Admin adapters;
    target-host restart/outage drills; pinned worker/container image and runtime

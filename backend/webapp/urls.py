@@ -3,11 +3,13 @@ from django.urls import path
 from . import results
 from . import views as V
 from . import tournament_archive
+from . import audit
 urlpatterns = [
     path('api/v1/health/', V.health),
     path('api/v1/auth/session/', V.session), path('api/v1/auth/login/', V.login_view),
     path('api/v1/auth/logout/', V.logout_view), path('api/v1/tournaments/', V.tournaments),
     path('api/v1/dependencies/', V.dependencies), path('api/v1/admin/operations/', V.operations),
+    path('api/v1/admin/audit-logs/', audit.admin_audit),
     path('api/v1/matches/<str:mid>/replay/', V.replay),
     path('api/v1/notifications/', V.notifications),
     path('api/v1/notifications/<str:nid>/', V.notification_detail),
@@ -18,6 +20,7 @@ urlpatterns = [
     path('api/v1/tournaments/<str:tid>/teams/<str:team>/submissions/', V.submissions),
     path('api/v1/tournaments/<str:tid>/submissions/<str:sid>/download/', V.download),
     path('api/v1/tournaments/<str:tid>/archive/', tournament_archive.archive),
+    path('api/v1/tournaments/<str:tid>/audit-logs/', audit.tournament_audit),
     path('api/v1/tournaments/<str:tid>/disputes/', V.disputes),
     path('api/v1/tournaments/<str:tid>/disputes/<uuid:did>/', V.dispute_detail),
     path('api/v1/tournaments/<str:tid>/bracket/', results.bracket),
