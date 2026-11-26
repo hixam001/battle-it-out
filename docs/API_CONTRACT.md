@@ -697,8 +697,9 @@ Both PATCH routes set an absolute state and are naturally idempotent; this
 slice needs no idempotency-key receipt. Every response uses CN-029's fresh
 request ID and `private, no-store`; errors use the shared envelope. No SQL/JSON
 cross-store transaction or full notification database migration is claimed.
-Announcements, automatic extension/override notices, real email providers,
-mandatory security-email policy and notification screens remain open.
+The [participant inbox](../frontend/README.md) uses these endpoints (CN-031).
+Announcements, automatic extension/override notices, real email providers and
+mandatory security-email policy remain open.
 
 ### GET `/tournaments/{id}/audit-logs`
 

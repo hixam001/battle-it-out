@@ -223,8 +223,17 @@ and temporary legacy notification/registration state:
   deliveries; new roster-derived team notices still appear once in the feed.
   Injected provider failure leaves dashboard notices intact.
 
-This does not close full TC-08: no real provider, notification UI, production
-outage or backup/restore drill is exercised. Staff recipients, announcement and
+#### Implemented browser subset (BIO-703 / CN-031)
+
+The Playwright suite uses real Django sessions and disposable PostgreSQL accounts
+with isolated notification data. It verifies direct dashboard/inbox links,
+timezone-labeled deadlines, tournament-scoped previews, historical personal
+notices, inbox pagination, keyboard filtering, read and email preference
+persistence across reload, account isolation on logout, and the unlinked-account
+refusal. Desktop and mobile layout checks are covered in the local browser suite.
+
+Full TC-08 still requires a real provider, production outage and backup/restore
+drill. Staff recipients, announcement and
 automatic deadline/override endpoints, and notification-store migration remain
 open. Web tests require explicit module labels in the webapp README; the backend
 execution runner does not discover these modules.
