@@ -686,3 +686,23 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   production build and all five Playwright tests. Tests used disposable
   PostgreSQL, local services and temporary replay paths. No provider or
   production environment was used.
+
+### 2026-11-27 — BIO-510: exact curated dependency releases
+
+- Started BIO-510-curated-dependency-pins from fetched origin/main at d66b95d
+  while PRs #44–46 were open against main. Read the merged memory, latest
+  handoff and bundle, API, data-model and requirements specifications.
+- Updated the bundle catalogue and validator, HTTP catalogue and React list.
+  Each exact release has a reviewed digest. Publication and ingestion verify
+  the shipped bytes. Stored bundles use their declared release to verify
+  their existing bytes. Reject duplicate declarations and preserve the
+  biohelpers 1.0.0 digest, manifest and aggregate content hashes.
+- All 73 targeted bundle/registry tests passed with the real engine
+  (31.063 s). All 80 web tests passed with disposable PostgreSQL (8.154 s).
+  Django system and migration-drift checks and the production frontend
+  build passed. Confirmed the original CN-028 fixture hash with the base
+  implementation. Tests used temporary outputs.
+- Updated the bundle guide, API contract, Jira, test plan, coverage, changelog,
+  CN-039 and project memory. All 91 requirement statuses and nine backlog
+  categories remain. An additional module name needs a collision review
+  against previously accepted local modules. No new package was added.

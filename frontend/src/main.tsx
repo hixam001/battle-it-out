@@ -1150,7 +1150,7 @@ function Submissions({ cup, role }: { cup: Cup; role: string }) {
             platform snapshots the pinned source into your bundle.
           </p>
           {catalogue.map((d) => (
-            <div key={d.name} className="dependency">
+            <div key={`${d.name}@${d.version}`} className="dependency">
               <code>
                 {d.name} / {d.version}
               </code>

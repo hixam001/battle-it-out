@@ -509,3 +509,19 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Remaining:** matched worker-output and backup policy, production purge
   supervision, staging restore after real archive and permanent-delete workflow.
   Coverage evidence advances without changing the requirement statuses.
+
+## CN-039 — Exact curated dependency releases (2026-11-27)
+
+- **BIO-510:** the catalogue records the reviewed SHA-256 for each approved
+  exact release. A source mismatch stops publication and new uploads of the
+  affected release. Snapshot validation checks the declared release's digest
+  against stored bytes. The existing biohelpers 1.0.0 pin, manifest and
+  aggregate bundle hash remain compatible with CN-028.
+- **Verification:** all 73 selected bundle/registry tests passed in real-engine
+  mode, including adding a test release alongside an old pin, same-version
+  source drift, duplicate requirements and version syntax. All 80 Django
+  tests passed with disposable PostgreSQL, alongside system and migration
+  checks. The React production build passed.
+- **Scope:** biohelpers 1.0.0 is the only approved release. Catalogue additions
+  need source review and a module collision check. BIO-REQ-21 remains PARTIAL
+  for later languages and wider dependencies.

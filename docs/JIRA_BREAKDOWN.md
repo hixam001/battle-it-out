@@ -132,7 +132,7 @@ issues were created. Existing execution/production gates remain open.
 | Key | Active scope / implementation | Remaining work |
 |---|---|---|
 | BIO-509 | Native flat Python bundle validation, immutable complete hashes, trial/activation/pins and HTTP upload/download | Final limits, production acceptance and additional-language compatibility follow-up |
-| BIO-510 | Exact-version curated source dependencies; initial biohelpers catalogue and pinned snapshot | Further package selection/review; custom runtimes are not approved |
+| BIO-510 | **Implemented (CN-039):** reviewed digest per exact release, public catalogue, verified snapshot and reproducible export | Future package selection and review are follow-up work under CN-028 |
 | BIO-612 | Team-private match disputes, comments, staff review, versions/idempotency and PostgreSQL audit/history | Appeals/reopening/outcome correction policy and notifications |
 | BIO-613 | Read-only Admin operations/incidents/dead-job/audit console | Additional mutation controls and resume authority policies |
 | BIO-710 | Private native-engine numeric live boards, current-scope HTTP polling and React rendering | Production scale/reconnect evidence and full viewer overlays |

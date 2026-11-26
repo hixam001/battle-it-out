@@ -54,6 +54,10 @@ remaining backlog after every task.
 - CN-032–035 add native replay downloads, the interim operations runbook,
   bracket/game history reads and confirmed archive with retryable vault purge.
   Browser replay playback, full results screens and production recovery remain open.
+- CN-039 completes BIO-510 for the approved catalogue. Each exact release has
+  a recorded SHA-256. Publishing and uploading verify the source, and stored
+  bundles keep their original hashes and release pins. The only published
+  release is biohelpers 1.0.0.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -149,7 +153,7 @@ raise a refusal after the transaction when its audit/limiter write must survive.
 | `registration` | Official CSV/JSON roster, invitation issue/revoke/replace, claim/confirm, limiter, membership-derived participant Actor and registered teams | `registration.py`; CN-020/021 |
 | `notifications` | Mandatory dashboard feed, recipient-only reads, email preference/outbox/leases/retry, event adapters and worker/timer hooks | `notifications.py`, `sources.py`; CN-022/023 |
 | `services` | Configured notification-enabled worker, roster-aware maintenance with vault/live cleanup, separate email/alert processes through optional adapters; locks, signals, status and systemd template | `runner.py`; CN-027/028 |
-| `submission_bundle` | Bounded flat Python ZIPs, native local-module checks, aggregate digests and curated pinned biohelpers source; exact trials/activation/pins/export | `bundle.py`; CN-028 |
+| `submission_bundle` | Bounded flat Python ZIPs, native local-module checks, aggregate digests and reviewed exact-release biohelpers source; exact trials/activation/pins/export | `bundle.py`; CN-028/039 |
 | `live_view` | Transport-only NetServer adapter, unchanged engine/schema, numeric board snapshots with no raw listener; private HTTP polling and archive cleanup | `transport.py`, `transport/battlecode/server/NetServer.java`; CN-028 |
 | `webapp` / `frontend` | Django/DRF/PostgreSQL feature sessions/scope/API, transactional disputes/audit, analytics and Admin reader; React public landing/feature console | Package READMEs, `DESIGN.md`; CN-028 |
 
@@ -311,7 +315,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    upload/history/source/bundle delivery and queued checks now exist and use the
    official stored deadline/current roster Actor. Interim caps are 256 KiB and
    500 versions/team; bundle input ceiling is 32 files. Native flat modules and
-   curated biohelpers 1.0.0 are supported; more packages require review/pins,
+   curated biohelpers 1.0.0 are supported with exact release/digest verification
+   (BIO-510). More packages require source and module collision review and pins,
    additional languages follow compatibility work, and arbitrary participant
    installs/custom runtimes remain unapproved.
 5. **Tournament operations and deletion:** remaining tournament/deadline/
@@ -426,7 +431,7 @@ records unresolved role/provisioning decisions; none is an implemented default.
 | Source | Use |
 |---|---|
 | [PRD.md](PRD.md), [SRD.md](SRD.md) | Product rules and numbered requirements; read their change-notice headers |
-| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–035 decisions, corrections, defaults, proposals and test evidence |
+| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | Numbered decisions, corrections, defaults, proposals and test evidence |
 | [API_CONTRACT.md](API_CONTRACT.md), [DATA_MODEL.md](DATA_MODEL.md) | Proposed API, entities, constraints, state/access/retention matrices |
 | [APP_FLOW.md](APP_FLOW.md), [../PRODUCT.md](../PRODUCT.md) | User journeys, route inventory, product context; planned screens |
 | [ARCHITECTURE.md](ARCHITECTURE.md), [TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md) | Design boundaries, runner/worker mechanics, commands and troubleshooting |
