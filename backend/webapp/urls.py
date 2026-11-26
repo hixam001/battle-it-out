@@ -3,6 +3,7 @@ from django.urls import path
 from . import results
 from . import views as V
 from . import tournament_archive
+from . import roster
 urlpatterns = [
     path('api/v1/health/', V.health),
     path('api/v1/auth/session/', V.session), path('api/v1/auth/login/', V.login_view),
@@ -18,6 +19,10 @@ urlpatterns = [
     path('api/v1/tournaments/<str:tid>/teams/<str:team>/submissions/', V.submissions),
     path('api/v1/tournaments/<str:tid>/submissions/<str:sid>/download/', V.download),
     path('api/v1/tournaments/<str:tid>/archive/', tournament_archive.archive),
+    path('api/v1/tournaments/<str:tid>/roster/', roster.roster),
+    path('api/v1/tournaments/<str:tid>/roster/import/', roster.import_roster),
+    path('api/v1/tournaments/<str:tid>/roster/report/', roster.report),
+    path('api/v1/tournaments/<str:tid>/roster/<str:entry_id>/', roster.correct_entry),
     path('api/v1/tournaments/<str:tid>/disputes/', V.disputes),
     path('api/v1/tournaments/<str:tid>/disputes/<uuid:did>/', V.dispute_detail),
     path('api/v1/tournaments/<str:tid>/bracket/', results.bracket),

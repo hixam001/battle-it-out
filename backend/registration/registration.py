@@ -39,6 +39,7 @@ import csv
 import hashlib
 import hmac
 import io
+import json
 import re
 import secrets
 import time
@@ -189,9 +190,8 @@ def _row(raw) -> dict:
     """One roster row, validated and normalized; raises `Invalid` with a reason that names the field, never the value."""
     if not isinstance(raw, dict):
         raise Invalid("a row must be an object")
-    unknown = sorted(str(k) for k in raw if k not in ("email", "team_key", "team_name", "member_number", "role", "role_label"))
-    if unknown:
-        raise Invalid(f"unknown fields: {', '.join(unknown)}")
+    if set(raw) - {"email", "team_key", "team_name", "member_number", "role", "role_label"}:
+        raise Invalid("the row has unsupported fields")
     fields = {k: v for k, v in raw.items() if k != "role"}
     if "role" in raw or "role_label" in raw:
         fields["role_label"] = raw.get("role_label", raw.get("role"))
@@ -212,7 +212,9 @@ def _fields(raw: dict) -> dict:
     if "member_number" in raw:
         n = raw["member_number"]
         if isinstance(n, str) and n.strip().isascii() and n.strip().isdigit():
-            n = int(n.strip())
+            digits = n.strip().lstrip("0") or "0"
+            if len(digits) <= len(str(MAX_MEMBER_NUMBER)):
+                n = int(digits)
         if isinstance(n, bool) or not isinstance(n, int) or not 1 <= n <= MAX_MEMBER_NUMBER:
             raise Invalid(f"member_number must be a whole number from 1 to {MAX_MEMBER_NUMBER}")
         out["member_number"] = n
@@ -331,20 +333,39 @@ def parse_csv(text: str) -> list[dict]:
 
 
 def import_roster(reg: Registration, actor: R.Actor | None, tournament_id: str, rows: list, *,
-                  source_filename: str = "roster", now: Callable[[], float] = time.time) -> dict:
+                  source_filename: str = "roster", idempotency_key: str | None = None,
+                  now: Callable[[], float] = time.time) -> dict:
     """Apply roster rows (`POST roster/import`). Every row is judged alone: created, updated (an unregistered
     entry with that email), unchanged, or rejected with a reason (`{"row": n, "reason": ...}`, 1-based, no
     personal data). A registered entry is never changed: the same data is `unchanged`, other data is rejected as
-    locked. The original file is not kept; the batch keeps only its counts."""
+    locked. The original file is not kept. When supplied, an idempotency key
+    binds an import to its request and exact batch summary."""
     rec = _staff(reg, actor, tournament_id)
     if not isinstance(rows, list) or not rows or len(rows) > MAX_ENTRIES:
         raise Invalid(f"rows must be a list of 1 to {MAX_ENTRIES} objects")
     name = _text("source_filename", source_filename, MAX_FILENAME)
-    t = now()
-    _editable(rec, t)
+    receipt_key = fingerprint = None
+    if idempotency_key is not None:
+        if not isinstance(idempotency_key, str) or not R.KEY_RE.fullmatch(idempotency_key):
+            raise Invalid("a safe idempotency key is required")
+        receipt_key = f"{actor.user_id}\0{idempotency_key}"
+        try:
+            encoded = json.dumps([name, rows], sort_keys=True, ensure_ascii=True).encode()
+        except (TypeError, ValueError, RecursionError) as exc:
+            raise Invalid("rows must contain JSON values") from exc
+        fingerprint = hashlib.sha256(encoded).hexdigest()
     summary = {"created": 0, "updated": 0, "unchanged": 0, "rejected": []}
     with reg.store.transaction() as state:
         b = _bucket(state, rec["id"])
+        if receipt_key is not None:
+            receipts = b.setdefault("import_receipts", {})
+            prior = receipts.get(receipt_key)
+            if prior is not None:
+                if prior["fingerprint"] != fingerprint:
+                    raise Conflict("the idempotency key was used for a different roster import")
+                return prior["result"]
+        t = now()
+        _editable(rec, t)
         entries = b["entries"]
         elsewhere = _team_keys_elsewhere(state, rec["id"])
         by_email = {e["email"]: e for e in entries.values()}
@@ -384,7 +405,10 @@ def import_roster(reg: Registration, actor: R.Actor | None, tournament_id: str, 
         b["batches"].append({"id": batch_id, "uploaded_by": actor.user_id, "source_filename": name,
                              "created_at": _iso(t), "summary": counts})
         _audit(state, t, actor.user_id, "roster_import", rec["id"], batch=batch_id, **counts)
-        return {"batch_id": batch_id, **summary}
+        result = {"batch_id": batch_id, **summary}
+        if receipt_key is not None:
+            receipts[receipt_key] = {"fingerprint": fingerprint, "result": result}
+        return result
 
 
 def correct_entry(reg: Registration, actor: R.Actor | None, tournament_id: str, entry_id: str, changes: dict, *,

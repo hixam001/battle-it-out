@@ -509,3 +509,17 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Remaining:** matched worker-output and backup policy, production purge
   supervision, staging restore after real archive and permanent-delete workflow.
   Coverage evidence advances without changing the requirement statuses.
+
+## CN-044 — Official roster API (2026-11-27)
+
+- **BIO-501:** Admins and currently assigned Organizers can read the roster
+  and report, import bounded UTF-8 CSV or JSON, and correct unclaimed
+  entries with an expected version. The existing CN-020 roster defaults
+  apply. Claim and deadline locks are enforced by the roster library.
+- **Persistence:** same-key retries return the original import summary.
+  A different payload under the same key conflicts. The roster changes,
+  receipt and audit commit together. Rejections identify rows without
+  echoing their data.
+- **Checks:** 84 Django cases passed with disposable PostgreSQL and system
+  and migration checks. All 149 targeted registration and tournament cases
+  passed. SRD-038 moves to DONE for the local roster contract.

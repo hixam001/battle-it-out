@@ -488,22 +488,40 @@ remain permanently.\
 
 ## 4. Roster, teams, invitations --- BIO-EPIC-05
 
-### POST `/tournaments/{id}/roster/import`
+### POST `/tournaments/{id}/roster/import/`
 
 **Purpose:** Import official roster.\
-**Access:** Admin or assigned Organizer.\
-**Request:** multipart roster file or validated JSON. `[DECIDE]` file
-format.\
-**Success:** import summary with created/updated/rejected rows.\
-**Rules:** corrections allowed before participant registration locks the
-row. No editing locked participant identity/team/member number/role.
+**Access:** Current Admin or explicitly assigned Organizer, session CSRF
+and `Idempotency-Key`.\
+**Request:** The existing CN-020 formats are supported. Send one UTF-8 CSV
+part named `file` with columns `email,team_key,team_name,member_number,role`,
+or JSON containing a `rows` array of those objects. The interim limits are
+1 MiB and 2,000 rows.\
+**Success:** `200` with `batch_id`, `created`, `updated`, `unchanged` and
+redacted `rejected` row numbers and reasons. Rows are assessed individually.
+A retry by the same actor for the same tournament and key reuses the batch
+summary. A different payload under the same key returns `409`. The roster
+store retains the audited summary and discards the file.
 
-### PATCH `/tournaments/{id}/roster/{entry_id}`
+### PATCH `/tournaments/{id}/roster/{entry_id}/`
 
 **Purpose:** Correct an unregistered roster entry.\
-**Access:** Admin or assigned Organizer.\
-**Request:** allowed fields only.\
-**Errors:** `403`, `404`, `409` if participant already registered.
+**Access:** Current Admin or explicitly assigned Organizer with session CSRF.\
+**Request:** `expected_version` as a positive integer and at least one of
+`email`, `team_key`, `team_name`, `member_number`, `role_label`. A claim
+locks the entry. Stale versions and closed or locked entries return `409`.
+Hidden and mismatched tournament/entry IDs share `404`.
+
+### GET `/tournaments/{id}/roster/` and GET `/tournaments/{id}/roster/report/`
+
+Current Admins and explicitly assigned Organizers can read the roster and
+the exclusion report. The roster includes official email addresses and
+row versions for corrections. The report lists status counts, teams
+missing a roster or registered captain, and entry IDs excluded after the
+stored registration deadline. Both responses are private/no-store.
+
+These four BIO-501 routes use the existing roster and interim format rules
+(CN-020/044).
 
 ### POST `/tournaments/{id}/invitation-codes`
 

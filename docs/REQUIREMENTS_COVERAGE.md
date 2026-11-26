@@ -17,11 +17,11 @@ It does **not** provide: users, roles, tournaments, brackets, byes, house bots, 
 
 | Status | Count | Meaning |
 |---|---|---|
-| DONE | 17 | built and tested here (library or tool level), nothing material missing |
-| PARTIAL | 62 | built in part; the gap column says what is still ours to develop |
+| DONE | 18 | built and tested here (library or tool level), nothing material missing |
+| PARTIAL | 61 | built in part; the gap column says what is still ours to develop |
 | TODO | 12 | not built; no code exists |
 | DEFERRED | 0 | No whole requirement remains deferred; owner activated BIO-REQ-19–23 (CN-028) |
-| **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 74 of the 91 still need development work |
+| **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 73 of the 91 still need development work |
 
 Reading this honestly: the execution libraries and configured service processes exist. CN-028 adds a Django/PostgreSQL feature API, session/scope adapter and React landing/feature console. Many core endpoints, the legacy-store migration, deletion lifecycle, full website/replay flows and production deployment remain open. The five former P2 features are active partial implementations, not five completed launch features. 'DONE' does not mean accepted by the owner or reviewed independently.
 
@@ -60,7 +60,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | SRD-035 | Admin extends deadlines, participants notified | None | **PARTIAL** | `extend_deadline`: Admin only, `confirm`, reason, later than now and than the current value, also after the deadline; refused once the bracket is drawn; returns the notice and a later deadline reopens uploads (CN-019) | Calling `notify_notice` after the extension (the API layer does that), a real email provider (DEC-11), affected-participant count in the answer, API |
 | SRD-036 | After a deadline, changes need an Admin extension first | None | **PARTIAL** | `edit` raises `DeadlineLocked` after the field's own deadline, for Admin too (CN-019) | Which settings the PRD means by 'configuration' is my reading (name, description, map pool, deadlines); API |
 | SRD-037 | Emergency override with reason, audit, notifications | None | **PARTIAL** | `emergency_override`: Admin only, `confirm`, reason, three settings; audit entry and a notice with setting, old and new value, reason, time and authorizer; the map pool is closed once the bracket is drawn (CN-019) | Calling `notify_notice` (CN-022; the API layer does that), a real email provider (DEC-11), more overridable settings as they appear, API |
-| SRD-038 | Official roster imported and correctable before registration | None | **PARTIAL** | `registration.import_roster` / `parse_csv` / `correct_entry` (CN-020): JSON rows or CSV, per-row rejection, idempotent re-import, correction only while unregistered and before the registration deadline, staff-only read | Endpoint; file format is my choice (CN-020 D1); correction of a registered entry (Admin exception) is an open decision |
+| SRD-038 | Official roster imported and correctable before registration | None | **DONE** | Scoped staff HTTP import, version-checked correction, private listing and exclusion reports. Same-key import retries replay the audited batch. Claim and deadline lock changes (CN-020/044) | Final format approval and any exception for already-claimed entries remain separate owner decisions |
 | SRD-039 | Register with official email and invitation code | None | **PARTIAL** | `registration.claim` + `confirm_email` (CN-020): one code per participant (DEC-01 recommendation), email normalized, open and before deadline, only a verified member counts | Account creation, passwords and the verification email belong to EPIC-04; endpoint; code delivery |
 | SRD-040 | Invalid attempts do not consume the code or block retry | None | **PARTIAL** | A wrong pair consumes nothing and always gets the same answer; failed attempts are counted per email and per source, the limit only waits and expires (CN-020 D4) | Limits (10 per email, 40 per source, 15 min) are interim; the API must pass the source address; no CAPTCHA or alerting |
 | SRD-041 | Single-use codes, expire at registration close | None | **DONE** | Code consumed by the first claim (race tested); expiry is computed from the live registration deadline, so an extension revives unused codes (CN-020 D3) | Notifying affected participants of an extension is the notification module's job |
