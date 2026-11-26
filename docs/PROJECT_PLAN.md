@@ -1,5 +1,7 @@
 # Battle It Out --- Project Plan & Scope Statement
 
+> **CN-028 owner update (2026-11-26):** the five deferred feature groups are active. Django/DRF, PostgreSQL and React/TypeScript are selected; live viewing is tournament-private; Python bundles/curated dependencies precede additional languages. Local web feature implementation is authorized while existing execution gates remain open. No gate completion or production deployment is implied; earlier scheduling/deferral text below is the historical baseline where it conflicts.
+
 **Version:** 1.0\
 **Status:** Working baseline\
 **Date:** 2026-11-24\
@@ -84,7 +86,7 @@ Jira issue keys are `BIO-NNN` where the hundreds digit is the epic number; scope
 | 4 Backend foundation | BIO-EPIC-04 | P1 | BIO-401 to BIO-410 (proposed): stack decision, schema, store adapters, API skeleton, accounts and sessions, roles and scope, audit log, private storage, services, permission tests | API permission and persistence tests pass |
 | 5 Registration and submissions | BIO-EPIC-05 | P1 | BIO-501 to BIO-508 (proposed): roster, codes, teams, upload, submission reads, privacy tests, TC-06 flow, account recovery | Participant flow passes with privacy and deadline rules |
 | 6 Tournament operations | BIO-EPIC-06 | P1 | BIO-601 to BIO-611 (proposed): tournament, deadline, bracket and round endpoints, Admin trouble tools, replays and logs, archive jobs, notifications, deletion lifecycle, audit read, lifecycle tests | Admin/Organizer lifecycle tests pass |
-| 7 Website and participant UI | BIO-EPIC-07 | P1 | BIO-701 to BIO-709 (proposed): frontend foundation, account, dashboard, submission, bracket and replay, Organizer, Admin screens, acceptance; landing page deferred | Usability and end-to-end acceptance complete |
+| 7 Website and participant UI | BIO-EPIC-07 | P1 | BIO-701 to BIO-709 (proposed): frontend foundation, account, dashboard, submission, bracket and replay, Organizer, Admin screens, acceptance; landing page and feature console now implemented locally (CN-028), with remaining core screens/acceptance open | Usability and end-to-end acceptance complete |
 | 8 QA, pilot, production | BIO-EPIC-08 | P0 launch gate | BIO-801 to BIO-808 (proposed): security and independent review, reliability and load, backups, deployment and CI, runbooks, licensing and terms, pilot, sign-off | Go-live checklist signed off |
 
 ```mermaid

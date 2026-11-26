@@ -6,6 +6,8 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Activated feature suite (BIO-EPIC-06; CN-028):** owner-selected Django/DRF/PostgreSQL and React/TypeScript; public landing page, private native-engine live boards, multi-file Python/curated dependencies, results/version/map/latency analytics, transactional match disputes and a read-only Admin operations console. Existing single-file bots and engine simulation remain. Added PostgreSQL HTTP/permission/audit checks, real bundle/live/archive tests and desktop/mobile browser flows. All five former deferred requirements are now active PARTIAL work; coverage is 17 DONE / 61 PARTIAL / 13 TODO / 0 DEFERRED. Production hosting, full core API/store migration and later languages remain open.
+
 - **Interim service runner (BIO-409; CN-027):** configured worker, roster-aware maintenance with replay housekeeping, email and alert processes, per-role locks, graceful shutdown, status and a reviewable systemd template. Optional trusted adapters leave unconfigured delivery pending. Added service tests including a real-engine subprocess upload-to-archive lifecycle. No production provider/channel, deployment or worker image is supplied.
 
 - **Access-control API proposal (BIO-406; CN-026):** user-directory and role routes, explicit Organizer assignment/revocation routes, trusted Actor construction, safe error/scope rules, access revisions, idempotency and durable audit behavior. Aligned the logical model and added 14 planned TC-07 cases. Documents only: role-cardinality/composition and staff provisioning remain open; no endpoint is implemented and requirement status counts are unchanged.

@@ -1,0 +1,237 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+"""HTTP/CSRF/privacy, analytics and dispute transactions against real PostgreSQL."""
+import io
+import json
+import os
+import tempfile
+import time
+import zipfile
+from pathlib import Path
+from django.contrib.auth import get_user_model
+from django.db import DatabaseError, transaction
+from django.test import TestCase, Client, override_settings
+from rest_framework.test import APIClient
+from backend.registration import registration as G
+from backend.submission_registry import registry as R
+from backend.match_orchestrator import bracket as B, maps as M
+from backend.match_orchestrator.tests.test_bracket import lower_wins
+from backend.tournament_flow import flow as F
+from backend.tournaments import tournaments as T
+from backend.work_queue.tests.test_handlers import verdict
+from . import domain as D
+from .models import Identity, OrganizerAssignment, Dispute, AuditEvent, Receipt
+
+BOT=b'def turn():\n    pass\n'
+ADM=R.Actor('staff','admin')
+
+class FeatureAPI(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        U=get_user_model()
+        cls.a=U.objects.create_user('captain-a',email='a@uni.edu',password='test-fixture-passphrase')
+        cls.b=U.objects.create_user('captain-b',email='b@uni.edu',password='test-fixture-passphrase')
+        cls.org=U.objects.create_user('organizer',password='test-fixture-passphrase')
+        cls.admin=U.objects.create_superuser('admin',email='admin@example.org',password='test-fixture-passphrase')
+        cls.outsider=U.objects.create_user('outsider',password='test-fixture-passphrase')
+        Identity.objects.create(user=cls.a,role='participant',roster_user_id='roster-a')
+        Identity.objects.create(user=cls.b,role='participant',roster_user_id='roster-b')
+        Identity.objects.create(user=cls.org,role='organizer')
+        OrganizerAssignment.objects.create(user=cls.org,tournament_id='cup')
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name)
+        self.override=override_settings(BIO_DATA_DIR=self.root);self.override.enable()
+        self.addCleanup(self.tmp.cleanup);self.addCleanup(self.override.disable);self.addCleanup(self.unlock)
+        self.rt=D.runtime();self.now=time.time();self.clock=lambda:self.now-5000
+        self.make_cup('cup',self.now-3000,self.now-1000)
+        self.register('cup', [('a','ta'),('b','tb')])
+        for uid,team in [('roster-a','ta'),('roster-b','tb')]:
+            actor=G.actor_for(self.rt.registration,uid)
+            sub=R.submit(self.rt.flow.registry,actor,team,'cup','bot.py',BOT,idempotency_key='one',deadline_at=self.now-1000,now=self.clock)
+            claim=R.claim_check(self.rt.flow.registry,sub['id'])
+            R.record_verdict(self.rt.flow.registry,claim,verdict(BOT))
+        catalogue={'one':'a'*64,'two':'b'*64,'three':'c'*64,'four':'d'*64}
+        M.create_pool(self.rt.flow.store,'pool',catalogue,'1.2.6',play=['one'],tiebreak_normal=['two'],tiebreak_final=['two','three','four'])
+        F.open_bracket(self.rt.flow,'cup','cup',['ta','tb'],'pool',catalogue,'1.2.6',deadline_at=self.now-1000)
+        F.start_round(self.rt.flow,'cup',1,'organizer')
+        B.run_round(self.rt.flow.store,'cup',1,lower_wins)
+        self.sid=next(iter(self.rt.flow.store.snapshot()['series']))
+        self.client=APIClient();self.client.force_authenticate(self.a)
+    def unlock(self):
+        for p in (self.root/'submissions').glob('*'):
+            if p.is_dir():p.chmod(0o700)
+    def make_cup(self,tid,registration,submission):
+        T.create(self.rt.tournaments,ADM,tid,'Tournament '+tid,'',registration,submission,idempotency_key=tid,now=self.clock)
+        T.approve(self.rt.tournaments,ADM,tid,confirm=True,now=self.clock)
+        T.open_registration(self.rt.tournaments,ADM,tid,now=self.clock)
+    def register(self,tid,entries):
+        rows=[{'email':u+'@uni.edu','team_key':t,'team_name':t.upper(),'member_number':1,'role':'captain'} for u,t in entries]
+        G.import_roster(self.rt.registration,ADM,tid,rows,now=self.clock)
+        roster=G.list_roster(self.rt.registration,ADM,tid)
+        issued=G.issue_codes(self.rt.registration,ADM,tid,now=self.clock)['issued']
+        codes={c['entry_id']:c['code'] for c in issued}
+        for entry in roster:
+            name=entry['email'].split('@')[0];uid='roster-'+name
+            G.claim(self.rt.registration,tid,entry['email'],codes[entry['id']],uid,now=self.clock)
+            G.confirm_email(self.rt.registration,tid,uid,now=self.clock)
+    def url(self,suffix):return '/api/v1/tournaments/cup/'+suffix
+    def post(self,path,data,key='request-one'):
+        return self.client.post(path,data,format='json',HTTP_IDEMPOTENCY_KEY=key)
+    def open(self):
+        result=self.post(self.url('disputes/'),{'series_id':self.sid,'title':'Review match','description':'Please review the recorded event.'})
+        self.assertEqual(result.status_code,201,result.data);return result.data
+    def test_anonymous_cannot_read_any_protected_feature(self):
+        self.client.force_authenticate(None)
+        for path in ('analytics/','analytics.csv','live/','disputes/','teams/ta/submissions/'):
+            response=self.client.get(self.url(path));self.assertEqual(response.status_code,401,path)
+    def test_foreign_scope_and_missing_tournament_have_same_404(self):
+        self.client.force_authenticate(self.outsider)
+        for tid in ('cup','missing'):
+            for feature in ('analytics/','live/','disputes/'):
+                self.assertEqual(self.client.get(f'/api/v1/tournaments/{tid}/{feature}').status_code,404)
+    def test_participant_actor_comes_from_current_verified_roster(self):
+        self.assertIn('cup',D.actor(self.a).tournament_ids)
+        identity=Identity.objects.get(user=self.a);identity.roster_user_id='unregistered';identity.save()
+        self.assertEqual(self.client.get(self.url('analytics/')).status_code,404)
+    def test_organizer_assignment_revocation_applies_to_next_poll(self):
+        self.client.force_authenticate(self.org)
+        self.assertEqual(self.client.get(self.url('live/')).status_code,200)
+        OrganizerAssignment.objects.filter(user=self.org).update(active=False)
+        self.assertEqual(self.client.get(self.url('live/')).status_code,404)
+    def test_analytics_use_official_results_and_exclude_source_and_host_paths(self):
+        before=self.rt.flow.store.snapshot()
+        response=self.client.get(self.url('analytics/'));self.assertEqual(response.status_code,200,response.data)
+        data=response.data;self.assertEqual(data['totals']['completed'],1);self.assertEqual(data['totals']['teams'],2)
+        self.assertEqual(sum(t['wins'] for t in data['teams']),1)
+        self.assertEqual(len(data['versions']),2);self.assertEqual(sum(v['wins'] for v in data['versions']),1);self.assertNotIn('source',json.dumps(data));self.assertNotIn(str(self.root),json.dumps(data))
+        self.assertEqual(before,self.rt.flow.store.snapshot())
+        export=self.client.get(self.url('analytics.csv'));self.assertEqual(export.status_code,200)
+        self.assertIn('private',export['Cache-Control']);self.assertIn(b'team,played,wins',export.content)
+    def test_live_board_is_allowlisted_and_archived_tournament_returns_gone(self):
+        game=next(iter(self.rt.flow.store.snapshot()['matches']))
+        path=self.root/'live'/f'{game}.json';path.parent.mkdir()
+        path.write_text(json.dumps({'width':20,'height':20,'round':9,'updated_at':time.time(),'finished':False,
+           'robots':[{'id':1,'x':1,'y':2,'team':1,'kind':1,'health':9,'cheese':0,'dir':1,'source':'SECRET'}],
+           'walls':[],'dirt':[],'indicator':'PRIVATE'}))
+        response=self.client.get(self.url('live/'));self.assertEqual(response.status_code,200,response.data)
+        self.assertEqual(response.data['items'][0]['board']['round'],9)
+        self.assertNotIn('PRIVATE',json.dumps(response.data));self.assertNotIn('SECRET',json.dumps(response.data))
+        with self.rt.tournaments.store.transaction() as state:state['tournaments']['cup']['status']='archived'
+        for user in (self.a,self.org,self.admin):
+            self.client.force_authenticate(user);self.assertEqual(self.client.get(self.url('live/')).status_code,410)
+    def test_source_download_is_team_private_and_staff_read_is_audited(self):
+        own=self.client.get(self.url('submissions/ta-v1/download/'));self.assertEqual(own.status_code,200)
+        other=self.client.get(self.url('submissions/tb-v1/download/'));self.assertEqual(other.status_code,404)
+        self.client.force_authenticate(self.org)
+        self.assertEqual(self.client.get(self.url('submissions/tb-v1/download/')).status_code,200)
+        self.assertTrue(any(a['action']=='download' for a in self.rt.flow.registry.store.snapshot()['audit']))
+    def test_upload_uses_official_deadline_and_staff_cannot_upload(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        response=self.client.post(self.url('teams/ta/submissions/'),{'file':SimpleUploadedFile('bot.py',BOT)},format='multipart',HTTP_IDEMPOTENCY_KEY='late')
+        self.assertEqual(response.status_code,409)
+        self.client.force_authenticate(self.org)
+        response=self.client.post(self.url('teams/ta/submissions/'),{'file':SimpleUploadedFile('bot.py',BOT)},format='multipart',HTTP_IDEMPOTENCY_KEY='staff')
+        self.assertEqual(response.status_code,403)
+        self.assertEqual(len(self.rt.flow.registry.store.snapshot()['submissions']),2)
+    def test_bundle_upload_queues_a_check_and_exports_only_to_its_team(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from backend.submission_bundle.tests.test_bundle import archive, FILES
+        self.make_cup('uploads',self.now+3000,self.now+5000)
+        self.register('uploads',[('a','upload-a')])
+        path='/api/v1/tournaments/uploads/teams/upload-a/submissions/'
+        response=self.client.post(path,{'file':SimpleUploadedFile('strategy.zip',archive(FILES))},format='multipart',HTTP_IDEMPOTENCY_KEY='bundle-upload')
+        self.assertEqual(response.status_code,201,response.data)
+        self.assertEqual(response.data['format'],'python-bundle')
+        from backend.work_queue import jobs as J
+        self.assertTrue(any(j['payload'].get('submission_id')==response.data['id'] for j in J.list_jobs(self.rt.flow.queue)))
+        download=self.client.get('/api/v1/tournaments/uploads/submissions/'+response.data['id']+'/download/')
+        self.assertEqual(download.status_code,200)
+        self.assertEqual(download['Content-Type'],'application/zip')
+        self.client.force_authenticate(self.b)
+        self.assertEqual(self.client.get('/api/v1/tournaments/uploads/submissions/'+response.data['id']+'/download/').status_code,404)
+
+    def test_login_rate_limit_is_durable_and_failure_does_not_create_a_session(self):
+        client=Client(enforce_csrf_checks=True)
+        csrf=client.get('/api/v1/auth/session/').json()['csrf']
+        for _ in range(10):
+            result=client.post('/api/v1/auth/login/',data=json.dumps({'username':'missing-account','password':'wrong-fixture'}),content_type='application/json',HTTP_X_CSRFTOKEN=csrf)
+            self.assertEqual(result.status_code,401)
+        result=client.post('/api/v1/auth/login/',data=json.dumps({'username':'missing-account','password':'wrong-fixture'}),content_type='application/json',HTTP_X_CSRFTOKEN=csrf)
+        self.assertEqual(result.status_code,429)
+        other_source=client.post('/api/v1/auth/login/',data=json.dumps({'username':'missing-account','password':'wrong-fixture'}),content_type='application/json',HTTP_X_CSRFTOKEN=csrf,REMOTE_ADDR='127.0.0.2')
+        self.assertEqual(other_source.status_code,429)
+        other_account=client.post('/api/v1/auth/login/',data=json.dumps({'username':'another-account','password':'wrong-fixture'}),content_type='application/json',HTTP_X_CSRFTOKEN=csrf)
+        self.assertEqual(other_account.status_code,429)
+        self.assertIsNone(client.get('/api/v1/auth/session/').json()['user'])
+
+    def test_dispute_idempotency_own_team_visibility_and_no_result_changes(self):
+        before=self.rt.flow.store.snapshot();item=self.open()
+        again=self.post(self.url('disputes/'),{'series_id':self.sid,'title':'Review match','description':'Please review the recorded event.'})
+        self.assertEqual(again.data,item);self.assertEqual(Dispute.objects.count(),1);self.assertEqual(AuditEvent.objects.count(),1)
+        self.client.force_authenticate(self.b)
+        self.assertEqual(self.client.get(self.url(f"disputes/{item['id']}/")).status_code,404)
+        self.assertEqual(self.client.get(self.url('disputes/')).data['items'],[])
+        self.assertEqual(before,self.rt.flow.store.snapshot())
+    def test_comments_status_transitions_versions_and_closed_records(self):
+        item=self.open();path=self.url(f"disputes/{item['id']}/")
+        self.assertEqual(self.post(path,{'expected_version':1,'status':'resolved','resolution':'win'},'bad').status_code,403)
+        comment=self.post(path,{'expected_version':1,'message':'Extra detail'},'comment');self.assertEqual(comment.data['version'],2)
+        self.assertEqual(self.post(path,{'expected_version':1,'message':'stale'},'stale').status_code,409)
+        self.client.force_authenticate(self.org)
+        self.assertEqual(self.post(path,{'expected_version':2,'status':[],'resolution':'bad fixture'},'invalid-status').status_code,400)
+        reviewed=self.post(path,{'expected_version':2,'status':'reviewing','resolution':'Reviewing recorded evidence.'},'review')
+        self.assertEqual(reviewed.data['status'],'reviewing')
+        resolved=self.post(path,{'expected_version':3,'status':'resolved','resolution':'Recorded outcome stands.'},'resolve')
+        self.assertEqual(resolved.data['version'],4)
+        self.assertEqual(self.post(path,{'expected_version':4,'message':'closed'},'closed').status_code,409)
+        self.assertEqual(AuditEvent.objects.count(),4)
+    def test_idempotency_payload_mismatch_and_revoked_membership_cannot_replay(self):
+        self.open()
+        mismatch=self.post(self.url('disputes/'),{'series_id':self.sid,'title':'Changed','description':'different'})
+        self.assertEqual(mismatch.status_code,409)
+        Identity.objects.filter(user=self.a).update(roster_user_id='no-scope')
+        self.assertEqual(self.post(self.url('disputes/'),{'series_id':self.sid,'title':'Review match','description':'Please review the recorded event.'}).status_code,404)
+    def test_history_is_append_only_in_postgresql(self):
+        self.open();audit=AuditEvent.objects.first()
+        with self.assertRaises(DatabaseError),transaction.atomic():AuditEvent.objects.filter(pk=audit.pk).update(action='tampered')
+        with self.assertRaises(DatabaseError),transaction.atomic():AuditEvent.objects.filter(pk=audit.pk).delete()
+        self.assertEqual(AuditEvent.objects.get(pk=audit.pk).action,'dispute_opened')
+    def test_audit_failure_rolls_back_dispute_and_receipt(self):
+        from unittest.mock import patch
+        with patch.object(AuditEvent.objects,'create',side_effect=DatabaseError('fixture failure')):
+            with self.assertRaises(DatabaseError):self.open()
+        self.assertEqual(Dispute.objects.count(),0);self.assertEqual(Receipt.objects.count(),0)
+    def test_operations_are_admin_only_and_omit_raw_details(self):
+        self.assertEqual(self.client.get('/api/v1/admin/operations/').status_code,403)
+        self.client.force_authenticate(self.admin)
+        response=self.client.get('/api/v1/admin/operations/');self.assertEqual(response.status_code,200)
+        self.assertEqual(response.data['status']['open_incidents'],0)
+    def test_provisioned_organizer_assignment_and_revocation_are_audited(self):
+        from django.core.management import call_command
+        call_command('provision_access','outsider',organizer_tournament='cup',reason='Fixture assignment',stdout=io.StringIO())
+        self.client.force_authenticate(self.outsider)
+        self.assertEqual(self.client.get(self.url('live/')).status_code,200)
+        call_command('provision_access','outsider',organizer_tournament='cup',revoke=True,reason='Fixture revoked',stdout=io.StringIO())
+        self.assertEqual(self.client.get(self.url('live/')).status_code,404)
+        self.assertEqual(list(AuditEvent.objects.values_list('action',flat=True)),['organizer_assigned','organizer_revoked'])
+
+    def test_participant_provisioning_rejects_a_different_official_email(self):
+        from django.core.management import call_command, CommandError
+        with self.assertRaises(CommandError):
+            call_command('provision_access','outsider',roster_user_id='roster-a',reason='Fixture mismatch',stdout=io.StringIO())
+        self.assertFalse(Identity.objects.filter(user=self.outsider).exists())
+
+    def test_mutation_rechecks_account_activation_inside_the_transaction(self):
+        get_user_model().objects.filter(pk=self.a.pk).update(is_active=False)
+        response=self.post(self.url('disputes/'),{'series_id':self.sid,'title':'Blocked','description':'No scope.'})
+        self.assertEqual(response.status_code,403)
+        self.assertEqual(Dispute.objects.count(),0)
+
+    def test_real_session_login_enforces_csrf_and_rejects_bad_credentials_uniformly(self):
+        client=Client(enforce_csrf_checks=True)
+        self.assertEqual(client.post('/api/v1/auth/login/',data=json.dumps({'username':'captain-a','password':'test-fixture-passphrase'}),content_type='application/json').status_code,403)
+        token=client.get('/api/v1/auth/session/').json()['csrf']
+        result=client.post('/api/v1/auth/login/',data=json.dumps({'username':'captain-a','password':'test-fixture-passphrase'}),content_type='application/json',HTTP_X_CSRFTOKEN=token)
+        self.assertEqual(result.status_code,200);self.assertEqual(client.get(self.url('analytics/')).status_code,200)
+        self.assertEqual(client.post('/api/v1/auth/logout/').status_code,403)
+        self.assertEqual(client.post('/api/v1/auth/logout/',HTTP_X_CSRFTOKEN=result.json()['csrf']).status_code,200)
+        self.assertEqual(client.get(self.url('analytics/')).status_code,401)

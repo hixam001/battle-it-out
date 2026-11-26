@@ -144,7 +144,7 @@ def build_runner_cmd(py: Path, bots_dir: Path, side: str, name: str, socket_tuni
 
 
 def build_gradle_cmd(scaffold: Path, team_a: str, team_b: str, maps: str, replay: Path, offline: bool,
-                     class_dir: Path | None = None) -> list[str]:
+                     class_dir: Path | None = None, live_path: Path | None = None) -> list[str]:
     cmd = [str(scaffold / "gradlew"), "runJavaLocal", "--console=plain"]
     if offline:
         cmd.append("--offline")
@@ -152,6 +152,11 @@ def build_gradle_cmd(scaffold: Path, team_a: str, team_b: str, maps: str, replay
             f"-PteamA={team_a}", f"-PteamB={team_b}", f"-Pmaps={maps}", f"-Preplay={replay}"]
     if class_dir is not None:
         cmd += [f"-PclassLocationA={class_dir}", f"-PclassLocationB={class_dir}"]
+    if live_path is not None:
+        from backend.live_view.transport import prepare
+        live_path.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
+        live_path.unlink(missing_ok=True)
+        cmd += [f"-PbioLiveAdapter={prepare()}", f"-PbioLivePath={live_path.resolve()}"]
     return cmd
 
 
@@ -331,7 +336,7 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
               out_dir: Path, timeout: int, offline: bool, socket_tuning: bool,
               sandbox: bool = True, limits_path: Path | None = DEFAULT_LIMITS,
               cgroup: bool | None = None, trace_id: str | None = None, match_id: str | None = None,
-              attempt: int = 1, submissions: dict | None = None) -> dict:
+              attempt: int = 1, submissions: dict | None = None, live_path: Path | None = None) -> dict:
     """Run one match: one runner process per team, a router in front of the engine server.
 
     `cgroup`: None = use kernel cgroup limits if a user systemd manager is available, True = require,
@@ -431,7 +436,7 @@ def run_match(scaffold: Path, py: Path, bots_dir: Path, team_a: str, team_b: str
                 os.close(fd)
             seccomp_fds = []
             gradle = subprocess.Popen(
-                build_gradle_cmd(scaffold, team_a, team_b, maps, replay, offline, class_dir),
+                build_gradle_cmd(scaffold, team_a, team_b, maps, replay, offline, class_dir, live_path),
                 stdin=subprocess.DEVNULL, stdout=sl, stderr=subprocess.STDOUT,
                 start_new_session=True, cwd=scaffold)
             while gradle.poll() is None:

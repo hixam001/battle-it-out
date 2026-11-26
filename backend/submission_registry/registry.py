@@ -43,6 +43,7 @@ from typing import Callable
 from backend.bot_validator import validator as V
 from backend.match_orchestrator.store import JsonFileStore
 from backend.submission_check import trial as T
+from backend.submission_bundle import bundle as BU
 
 SCHEMA = 1
 STORED_NAME = "bot.py"
@@ -269,7 +270,8 @@ def _view(state: dict, rec: dict) -> dict:
     pinned = sorted(t for t, p in state["pins"].items() if p["teams"].get(rec["team_id"]) == rec["id"])
     keep = ("id", "team_id", "tournament_id", "version", "content_hash", "bytes", "uploaded_by", "uploaded_at",
             "validation_status", "is_active", "activated_at", "superseded_by")
-    return {**{k: rec[k] for k in keep}, "validations": [dict(v) for v in rec["validations"]],
+    return {**({"format": "python-bundle", "files": rec["bundle_files"]} if "bundle_files" in rec else {}),
+            **{k: rec[k] for k in keep}, "validations": [dict(v) for v in rec["validations"]],
             "check_in_progress": rec["claim"] is not None, "pinned_in": pinned}
 
 
@@ -280,7 +282,8 @@ def _team(state: dict, team_id: str) -> dict | None:
 # ---------------------------------------------------------------------------------------------- upload
 
 def submit(reg: Registry, actor: Actor | None, team_id: str, tournament_id: str, file_name: str, data: bytes, *,
-           idempotency_key: str, deadline_at: float, now: Callable[[], float] = time.time) -> dict:
+           idempotency_key: str, deadline_at: float, now: Callable[[], float] = time.time,
+           _bundle: dict[str, bytes] | None = None) -> dict:
     """Store a new version. Returns its view: `validating`, or `invalid` with the reasons (the participant
     sees them at once, and the invalid version stays in the history)."""
     _check_id("team id", team_id)
@@ -299,7 +302,8 @@ def submit(reg: Registry, actor: Actor | None, team_id: str, tournament_id: str,
         raise NotFound("no such team")
     t = now()
     key = f"{team_id}\x00{idempotency_key}"
-    digest = _sha(data)
+    digest = BU.digest(_bundle) if _bundle is not None else _sha(data)
+    size = sum(map(len, _bundle.values())) if _bundle is not None else len(data)
     with reg.store.transaction() as state:
         known = state["idempotency"].get(key)
         if known:                                   # a retry of an earlier request: same answer, always
@@ -311,7 +315,7 @@ def submit(reg: Registry, actor: Actor | None, team_id: str, tournament_id: str,
             raise Conflict("the team belongs to another tournament")
         if t >= deadline_at:
             raise DeadlineClosed("the submission deadline has passed")
-        if len(data) > reg.max_bytes:
+        if size > reg.max_bytes:
             raise TooLarge(f"the file is larger than {reg.max_bytes} bytes")
         team = state["teams"].setdefault(team_id, {"tournament_id": tournament_id, "next_version": 1,
                                                    "active": None})
@@ -319,14 +323,36 @@ def submit(reg: Registry, actor: Actor | None, team_id: str, tournament_id: str,
         if version > reg.max_versions:
             raise Conflict(f"the team has reached the limit of {reg.max_versions} versions")
         reasons, warnings = _static(file_name, data)
+        if _bundle is not None:
+            BU.validate(_bundle)
+            reasons, warnings = [], []
         sid = f"{team_id}-v{version}"
         _write_new(reg.root / sid, data)
+        if _bundle is not None:
+            folder = reg.root / sid
+            os.chmod(folder, 0o700)
+            for name, raw in _bundle.items():
+                if name == STORED_NAME:
+                    continue
+                fd = os.open(folder / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o400)
+                with os.fdopen(fd, "wb") as stream:
+                    stream.write(raw)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+            os.chmod(folder, 0o500)
+            dfd = os.open(folder, os.O_RDONLY)
+            try:
+                os.fsync(dfd)
+            finally:
+                os.close(dfd)
         status = INVALID if reasons else VALIDATING
         rec = {"id": sid, "team_id": team_id, "tournament_id": tournament_id, "version": version,
-               "content_hash": digest, "bytes": len(data), "uploaded_by": actor.user_id,
+               "content_hash": digest, "bytes": size, "uploaded_by": actor.user_id,
                "uploaded_at": _iso(t), "validation_status": status, "is_active": False, "activated_at": None,
                "superseded_by": None, "claim": None, "deadline_seen": float(deadline_at),
                "validations": [_clean_validation("static", "rejected" if reasons else "passed", reasons, warnings, t)]}
+        if _bundle is not None:
+            rec["bundle_files"] = sorted(_bundle)
         state["submissions"][sid] = rec
         team["next_version"] = version + 1
         state["idempotency"][key] = {"id": sid, "hash": digest}
@@ -343,12 +369,17 @@ def _problem(reg: Registry, rec: dict) -> str | None:
         st = os.lstat(folder)
         if not stat.S_ISDIR(st.st_mode):
             return "the submission folder is not a plain folder"
+        if "bundle_files" in rec:
+            files = BU.snapshot(folder)
+            if sorted(files) != rec["bundle_files"] or BU.digest(files) != rec["content_hash"]:
+                return "the stored bundle no longer matches its hash"
+            return None
         if os.listdir(folder) != [STORED_NAME]:
             return "the submission folder holds other files than bot.py"
         if _sha(_read_regular(folder / STORED_NAME, rec["bytes"])) != rec["content_hash"]:
             return "the stored file no longer matches its hash"
-    except OSError as e:
-        return f"the stored file cannot be read ({e.strerror or type(e).__name__})"
+    except (OSError, BU.Invalid) as e:
+        return f"the stored file cannot be read ({getattr(e, "strerror", None) or type(e).__name__})"
     return None
 
 
@@ -505,6 +536,8 @@ def download(reg: Registry, actor: Actor | None, submission_id: str, *,
         else:
             if actor.role != "participant":
                 _audit(state, t, actor.user_id, "download", submission_id=rec["id"], role=actor.role)
+            if "bundle_files" in rec:
+                raise Conflict("download this submission as a bundle ZIP")
             return SourceHandle(rec["id"], reg.root / rec["id"] / STORED_NAME, rec["content_hash"], rec["bytes"])
     raise Unavailable(damage)
 
@@ -615,3 +648,31 @@ def verify_pins(reg: Registry, tournament_id: str, *, now: Callable[[], float] =
                 _damaged(state, state["submissions"][sid], problem, t)
                 bad.append(sid)
     return bad
+
+
+def submit_bundle(reg, actor, team_id, tournament_id, data, **kwargs):
+    """Explicit multi-file upload; existing single-file callers remain unchanged."""
+    if not _can_upload(actor, team_id):
+        raise NotFound("no such team")
+    files = BU.unpack(data)
+    return submit(reg, actor, team_id, tournament_id, STORED_NAME, files[STORED_NAME], _bundle=files, **kwargs)
+
+
+def download_bundle(reg, actor, submission_id, *, now=time.time):
+    damage = None
+    with reg.store.transaction() as state:
+        rec = _readable(state, actor, submission_id)
+        if "bundle_files" not in rec:
+            raise Conflict("this is a single-file submission")
+        problem = _problem(reg, rec)
+        if problem:
+            damage = _damaged(state, rec, problem, now())
+        else:
+            files = BU.snapshot(reg.root / rec["id"])
+            if BU.digest(files) != rec["content_hash"]:
+                damage = _damaged(state, rec, "bundle changed during download", now())
+            else:
+                if actor.role != "participant":
+                    _audit(state, now(), actor.user_id, "download_bundle", submission_id=rec["id"], role=actor.role)
+                return BU.export(files)
+    raise Unavailable(damage)

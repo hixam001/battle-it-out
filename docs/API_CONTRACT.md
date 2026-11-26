@@ -688,3 +688,27 @@ and tests for both allowed and denied cases. Treat `[DECIDE]` items as
 unresolved and do not silently choose a behavior. For worker
 integration, inspect the real Battlecode runner interface rather than
 inventing engine APIs.
+
+
+## 10. Implemented feature API — CN-028
+
+The owner activated BIO-REQ-19–23 and selected Django/DRF/PostgreSQL with a React
+frontend. The authoritative implemented route table, session/CSRF behavior,
+private access rules and request shapes are in the
+[web application README](../backend/webapp/README.md). These routes are a tested
+feature slice; older endpoint groups above remain proposed unless implemented.
+Canonical new paths use a trailing slash except `analytics.csv`.
+
+- Session lifecycle: GET `/auth/session/`, POST `/auth/login/`, POST `/auth/logout/`.
+- GET `/tournaments/` lists current accessible records; GET `/dependencies/` is a public pinned catalogue.
+- GET `/tournaments/{id}/live/` supplies numeric board snapshots and safe match metadata, with current authorization on every poll, private/no-store cache policy and 410 after archive.
+- GET `/tournaments/{id}/analytics/` and `/analytics.csv` expose results-derived team/version/map/round and failure/timing statistics. No source, host path or bot output is included.
+- GET/POST `/tournaments/{id}/teams/{team}/submissions/` and GET `/tournaments/{id}/submissions/{version}/download/` implement team-private history, captain upload using the stored deadline, queued validation and authorized source/bundle delivery. POST accepts one multipart `file` and requires `Idempotency-Key`.
+- GET/POST `/tournaments/{id}/disputes/` and `/disputes/{uuid}/` support match-bound team-private review. Creation body: `series_id`, `title`, `description`. Update body: `expected_version` and either `message`, or staff `status` plus `resolution`. Both mutation forms require `Idempotency-Key`; state/event/audit/receipt persistence is one PostgreSQL transaction. Closing a review does not change match results or replay a game.
+- GET `/admin/operations/` is Admin-only and read-only, returning counts, incident metadata, dead jobs and recent feature audit events.
+
+Existing core stores remain JSON. Native Django accounts/sessions plus operator
+roster links and Organizer assignments provide current scope for these routes;
+public account registration/recovery, global role APIs and the full CN-026
+administration/concurrency contract are still open. No full BIO-403 migration,
+production hosting, provider integration or complete backend is claimed.

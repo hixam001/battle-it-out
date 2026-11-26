@@ -1,5 +1,7 @@
 # Product
 
+> Current scope update, 2026-11-26 (CN-028): all five former deferred feature groups are active. The owner selected Django/DRF + PostgreSQL and React/TypeScript, private tournament live viewing, and Python multi-file bundles plus curated dependencies first. Additional languages follow compatibility work. This notice supersedes historical deferral, stack and one-file-only statements below. Current implementation/backlog is in `docs/PROJECT_MEMORY.md`.
+
 <!-- impeccable:product-schema 1 -->
 
 > Source: derived on 2026-11-24 from `docs/PRD.md` (v1.1), `docs/SRD.md`, `docs/APP_FLOW.md`, `docs/API_CONTRACT.md`, `docs/DATA_MODEL.md`, and `docs/TEST_PLAN.md`, without a separate interview. Statements follow the docs' own labels: **confirmed** (established in project discussions), **proposed** (needs approval), and `[DECIDE]` (unresolved). If a doc and this file disagree, the doc wins; update this file.
@@ -11,7 +13,7 @@ web
 ## Stack
 Not decided. Proposed in the PRD and awaiting approval (`[DECIDE]` DEC-11): React + TypeScript frontend; Django + Django REST Framework API; PostgreSQL; Celery + Redis background jobs; isolated container workers for bot execution; private S3-compatible file storage; polling for updates (WebSockets only if live updates materially require them); containerized deployment behind a reverse proxy. Hosting, email provider, and object storage are also undecided.
 
-Already in the repo (confirmed): the Battlecode 2026 Java/Python scaffold, vendored at `backend/battlecode26-scaffold/`. Its Python launcher currently requires Python 3.12 exactly; the project target is Python 3.13, not yet verified.
+Already in the repo (confirmed): the Battlecode 2026 Java/Python scaffold, vendored at `backend/battlecode26-scaffold/`. The stock Python launcher requires 3.12; our launcher and pinned project environments are verified on 3.12–3.15 (primary 3.15.2), with remaining execution gates open.
 
 ## Users
 Three authenticated roles. Anonymous public browsing of tournament results is not assumed.
@@ -25,7 +27,7 @@ INNOFEST Battle It Out is a Battlecode-style programming competition. Participan
 
 Success means: bots run reproducibly and safely; bot failures are told apart from platform failures; tournaments run end to end with correct, traceable outcomes; and the permission, privacy, and deadline rules cannot be bypassed.
 
-Delivery order is confirmed: scaffold modernization and Python 3.13 compatibility first, then safe bot execution and match automation, then backend, then registration/submissions, then tournament operations, then the website. Nothing visual is built until the execution foundation passes its exit gate. The public landing page is explicitly deferred.
+Delivery order is confirmed: scaffold modernization and Python 3.13 compatibility first, then safe bot execution and match automation, then backend, then registration/submissions, then tournament operations, then the website. The owner subsequently activated local landing/feature-console work (CN-028); execution gates remain open and no production launch is implied.
 
 ## Positioning
 The docs describe the mechanism but do not state a positioning claim, so none is invented here (`[DECIDE]`). What is confirmed: participants write a single-file Python bot that plays in the real Battlecode 2026 engine (no replacement engine); matches run in an isolated worker with fixed platform-wide limits; and outcomes are transparent and auditable, including publicly displayed tie-break and coin-flip results.
@@ -67,7 +69,7 @@ The name is "Battle It Out", presented as "INNOFEST Battle It Out" and described
 ## Evidence on Hand
 - Specification documents in `docs/` (PRD, SRD, API contract, data model, test plan, app flow), plus `handoff.md` for current project state.
 - The Battlecode 2026 Java/Python scaffold with example bots at `backend/battlecode26-scaffold/`.
-- Absent, and not to be fabricated: any UI or design, logo or brand assets, testimonials, past participants or results, press, pricing, sponsor details, real tournament dates, real rosters, benchmark numbers, or measured Python 3.13 compatibility.
+- Initial React UI and a reviewable visual direction now exist in `frontend/` and `DESIGN.md`; Python matrix evidence is recorded in memory. Do not fabricate branding approval, testimonials, participants/results, press, pricing, sponsors, event dates, rosters or benchmark approval.
 
 ## Product Principles
 1. **Prove the engine before presenting it.** The execution path, failure classification, and limits come first, and nothing claims compatibility, isolation, or reliability without a test that proves it.

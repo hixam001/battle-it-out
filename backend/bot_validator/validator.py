@@ -94,7 +94,7 @@ class _Binder(ast.NodeVisitor):
     visit_Nonlocal = visit_Global
 
 
-def validate_source(source: str, policy: dict | None = None) -> dict:
+def validate_source(source: str, policy: dict | None = None, *, require_entry_point: bool = True) -> dict:
     policy = policy or load_policy()
     errors: list[dict] = []
     warnings: list[dict] = []
@@ -113,19 +113,19 @@ def validate_source(source: str, policy: dict | None = None) -> dict:
         errors.append({"code": "E-SYNTAX", "line": None, "message": f"the source cannot be parsed ({type(e).__name__})"})
         return {"ok": False, "errors": errors, "warnings": warnings}
     try:
-        return _check_tree(tree, policy, errors, warnings)
+        return _check_tree(tree, policy, errors, warnings, require_entry_point=require_entry_point)
     except RecursionError:     # a tree that parses but is too deep for the visitors
         errors.append({"code": "E-SYNTAX", "line": None, "message": "the source is nested too deeply to check"})
         return {"ok": False, "errors": errors, "warnings": warnings}
 
 
-def _check_tree(tree: ast.AST, policy: dict, errors: list, warnings: list) -> dict:
+def _check_tree(tree: ast.AST, policy: dict, errors: list, warnings: list, *, require_entry_point=True) -> dict:
 
     entry = policy["entry_point"]
     turns = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == entry]
-    if not turns:
+    if require_entry_point and not turns:
         errors.append(_finding("E-NO-TURN", f"no top-level function {entry}()"))
-    else:
+    elif require_entry_point and turns:
         t = turns[-1]
         a = t.args
         if isinstance(t, ast.AsyncFunctionDef):

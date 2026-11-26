@@ -494,7 +494,7 @@ def host_lock(path: Path, timeout: float = 3600.0, poll: float = 1.0, sleep=time
 def launcher_run_fn(scaffold: Path, py: Path, bots_dir: Path, out_root: Path, *, timeout: int = 1800,
                     offline: bool = True, socket_tuning: bool = True, sandbox: bool = True,
                     limits_path: Path | None = L.DEFAULT_LIMITS, cgroup: bool | None = None,
-                    lock_path: Path | None = None, lock_wait: float = 3600.0) -> Callable[[AttemptContext], dict]:
+                    lock_path: Path | None = None, lock_wait: float = 3600.0, live_dir: Path | None = None) -> Callable[[AttemptContext], dict]:
     """Build a run function for `run_match_job` that plays the match with `backend/match_runner`.
 
     The bot folder of a team is `bots_dir/<submission reference>`: one immutable folder per submission
@@ -514,7 +514,8 @@ def launcher_run_fn(scaffold: Path, py: Path, bots_dir: Path, out_root: Path, *,
                                    timeout, offline, socket_tuning, sandbox=sandbox, cgroup=cgroup,
                                    trace_id=ctx.trace_id, match_id=ctx.match_id, attempt=ctx.attempt,
                                    submissions={"A": ctx.submission_a, "B": ctx.submission_b},
-                                   limits_path=limits_path)
+                                   limits_path=limits_path,
+                                   live_path=Path(live_dir) / (ctx.match_id + ".json") if live_dir else None)
         except L.PortBusyError as e:
             return {"outcome": "platform_failure", "kind": "port_busy", "detail": str(e)}
         except TimeoutError as e:

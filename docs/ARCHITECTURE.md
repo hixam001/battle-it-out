@@ -34,7 +34,7 @@ flowchart TB
 
 ### 1.2 What exists today (Observed)
 
-Only the execution foundation exists: the Battlecode 2026 scaffold at `backend/battlecode26-scaffold/`. There is no API, database or website; a job queue and a worker process exist as `backend/work_queue/` (CN-017) and run the upload check and tournament rounds from JSON files; `backend/tournament_flow/` (CN-018) is the library an API will call for each step (upload and queue the check, pin and draw, verify and start a round, housekeeping). `backend/tournaments/` (CN-019) holds the tournament record with its approval states and deadlines, and `scheduler.tick` draws the bracket when the submission deadline passes. `backend/registration/` (CN-020) holds the official roster, single-use invitation codes, the claim with email and code, and the participant `Actor` (teams, captain-of) for the submission registry. `scheduler.tick(registration=...)` (CN-021) draws the teams on that roster. `backend/notifications/` (CN-022) holds the dashboard notifications, the email preference and the email outbox (the provider is a function the caller passes); `notifications/sources.py` (CN-023) tells teams how their check, matches and the draw ended, through hooks in the worker handlers and the timer.
+The existing engine is integrated at `backend/battlecode26-scaffold/`. CN-028 adds a Django/DRF/PostgreSQL feature API (`backend/webapp/`) and a React/TypeScript landing/feature console (`frontend/`), while existing core stores remain JSON; a job queue and a worker process exist as `backend/work_queue/` (CN-017) and run the upload check and tournament rounds from JSON files; `backend/tournament_flow/` (CN-018) is the library an API will call for each step (upload and queue the check, pin and draw, verify and start a round, housekeeping). `backend/tournaments/` (CN-019) holds the tournament record with its approval states and deadlines, and `scheduler.tick` draws the bracket when the submission deadline passes. `backend/registration/` (CN-020) holds the official roster, single-use invitation codes, the claim with email and code, and the participant `Actor` (teams, captain-of) for the submission registry. `scheduler.tick(registration=...)` (CN-021) draws the teams on that roster. `backend/notifications/` (CN-022) holds the dashboard notifications, the email preference and the email outbox (the provider is a function the caller passes); `notifications/sources.py` (CN-023) tells teams how their check, matches and the draw ended, through hooks in the worker handlers and the timer.
 
 `backend/services/` (BIO-409; CN-027) provides separate configured worker, roster-aware maintenance, email and alert processes over these stores. Maintenance supplies registration, notifications and the vault to `tick`; rounds still need an Organizer start. Optional trusted adapters deliver email/Admin alerts; absent adapters leave deliveries unclaimed and incidents unacknowledged. A systemd template is supplied for review; deployment, provider/channel and pinned worker image remain open. See [service operations](../backend/services/README.md).
 
@@ -269,12 +269,12 @@ Services are containerized; the worker runs on separate hardware or at least a s
 | ID | Decision | Status | Source |
 |---|---|---|---|
 | ADR-01 | Reuse the Battlecode 2026 engine; no second engine | Confirmed | SRD-001 |
-| ADR-02 | Python only, one `bot.py`, same runtime image for all bots | Confirmed | PRD §9 |
+| ADR-02 | Python entry bot.py, optionally with flat helper modules and curated exact-version source dependencies; additional languages follow compatibility work | Owner-selected expansion 2026-11-26 | CN-028 |
 | ADR-03 | Execute bots outside the web/API process in isolated workers | Confirmed | SRD-007 |
 | ADR-04 | Single-elimination, sequential matches started by an Organizer | Confirmed | PRD §6.4 |
 | ADR-05 | Global fixed resource limits from benchmarks | Confirmed (values open) | PRD §8 |
-| ADR-06 | React/TypeScript, Django/DRF, PostgreSQL, Celery/Redis, S3-compatible storage | Proposed | PRD §9, DEC-11 |
+| ADR-06 | React/TypeScript + Django/DRF + PostgreSQL approved; Celery/Redis, hosting/email/object storage remain unapproved | Partially decided by owner 2026-11-26 | CN-028, DEC-11 |
 | ADR-07 | Vendor the scaffold into `backend/battlecode26-scaffold/` and build on it | Decided by owner 2026-11-05 | PR #1 |
-| ADR-08 | Polling before WebSockets; defer live viewing | Proposed | DEC-09 |
+| ADR-08 | Private live board through authenticated polling and a numeric file transport; native engine WebSocket disabled | Owner approved private audience; transport is interim engineering choice | CN-028, DEC-09 |
 | ADR-09 | Retry cap interpreted as 10 total attempts | Proposed | DEC-05 |
 | ADR-10 | Project license given the AGPL-3.0 scaffold | Decided 2026-11-24: AGPL-3.0-only (CN-003) | A-05 |

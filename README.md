@@ -1,23 +1,29 @@
 # Battle It Out
 
-INNOFEST **Battle It Out** is a Battlecode-style programming competition. Participants submit one Python file, `bot.py`, and the platform runs their bots against each other in the existing **Battlecode 2026** engine: invitation-based registration, bot validation, single-elimination brackets, tie-breaks, replays, notifications, and an immutable audit trail.
+INNOFEST **Battle It Out** is a Battlecode-style programming competition. Participants submit Python `bot.py`, alone or in a flat-module bundle with curated dependencies, and the platform runs their bots against each other in the existing **Battlecode 2026** engine: invitation-based registration, bot validation, single-elimination brackets, tie-breaks, replays, notifications, and an immutable audit trail.
 
 ## Project status
 
-**Early stage: only the execution foundation exists.** What is in the repository today:
+**Execution libraries and an initial web feature platform are implemented.**
 
-- the requirement and design documents in [`docs/`](docs/);
-- the Battlecode 2026 scaffold, vendored at [`backend/battlecode26-scaffold/`](backend/battlecode26-scaffold/);
-- project state and working rules in [`handoff.md`](handoff.md).
+- Existing Battlecode engine and sandboxed Python workers, queue, tournament flow, registry, roster, notifications and replay vault.
+- [Django/DRF feature API with PostgreSQL](backend/webapp/README.md): sessions, current roster/Organizer scope, submissions, analytics, disputes and an Admin operations reader.
+- [React/TypeScript website](frontend/README.md): public landing page and private feature console, with desktop/mobile browser checks.
+- [Native Python bundles](backend/submission_bundle/README.md) and [private live boards](backend/live_view/README.md), verified with real engine games.
+- Durable continuation notes in [project memory](docs/PROJECT_MEMORY.md) and [handoff](handoff.md).
 
-There is **no API, database, or website yet** (a job queue and a worker process exist: `backend/work_queue/`, `backend/tournament_flow/` joins upload, pins, bracket and round as a library, and `backend/tournaments/` holds the tournament record, approval, deadlines and the deadline timer, `backend/registration/` holds the official roster, invitation codes and registration, and `backend/notifications/` holds dashboard notifications, the email preference, the email outbox and the sources that notify teams of check, match and draw results). The delivery order is fixed: scaffold and Python 3.13 compatibility first, then safe bot execution and match automation, then backend, then registration and submissions, then tournament operations, then the website. See [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md).
+The owner activated the five former deferred features and selected Django/DRF,
+PostgreSQL and React/TypeScript (CN-028). Other languages follow compatibility
+work. No production website/services are deployed; many core endpoints/screens,
+the legacy JSON-store migration and execution/launch gates remain open. See
+[coverage](docs/REQUIREMENTS_COVERAGE.md) for the exact remaining gaps.
 
 [`backend/services/`](backend/services/README.md) now provides interim single-host worker, maintenance, email and alert commands with configuration and a reviewable systemd template (BIO-409; CN-027). Maintenance always uses the roster, notifications and replay vault. Providers/channels are operator-supplied; no production services are deployed.
 
 Known open issues (details in the plan and architecture documents):
 
 - The engine package officially supports only Python 3.12. Python 3.12 to 3.15 (latest stable, 3.15.2) pass our tests through `backend/match_runner/`, on Linux x86_64 only; the engine's authors do not support this (`docs/CHANGE_NOTICES.md` CN-001).
-- The engine's bot sandbox is weak (it allows `open`, attribute-walk escapes and infinite loops); isolation and limits are still to be built (`docs/TECHNICAL_DOCUMENTATION.md` section 3.5).
+- The engine's bot sandbox is weak (it allows `open`, attribute-walk escapes and infinite loops); our per-team OS isolation and provisional limits are implemented, with benchmarking and independent review still open (`docs/TECHNICAL_DOCUMENTATION.md` section 3.5).
 - Running Python bots through Gradle fails or hangs on Linux. Use `python3 backend/match_runner/launcher.py run ...` (see `backend/match_runner/README.md`); a match of the example bot takes about 3 seconds.
 - The match runner has had one self-review (`docs/SECURITY_REVIEW.md`, CN-008): five defects were fixed, two residual risks stay open, and a human or third-party review is still needed. Isolation is for Linux x86_64 only.
 - The Battlecode Java engine declares no license; written confirmation from the Battlecode team is still needed (`docs/LICENSING.md`).

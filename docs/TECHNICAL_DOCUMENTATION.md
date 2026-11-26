@@ -36,7 +36,7 @@ battle-it-out/
 
 Git-ignored, local-only directories inside the scaffold (recreated by tooling): `.venv`, `.gradle`, `build/`, `client/`, `matches/`, `.temp/`. Agent and skill directories (`.claude/skills`, `.claude/agents`, `.agents`, `skills-lock.json`) are also ignored.
 
-The backend described in later sections (API, database, worker) does not exist yet; where it will live under `backend/` is `[DECIDE]`. A reasonable starting point is sibling packages next to the scaffold, but that is a proposal, not a decision.
+Current CN-028 implementation: sibling execution libraries and services plus `backend/webapp/` (Django/DRF/PostgreSQL feature endpoints) and `frontend/` (React/TypeScript landing/feature console). Existing core stores remain JSON. Later full-schema/core-endpoint descriptions are proposals unless the [feature API README](../backend/webapp/README.md) identifies them as implemented. Hosting/email/object storage remain open.
 
 ## 2. Prerequisites and environment
 

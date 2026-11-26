@@ -296,9 +296,12 @@ def defaultClassLocation = sourceSets.main.output.classesDirs.getAsPath()
 def defaultReplayName = truncateString(project.property('teamA') + '-vs-' + project.property('teamB') + '-on-' + project.property('maps'), 80)
 def defaultReplayFile = 'matches/' + defaultReplayName + '.bc26'
 
+// Modified 2026-11-26: private live-event transport (CN-028); the engine simulation is unchanged.
 task runJavaLocal(type: JavaExec) {
   mainClass = 'battlecode.server.Main'
-  classpath = sourceSets.main.runtimeClasspath
+  classpath = project.findProperty('bioLiveAdapter')
+    ? files(project.property('bioLiveAdapter')) + sourceSets.main.runtimeClasspath
+    : sourceSets.main.runtimeClasspath
   args = ['-c=-']
   jvmArgs = [
     '--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED',
@@ -306,6 +309,8 @@ task runJavaLocal(type: JavaExec) {
     '--add-opens=java.base/jdk.internal.util=ALL-UNNAMED',
     '--add-opens=java.base/jdk.internal.access=ALL-UNNAMED',
     '--add-opens=java.base/sun.security.action=ALL-UNNAMED',
+    '-Dbc.server.websocket=' + (project.findProperty('bioLiveAdapter') ? 'true' : 'false'),
+    '-Dbio.live.path=' + (project.findProperty('bioLivePath') ?: ''),
     '-Dbc.server.wait-for-client=' + (project.findProperty('waitForClient') ?: 'false'),
     '-Dbc.server.mode=headless',
     '-Dbc.server.map-path=maps',

@@ -321,3 +321,34 @@ engine and approved runtime image. Never mock the engine for the only
 proof of Python 3.13 compatibility. Record versions, seed, bot
 submission IDs, expected result, observed result, logs, and pass/fail
 evidence. Do not claim a test passed unless it was run.
+
+
+## 8. Activated feature verification — CN-028
+
+BIO-REQ-19–23 are now active. The following evidence complements the original
+TC-02/05/07/08 plan; it does not close the execution/production acceptance gates.
+
+| Surface | Required verification / implemented checks |
+|---|---|
+| Python bundles | ZIP traversal/duplicates/symlinks/expansion limits; every module checked; curated exact versions; complete-digest verdict and pin binding; changed helper/dependency refusal; authorized reproducible export; real two-sided native-module engine trial |
+| Private live board | Real board changes observed before completion; native schema only; no raw WebSocket listener; numeric allowlist/private file mode; baseline engine round/reason comparison; scope revoked on next poll; archived access denied and frame files purged |
+| PostgreSQL API | Anonymous/foreign scope denial; current roster/assignment authority; staff source read audit; stored deadline/captain upload gate; CSRF/session and independent durable source/account login limits |
+| Disputes | Team-private actual match reference; idempotent create; payload mismatch; optimistic conflict; staff-only transitions/reason; comments/closed-state behavior; result records unchanged; state/audit/receipt rollback; database rejection of audit-history changes |
+| React | Production build/type check; desktop/mobile overflow and keyboard navigation; labeled illustration; real login, analytics/version/timing view, dispute/comment, submission catalogue, logout and Admin operations |
+
+Use the documented package/backend runner plus the PostgreSQL-specific command:
+
+```bash
+backend/.venvs/py3.15/bin/python backend/run_tests.py
+backend/.venvs/py3.15/bin/python backend/run_tests.py --integration
+backend/.venvs/web/bin/python backend/webapp/manage.py test backend.webapp.tests
+npm run build --prefix frontend
+npm test --prefix frontend
+```
+
+Browser tests require labeled disposable local fixture accounts and both local
+servers. Database tests require PostgreSQL; SQLite is not equivalent evidence
+for the history triggers. Real matches run sequentially and all output stays in
+temporary directories. Other language runtimes, production deployment/load,
+full browser replay playback, formal accessibility and independent security
+review remain separate acceptance work.

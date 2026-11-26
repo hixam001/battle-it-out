@@ -22,15 +22,19 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
-- Latest continuation on 2026-11-26: PR #34 (BIO-406's contract proposal)
-  merged into `main`; fetched `origin/main` is `a74e699`. **BIO-409's interim
-  service slice** starts there on `BIO-409-service-runner` (CN-027): configured
-  worker, roster-aware maintenance, email and alert commands and a reviewable
-  systemd template. A real-engine subprocess lifecycle passed. No services
-  were installed/deployed and no real provider/channel was used. Production
-  persistence, provider/channel, worker image and supervision still need work.
-  BIO-406's CN-026 remains a proposal awaiting policy decisions and implementation;
-  no HTTP API/authentication/role store was added.
+- Latest continuation on 2026-11-26: PR #35 (BIO-409 service runner) merged;
+  fetched `origin/main` is `2e06a4b`. **BIO-EPIC-06 activated-feature suite**
+  starts there on `BIO-EPIC-06-deferred-feature-suite` (CN-028). The owner
+  activated all five deferred groups, selected Django/DRF + PostgreSQL and
+  React/TypeScript, chose private tournament live viewing, and chose Python
+  bundles/curated dependencies before other language compatibility work.
+- Implemented locally: React landing/feature console; Django session/CSRF and
+  current roster/explicit Organizer scope; real upload/history/download;
+  native Python multi-file bundles and pinned helper dependency; private numeric
+  live boards through a transport-only engine adapter; version/map/round/failure/
+  timing analytics and CSV; PostgreSQL transactional disputes and append-only
+  audit/history; read-only Admin operations. No production hosting or complete
+  core API/JSON-store migration is claimed. Other languages remain follow-up.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -50,25 +54,32 @@ remaining backlog after every task.
   ran 20 times each on 3.13 and 3.15, totaling 120 real matches. Unit mode
   skips integration cases; three engine-dependent tests need the project venv.
   These are Claude's recorded results, not a new four-version run by Codex.
-- Coverage currently records **17 DONE / 50 PARTIAL / 19 TODO / 5 DEFERRED**
+- Coverage currently records **17 DONE / 61 PARTIAL / 13 TODO / 0 DEFERRED**
   across **91** requirements. DONE denotes the documented library/tool scope,
   not owner acceptance or an independent security review. Counts and row-level
   gaps live in [REQUIREMENTS_COVERAGE.md](REQUIREMENTS_COVERAGE.md).
-- The platform has **no HTTP API, production database, accounts/authentication,
-  or website**. It has tested Python libraries, durable local JSON stores, and
-  a queue worker CLI. A timer function exists; no deployed service runs it.
+- The platform now has a tested **Django/DRF/PostgreSQL feature API and
+  React website**, plus the existing execution libraries/JSON stores and service
+  commands. No production service/website is deployed. Full core registration,
+  account recovery, tournament-management API/screens and legacy-store migration
+  remain unimplemented; feature implementation is not launch acceptance.
 
 ## Product and owner agreements
 
 INNOFEST Battle It Out runs participant bots in the **existing Battlecode 2026
-engine**. Each submission is one UTF-8 `bot.py` with top-level `turn()` and no
-arguments. No replacement engine, Java bots, ZIP/multi-file submissions, or
-participant-installed packages. Java remains necessary for the engine server.
+engine**. Each submission has UTF-8 entry `bot.py` with top-level `turn()` and
+no arguments. The owner now also permits bounded flat Python ZIP bundles with
+curated exact-version source dependencies (CN-028); legacy one-file uploads keep
+their semantics. No participant package installation, arbitrary custom runtime
+or Java bot language is enabled. Additional languages follow compatibility work.
+Java remains the existing engine server and its optional private event transport;
+no replacement simulation is built.
 
 - Delivery order: execution foundation and automation (epics 00–03), backend
   (04), registration/submissions (05), operations (06), website (07), QA/pilot
-  and launch (08). Unresolved execution gates remain open; do not infer that a
-  successful local match authorizes starting the website.
+  and launch (08). CN-028's explicit owner activation authorizes the new local
+  website/feature work while unresolved execution gates remain open; it does not
+  count those gates as passed or authorize a production launch.
 - Owner/contributor: Hisham Ahmed. A new task gets a Jira-named branch, commit,
   push, and PR to **main**. No co-author/generated-by lines. Do not merge unless
   instructed. Verify the base: PRs #11–#13 once merged into parent branches;
@@ -82,8 +93,9 @@ participant-installed packages. Java remains necessary for the engine server.
   Jira ID, changed files, actual tests/results, risks, and decisions.
 - Epics are `BIO-EPIC-00..08`; task keys are `BIO-NNN` with epic-based hundreds;
   requirements are `BIO-REQ-01..23`, `SRD-nnn`, and `BIO-NFR-01..12`. Do not reuse
-  a key. [JIRA_BREAKDOWN.md](JIRA_BREAKDOWN.md) proposes 46 later tasks
-  `BIO-401..410`, `501..508`, `601..611`, `701..709`, `801..808`. No real tracker
+  a key. [JIRA_BREAKDOWN.md](JIRA_BREAKDOWN.md) proposes 52 later tasks
+  `BIO-401..410`, `501..510`, `601..613`, `701..711`, `801..808` (CN-028
+  adds bundle/dependency/dispute/operations/live/analytics work). No real tracker
   issues were created; reconcile real keys if assigned later.
 - Keep confirmed rules, proposed stack choices, delegated interim defaults,
   and unresolved `[DECIDE]` items distinct. Earlier delegation authorized
@@ -117,7 +129,10 @@ raise a refusal after the transaction when its audit/limiter write must survive.
 | `tournaments` | Tournament state/approval, independent deadlines, extensions/overrides, archive/delete record, deadline tick | `tournaments.py`, `scheduler.py`; CN-019/021/023 |
 | `registration` | Official CSV/JSON roster, invitation issue/revoke/replace, claim/confirm, limiter, membership-derived participant Actor and registered teams | `registration.py`; CN-020/021 |
 | `notifications` | Mandatory dashboard feed, recipient-only reads, email preference/outbox/leases/retry, event adapters and worker/timer hooks | `notifications.py`, `sources.py`; CN-022/023 |
-| `services` | Configured notification-enabled worker, roster-aware maintenance with vault, separate email/alert processes through optional adapters; per-role locks, graceful signals, status and a systemd template | `runner.py`, `README.md`, `battle-it-out@.service`; CN-027 |
+| `services` | Configured notification-enabled worker, roster-aware maintenance with vault/live cleanup, separate email/alert processes through optional adapters; locks, signals, status and systemd template | `runner.py`; CN-027/028 |
+| `submission_bundle` | Bounded flat Python ZIPs, native local-module checks, aggregate digests and curated pinned biohelpers source; exact trials/activation/pins/export | `bundle.py`; CN-028 |
+| `live_view` | Transport-only NetServer adapter, unchanged engine/schema, numeric board snapshots with no raw listener; private HTTP polling and archive cleanup | `transport.py`, `transport/battlecode/server/NetServer.java`; CN-028 |
+| `webapp` / `frontend` | Django/DRF/PostgreSQL feature sessions/scope/API, transactional disputes/audit, analytics and Admin reader; React public landing/feature console | Package READMEs, `DESIGN.md`; CN-028 |
 
 The safe application path is: roster claim and verification → membership-derived
 Actor → `tournament_flow.upload` → queued two-sided trial → latest-valid version
@@ -241,85 +256,99 @@ in temporary directories; existing user replays were preserved.
 This list reconciles Claude's `project-unimplemented-backlog.md` after CN-025
 with current code and the coverage matrix; nothing here is closed by intake.
 
-1. **Backend foundation (epic 04):** DEC-11 stack/database/hosting/email/storage
-   approval; schema/migrations and replacement of all JSON stores; HTTP API,
-   common errors/pagination/idempotency/concurrency; accounts/passwords/email
-   verification/login/logout/sessions/recovery; centralized roles and real
-   Organizer assignments; append-only permanent audit with transactional/outbox
-   writes; private authorized file delivery. User/role/Organizer-assignment
-   routes now have a contract proposal (BIO-406, CN-026), with no implementation.
-   Single/multiple roles, staff/participant combinations, permission composition
-   and initial Admin/staff provisioning/recovery remain undecided. Review
-   CN-026's proposed access/revocation rules before implementing them; replace
-   the creator-based permission fallback, not only the `Actor` construction.
-2. **Service operation:** deploy/supervise the CN-027 worker, maintenance,
-   email and alert commands; approve/implement real email and Admin-channel
-   adapters for capped matches/dead jobs/failed email; target-host restart and
-   outage drills; worker container/image and runtime digest; secure deployment
-   and configuration. The systemd template is validated syntax, not installed
-   supervision. One-host/fixed-port assumptions remain. Queue jobs have heartbeat,
-   but the orchestrator's separate 2400-second attempt lease is not renewed.
-   Resume authority and final retry-cap policy need confirmation. Operational
-   failed-email alert receipts also need the eventual deletion/retention policy.
+1. **Backend foundation (epic 04):** full schema/migrations and replacement
+   of legacy JSON stores; complete core HTTP errors/pagination/idempotency/
+   concurrency/health; public invitation-linked account registration, verification
+   email, password recovery and account lifecycle; global user/role/assignment
+   API and role-composition/revision/last-Admin policy; unified permanent audit
+   and production private file delivery. Django/DRF, PostgreSQL and React/TS are
+   approved; hosting/email/object storage and other production choices are not.
+   The feature session/scope adapter, operator roster linking, explicit Organizer
+   assignments and feature audit tables now exist. CN-026's full administration
+   proposal remains open. Legacy creator fallback remains outside these scoped
+   feature routes and must be replaced before the full role API is implemented.
+2. **Service operation:** deploy/supervise the CN-027/028 worker, maintenance,
+   email, alert and web processes; approve/implement real email/Admin adapters;
+   target-host restart/outage drills; pinned worker/container image and runtime
+   digest; secure production database/configuration/TLS. The systemd template is
+   validated syntax, not deployed supervision. One-host/fixed-port assumptions,
+   the nonrenewed 2400-second match-attempt lease, resume authority and final
+   retry-cap policy remain. Live adapter compilation needs the pinned JAR/JDK;
+   operational failed-email alert receipt retention still needs policy.
 3. **Execution gates:** realistic target-hardware limits benchmark (DEC-04),
    independent sandbox/security review, SR-06 Java-exception classification and
    SR-03 parameter-type residual, engine seed control or accepted TC-04 waiver,
    house-bot algorithm (DEC-06), qualification-cutoff draw/audit (DEC-14), and
    complete TC-05 including these scenarios. Map pools exist; custom-map safety,
-   suitability, per-round pool re-verification, and production pool persistence
-   remain. Other OSes, 3.16 and free-threaded builds are unverified; no CI.
-4. **Registration/submissions:** endpoints and error mapping, code delivery,
-   account and verification-email integration, locked-entry Admin exception,
-   team size/name/captain policy, source retention, approved upload and limiter
-   caps/throttling, manual-activation decision. Registry defaults are 256 KiB
-   per file and 500 versions/team, not approved product limits. Engine imports
-   remain restricted to random/math/enum/battlecode26; no arbitrary stdlib or
-   preinstalled third-party bot libraries. Production callers must supply the
-   official deadline, authenticated Actor, and roster-aware timer configuration.
-5. **Tournament operations and deletion:** HTTP operations and permission tests,
-   explicit map-pool selection, authenticated results publication, incident and
-   paused-job controls; queued/cancelable account deletion, historical-roster
-   removal without changed results, captain transfer/no successor (DEC-07),
-   team deletion/restore after archive, and permanent tournament deletion across
-   every package's data with audit retained. A tournament tombstone and purge
-   helpers do not implement the full deletion lifecycle.
-6. **Notifications:** endpoints/screens, real email adapter/provider, service
-   adapter deployment/delivery, announcements, automatic `notify_notice` after extension/override,
-   affected-participant counts, Organizer approval/rejection notices, mandatory
-   security-email policy, owner-reviewed wording/retry defaults, expiry and
-   given-up-email alerts, real provider-outage drill. Check/round/draw event
-   adapters already exist; do not re-list those as unimplemented.
-7. **Replays/logs/privacy:** authorized HTTP replay/log delivery, object storage,
-   short-lived URLs and browser player (DEC-10), deployed purge schedule and vault
-   backups/restore; replay indicator-text exposure review; durable log storage,
-   retention and audit/notification visibility. Current redaction is best effort
-   and limited to match logs; no complete end-to-end privacy verification.
-8. **Website and launch:** every participant/Organizer/Admin screen, dashboard,
-   bracket/results/replay view and coin-flip display; design/accessibility/
-   usability; cross-role HTTP security tests; capacity/load/outage/concurrency
-   tests, multi-host design, backups/recovery drill, deployment environments/TLS,
-   CI matrix and real-engine tests, runbooks, pilot and go-live sign-off. Cold
-   clone setup still needs evidence; no release dates before the benchmark.
-9. **Owner/legal and deferred work:** written Battlecode Java-engine license
-   clarification, copyright holder, participant terms, network source offer;
-   review proposed Jira numbering/mapping and create actual tracker issues;
-   decide whether to update the local client pin (1.0.6) separately. P2 remains
-   landing page, live viewing, other languages/multi-file/custom dependencies,
-   advanced analytics, disputes and extra admin tools.
+   suitability, per-round re-verification and production persistence remain.
+   Other OSes, 3.16/free-threaded builds and CI remain unverified/unbuilt. New
+   native bundle/live tests do not close any of these execution gates.
+4. **Registration/submissions:** roster/invitation/team/claim/verification
+   endpoints and code delivery; final error/media-type contracts; locked-entry
+   Admin exception; team size/name/captain policy, source retention/deletion,
+   approved upload/version/limiter caps and manual-activation decision. HTTP
+   upload/history/source/bundle delivery and queued checks now exist and use the
+   official stored deadline/current roster Actor. Interim caps are 256 KiB and
+   500 versions/team; bundle input ceiling is 32 files. Native flat modules and
+   curated biohelpers 1.0.0 are supported; more packages require review/pins,
+   additional languages follow compatibility work, and arbitrary participant
+   installs/custom runtimes remain unapproved.
+5. **Tournament operations and deletion:** remaining tournament/deadline/
+   bracket/round/archive HTTP operations and permission tests; explicit map-pool
+   selection; full result publication and paused-job mutation controls; queued/
+   cancelable account deletion, historical-roster removal without changed
+   results, captain transfer/no successor (DEC-07), team delete/restore after
+   archive, permanent tournament deletion across every legacy/new package with
+   audit retained. Feature match disputes now support private comments/staff
+   review/version/idempotency and immutable history; appeals/reopening/outcome
+   correction policy and automatic notices remain. The Admin operations reader
+   is implemented; additional action controls remain open.
+6. **Notifications:** endpoints/screens, real provider and deployment;
+   announcements, automatic notice calls after extension/override, affected-user
+   counts, Organizer approval/rejection and dispute notices; mandatory security
+   email policy, owner wording/retry review, expiry alerts and real outage drill.
+   Check/round/draw adapters and failed-email alert retry hooks already exist.
+7. **Replays/logs/privacy:** authorized replay/log HTTP delivery, object storage,
+   short-lived URLs, full browser replay player (DEC-10), deployed purge schedule,
+   backups/restore, indicator-text exposure review, durable log retention and
+   complete end-to-end privacy verification. Private live numeric boards now
+   omit arbitrary text, check current scope per poll and are denied/purged after
+   archive. Full viewer overlays/traps/animations and production reconnect/load
+   evidence remain; live viewing is not the offline replay player.
+8. **Website and launch:** remaining registration/account settings/notification,
+   team, tournament creation/approval/deadline/round management, full bracket/
+   replay/coin-flip and Admin mutation screens. Public landing and the private
+   live/analytics/submission/dispute/operations console now exist. Branding,
+   usability, formal accessibility/nonvisual play-by-play and full FLOW-01–08
+   acceptance remain; production capacity/outage/concurrency/multi-host tests,
+   backups/recovery, deployment/TLS, CI matrix/real-engine checks, runbooks, pilot
+   and go-live approval are still open. No release dates before the benchmark.
+9. **Owner/legal and follow-up scope:** written Battlecode Java-engine license
+   clarification, copyright holder, participant terms and network source offer;
+   reconcile proposed Jira numbering/create real issues; decide client pin
+   update separately. All five former deferred requirement groups are active
+   PARTIAL work. Additional languages explicitly follow engine compatibility;
+   further dependencies, custom runtime policy, richer analytics and dispute
+   outcome/appeal policies need separate work/decisions. Hosting is not approved.
 
 ## Decision register and next work
 
-The proposed React/TypeScript + Django/DRF + PostgreSQL + Celery/Redis +
-S3-compatible stack is **not approved**. **DEC-11 / BIO-401** unlocks the backend.
-The **BIO-406 contract gap** now has a reviewable documentation proposal
-(CN-026); user/role/assignment persistence, policies and HTTP implementation
-remain open. **BIO-409 service wiring** now has an interim JSON-store implementation
-(CN-027); production persistence still depends on BIO-403, and real provider/channel,
-image and deployment remain open. Next work is the execution gates and owner
-stack decision (BIO-401/DEC-11); written launch/runbook work can continue independently.
-Account deletion requires DEC-07; API implementation requires DEC-11.
-Review the CN-026 proposal and settle role cardinality/composition and initial
-Admin/staff provisioning before implementing BIO-406.
+The owner selected **React/TypeScript + Django/DRF + PostgreSQL** for the
+activated features (CN-028). DEC-11 / BIO-401 is **partially decided**: hosting,
+email, object storage, replacement of legacy persistence and remaining production
+choices are open; Celery/Redis/S3 were not silently approved. Native Django
+sessions and scoped operator provisioning are reversible initial implementation
+choices, not final global role/recovery policy.
+
+BIO-REQ-19–23 are all active PARTIAL requirements. The first language expansion
+is native flat Python bundles and pinned curated source; other languages come
+after compatibility work. DEC-09 is resolved for **private** tournament viewing,
+not public spectators. The owner request authorizes this local web work while
+execution gates remain open. Next work is the retained execution gates, complete
+core backend/database/account flows, remaining screens and production decisions.
+Account deletion still needs DEC-07; full BIO-406 needs its unreviewed role/
+composition/revision/provisioning policy choices. BIO-409 production deployment,
+real providers/channels and image digest remain open.
 
 CN-026 proposes Admin-only global user/role/access administration, a scoped
 assignment list for Organizers, current authorization on requests/idempotent
@@ -345,9 +374,10 @@ not rerun for this docs-only change. No HTTP permission result is claimed.
 | DEC-05 | 10 total attempts default; interpretation and resume policy remain interim |
 | DEC-06, DEC-14 | House bots and qualification draw unbuilt pending algorithms/inputs/audit |
 | DEC-07 | Captain deletion with no successor unresolved |
-| DEC-08, DEC-09 | Separate config-freeze deadline undecided; live viewing deferred |
-| DEC-10, DEC-11 | Replay browser support and production stack/hosting/email/storage unresolved |
-| DEC-12, DEC-13 | Team edits/size/captain policy and recovery/disputes/retention unresolved |
+| DEC-08 | Separate config-freeze deadline undecided |
+| DEC-09 | Owner approved private viewing for signed-in tournament members, assigned Organizers and Admins (CN-028); public spectators not approved |
+| DEC-10, DEC-11 | Full replay browser support unresolved; app stack approved, hosting/email/object storage and remaining production choices open |
+| DEC-12, DEC-13 | Team policy and account recovery/retention unresolved; initial private dispute review approved/implemented, appeals and outcome corrections open |
 
 Recorded defaults awaiting owner review include CN-005 D1/D2, CN-013 D1/D2,
 CN-018 D4, CN-019 D1–D7, CN-020 D1/D2/D4/D5/D6, CN-021 D1/D3,
@@ -369,7 +399,7 @@ records unresolved role/provisioning decisions; none is an implemented default.
 | [ARCHITECTURE.md](ARCHITECTURE.md), [TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md) | Design boundaries, runner/worker mechanics, commands and troubleshooting |
 | [PROJECT_PLAN.md](PROJECT_PLAN.md), [JIRA_BREAKDOWN.md](JIRA_BREAKDOWN.md), [REQUIREMENTS_COVERAGE.md](REQUIREMENTS_COVERAGE.md) | Roadmap, dependencies and evidence-based completion |
 | [TEST_PLAN.md](TEST_PLAN.md), [SECURITY_REVIEW.md](SECURITY_REVIEW.md), [BOT_POLICY.md](BOT_POLICY.md) | Acceptance gates, self-review residuals, actual bot contract |
-| [USER_GUIDE.md](USER_GUIDE.md), [ADMIN_GUIDE.md](ADMIN_GUIDE.md) | Planned product behavior; no functioning website is implied |
+| [USER_GUIDE.md](USER_GUIDE.md), [ADMIN_GUIDE.md](ADMIN_GUIDE.md) | Planned full core flows; CN-028 feature console is implemented separately |
 | [LICENSING.md](LICENSING.md), [../THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md), [../LICENSE](../LICENSE) | AGPL-3.0-only project and open component/launch obligations |
 | [../handoff.md](../handoff.md), [../CHANGELOG.md](../CHANGELOG.md), package READMEs and source | Task history and actual implementation; older narrative can be stale |
 
@@ -390,3 +420,28 @@ the exact remaining gap. CN-027 adds interim service commands without closing an
 requirement status. No implementation requirement changed during intake
 or the BIO-406 documentation slice. The user/role/Organizer-assignment contract
 is no longer absent; it is proposed in API_CONTRACT §2.1–2.3, not implemented.
+
+
+## CN-028 continuation evidence
+
+On project Python 3.15.2, full backend unit mode discovered 779 tests: 731 passed,
+48 integration cases skipped. The complete real-engine suite then passed **all
+779** in 332.531 seconds. Targeted native bundle/live/service integration passed
+28 tests; the service archive assertion was separately checked with all 18
+service tests, including deletion of retained live-board JSON. Additive bundle/
+validator unit checks passed on 3.12.15/3.13.18/3.14.10 (22 discovered, 19 passed,
+3 expected skips per interpreter). This is current evidence, not Claude's CN-025
+four-version whole-backend integration result.
+
+The PostgreSQL feature suite covers 20 HTTP/CSRF/privacy/transaction/history/
+provisioning cases on Django 6.1.3/DRF 3.18.3/psycopg 3.3.9. React/TypeScript
+production build passes and three desktop/mobile Playwright flows pass using
+labeled disposable local fixtures. A stalled browser installer was repaired by
+extracting its already-downloaded archive under /tmp; no production browser,
+account or competition was touched. Source/runtime state remains separated.
+No external Site/provider/channel was created/published/contacted. Temporary
+PostgreSQL, previews and output are task-owned; existing user replays remain.
+
+Two bounded read-only research agents inspected engine streaming/native modules
+under the Sites skill's research-delegation guidance. They made no code changes
+or independent security audit. No public skill/index/graph update was needed.

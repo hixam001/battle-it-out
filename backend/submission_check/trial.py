@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Callable
 
 from backend.bot_validator import validator as V
+from backend.submission_bundle import bundle as BU
 from backend.match_orchestrator import orchestrator as O
 from backend.match_runner import launcher as L
 from backend.match_runner import match_log as log_mod
@@ -171,25 +172,34 @@ def check_submission(candidate: Path, *, play: Play, scaffold: Path = L.DEFAULT_
         verdict.update(status=status, stage=stage, reasons=reasons)
         return verdict
 
-    # 1. static check of the structure, then of the exact bytes we will play
-    structure = V.validate_path(candidate, policy)
-    verdict["warnings"] = structure.get("warnings", [])
-    if not structure["ok"]:
-        return done("rejected", "static", [_finding(f"S-{e['code']}", e["message"], e.get("line"))
-                                           for e in structure["errors"]])
-    raw = _read_bot_bytes(candidate)
-    if isinstance(raw, dict):
-        return done("rejected", "static", [_finding(f"S-{e['code']}", e["message"]) for e in raw["errors"]])
-    verdict["sha256"], verdict["bytes"] = _sha(raw), len(raw)
-    try:
-        source = raw.decode("utf-8")
-    except UnicodeDecodeError:
-        return done("rejected", "static", [_finding("S-E-ENCODING", "the file is not valid UTF-8")])
-    content = V.validate_source(source, policy)
-    verdict["warnings"] = content.get("warnings", [])
-    if not content["ok"]:
-        return done("rejected", "static", [_finding(f"S-{e['code']}", e["message"], e.get("line"))
-                                           for e in content["errors"]])
+    bundle_files = None
+    if candidate.is_dir() and (candidate / BU.MANIFEST).exists():
+        try:
+            bundle_files = BU.snapshot(candidate)
+        except (BU.Invalid, OSError) as exc:
+            return done("rejected", "static", [_finding("S-E-BUNDLE", str(exc))])
+        verdict["sha256"], verdict["bytes"] = BU.digest(bundle_files), sum(map(len, bundle_files.values()))
+        raw = bundle_files["bot.py"]
+    else:
+        # 1. static check of the structure, then of the exact bytes we will play
+        structure = V.validate_path(candidate, policy)
+        verdict["warnings"] = structure.get("warnings", [])
+        if not structure["ok"]:
+            return done("rejected", "static", [_finding(f"S-{e['code']}", e["message"], e.get("line"))
+                                               for e in structure["errors"]])
+        raw = _read_bot_bytes(candidate)
+        if isinstance(raw, dict):
+            return done("rejected", "static", [_finding(f"S-{e['code']}", e["message"]) for e in raw["errors"]])
+        verdict["sha256"], verdict["bytes"] = _sha(raw), len(raw)
+        try:
+            source = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            return done("rejected", "static", [_finding("S-E-ENCODING", "the file is not valid UTF-8")])
+        content = V.validate_source(source, policy)
+        verdict["warnings"] = content.get("warnings", [])
+        if not content["ok"]:
+            return done("rejected", "static", [_finding(f"S-{e['code']}", e["message"], e.get("line"))
+                                               for e in content["errors"]])
 
     # 2. trial games, candidate on side A and then on side B, against the pinned reference bot
     reference = _reference_bytes(scaffold)
@@ -200,6 +210,10 @@ def check_submission(candidate: Path, *, play: Play, scaffold: Path = L.DEFAULT_
         bots = Path(tmp) / "bots"
         bots.mkdir(mode=0o755)
         _stage(bots, CANDIDATE, raw)
+        if bundle_files is not None:
+            for name, content in bundle_files.items():
+                if name != "bot.py":
+                    (bots / CANDIDATE / name).write_bytes(content)
         _stage(bots, REFERENCE, reference)
         for side in ("A", "B"):
             names = (CANDIDATE, REFERENCE) if side == "A" else (REFERENCE, CANDIDATE)
