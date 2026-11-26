@@ -12,6 +12,8 @@ INNOFEST **Battle It Out** is a Battlecode-style programming competition. Partic
 
 There is **no API, database, or website yet** (a job queue and a worker process exist: `backend/work_queue/`, `backend/tournament_flow/` joins upload, pins, bracket and round as a library, and `backend/tournaments/` holds the tournament record, approval, deadlines and the deadline timer, `backend/registration/` holds the official roster, invitation codes and registration, and `backend/notifications/` holds dashboard notifications, the email preference, the email outbox and the sources that notify teams of check, match and draw results). The delivery order is fixed: scaffold and Python 3.13 compatibility first, then safe bot execution and match automation, then backend, then registration and submissions, then tournament operations, then the website. See [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md).
 
+[`backend/services/`](backend/services/README.md) now provides interim single-host worker, maintenance, email and alert commands with configuration and a reviewable systemd template (BIO-409; CN-027). Maintenance always uses the roster, notifications and replay vault. Providers/channels are operator-supplied; no production services are deployed.
+
 Known open issues (details in the plan and architecture documents):
 
 - The engine package officially supports only Python 3.12. Python 3.12 to 3.15 (latest stable, 3.15.2) pass our tests through `backend/match_runner/`, on Linux x86_64 only; the engine's authors do not support this (`docs/CHANGE_NOTICES.md` CN-001).

@@ -22,12 +22,15 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
-- Latest continuation on 2026-11-26: PR #33 (the shared-memory handoff) is
-  merged; fetched `origin/main` is `3e4f867`. **BIO-406's documentation
-  slice** starts there on `BIO-406-access-control-contract`: CN-026 proposes
-  user/role/Organizer-assignment API routes, model constraints and 14 planned
-  TC-07 cases. No endpoint, authentication, role store or library behavior
-  was implemented. BIO-406 remains open for owner decisions and implementation.
+- Latest continuation on 2026-11-26: PR #34 (BIO-406's contract proposal)
+  merged into `main`; fetched `origin/main` is `a74e699`. **BIO-409's interim
+  service slice** starts there on `BIO-409-service-runner` (CN-027): configured
+  worker, roster-aware maintenance, email and alert commands and a reviewable
+  systemd template. A real-engine subprocess lifecycle passed. No services
+  were installed/deployed and no real provider/channel was used. Production
+  persistence, provider/channel, worker image and supervision still need work.
+  BIO-406's CN-026 remains a proposal awaiting policy decisions and implementation;
+  no HTTP API/authentication/role store was added.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -114,6 +117,7 @@ raise a refusal after the transaction when its audit/limiter write must survive.
 | `tournaments` | Tournament state/approval, independent deadlines, extensions/overrides, archive/delete record, deadline tick | `tournaments.py`, `scheduler.py`; CN-019/021/023 |
 | `registration` | Official CSV/JSON roster, invitation issue/revoke/replace, claim/confirm, limiter, membership-derived participant Actor and registered teams | `registration.py`; CN-020/021 |
 | `notifications` | Mandatory dashboard feed, recipient-only reads, email preference/outbox/leases/retry, event adapters and worker/timer hooks | `notifications.py`, `sources.py`; CN-022/023 |
+| `services` | Configured notification-enabled worker, roster-aware maintenance with vault, separate email/alert processes through optional adapters; per-role locks, graceful signals, status and a systemd template | `runner.py`, `README.md`, `battle-it-out@.service`; CN-027 |
 
 The safe application path is: roster claim and verification → membership-derived
 Actor → `tournament_flow.upload` → queued two-sided trial → latest-valid version
@@ -123,8 +127,22 @@ Organizer calls `tournament_flow.start_round` → re-hash pins and queue → wor
 plays sequential matches → results/notifications/replays → archive and purge.
 Pass the stored deadline from `tournaments.deadline`; never take it from a client.
 `tick` never starts rounds. Omitting `registration=` falls back to teams that
-uploaded, so production wiring must supply registration. Worker notifications
-require `--notify`. These are callable flows, not running production services.
+uploaded, so production wiring must supply registration. The legacy worker needs
+`--notify`; the service worker always enables hooks, and service maintenance
+always supplies registration, notifications and the vault. No production
+services are deployed.
+
+Service entry point: `backend/.venvs/py3.15/bin/python -m backend.services.runner
+--config /absolute/path/services.json ROLE [--once]`, where ROLE is `worker`,
+`maintenance`, `emails`, `alerts` or `status`. See [service operations](../backend/services/README.md)
+for the exact command, configuration and systemd template. Each role has a
+separate process lock; long matches/provider waits do not delay the timer.
+`adapter_factory: null` leaves email/alerts pending, without consuming attempts
+or acknowledging incidents. Optional trusted adapters supply send/address lookup
+and Admin alert handoff. Delivery is at least once; adapters must deduplicate by
+notification/incident ID. No provider credentials belong in repository config.
+The shared vault paths are `replays/` and `replays.json`; use the same vault for
+archive. `email-alerts.json` records successful failed-email alert handoffs.
 
 ## Rules and non-obvious lessons to preserve
 
@@ -207,6 +225,17 @@ the successful rerun used the same command outside Codex's restricted sandbox.
 Those environment failures were not product regressions. The real-game
 four-version matrix was not repeated for this documentation/memory task.
 
+BIO-409 verification on 2026-11-26: 18 new service tests, 17 unit cases passing
+on Python 3.12.15, 3.13.18, 3.14.10 and 3.15.2; all 18 pass with the real-engine
+subprocess lifecycle on project Python 3.15.2 (37.336 seconds). Full backend
+unit mode: **769 discovered, 723 passed, 46 skipped**. A temporary local-path
+copy of the systemd template passes `systemd-analyze verify`; no unit was
+installed or started. Restricted uv discovery and systemd verification needed
+an unrestricted rerun. Real games/full backend checks ran outside the restricted
+sandbox. No real email/Admin provider, production restart drill or new
+four-version whole-backend integration matrix was run. Test state/replays stayed
+in temporary directories; existing user replays were preserved.
+
 ## Complete remaining backlog
 
 This list reconciles Claude's `project-unimplemented-backlog.md` after CN-025
@@ -223,12 +252,15 @@ with current code and the coverage matrix; nothing here is closed by intake.
    and initial Admin/staff provisioning/recovery remain undecided. Review
    CN-026's proposed access/revocation rules before implementing them; replace
    the creator-based permission fallback, not only the `Actor` construction.
-2. **Service operation:** supervise worker, deadline tick, email delivery and
-   housekeeping; real Admin alerts for capped matches/dead jobs/failed email;
-   worker container/image and runtime digest; secure deployment/configuration.
-   One-host/fixed-port assumptions remain. Queue jobs have heartbeat, but the
-   orchestrator's separate 2400-second attempt lease is not renewed. Resume
-   authority and final retry-cap policy need confirmation.
+2. **Service operation:** deploy/supervise the CN-027 worker, maintenance,
+   email and alert commands; approve/implement real email and Admin-channel
+   adapters for capped matches/dead jobs/failed email; target-host restart and
+   outage drills; worker container/image and runtime digest; secure deployment
+   and configuration. The systemd template is validated syntax, not installed
+   supervision. One-host/fixed-port assumptions remain. Queue jobs have heartbeat,
+   but the orchestrator's separate 2400-second attempt lease is not renewed.
+   Resume authority and final retry-cap policy need confirmation. Operational
+   failed-email alert receipts also need the eventual deletion/retention policy.
 3. **Execution gates:** realistic target-hardware limits benchmark (DEC-04),
    independent sandbox/security review, SR-06 Java-exception classification and
    SR-03 parameter-type residual, engine seed control or accepted TC-04 waiver,
@@ -252,13 +284,13 @@ with current code and the coverage matrix; nothing here is closed by intake.
    every package's data with audit retained. A tournament tombstone and purge
    helpers do not implement the full deletion lifecycle.
 6. **Notifications:** endpoints/screens, real email adapter/provider, service
-   delivery, announcements, automatic `notify_notice` after extension/override,
+   adapter deployment/delivery, announcements, automatic `notify_notice` after extension/override,
    affected-participant counts, Organizer approval/rejection notices, mandatory
    security-email policy, owner-reviewed wording/retry defaults, expiry and
    given-up-email alerts, real provider-outage drill. Check/round/draw event
    adapters already exist; do not re-list those as unimplemented.
 7. **Replays/logs/privacy:** authorized HTTP replay/log delivery, object storage,
-   short-lived URLs and browser player (DEC-10), scheduled purge and vault
+   short-lived URLs and browser player (DEC-10), deployed purge schedule and vault
    backups/restore; replay indicator-text exposure review; durable log storage,
    retention and audit/notification visibility. Current redaction is best effort
    and limited to match logs; no complete end-to-end privacy verification.
@@ -281,9 +313,11 @@ The proposed React/TypeScript + Django/DRF + PostgreSQL + Celery/Redis +
 S3-compatible stack is **not approved**. **DEC-11 / BIO-401** unlocks the backend.
 The **BIO-406 contract gap** now has a reviewable documentation proposal
 (CN-026); user/role/assignment persistence, policies and HTTP implementation
-remain open. The next independent engineering candidate is **BIO-409 service
-wiring** on current stores (interim; production persistence still depends on
-BIO-403). Account deletion requires DEC-07; API implementation requires DEC-11.
+remain open. **BIO-409 service wiring** now has an interim JSON-store implementation
+(CN-027); production persistence still depends on BIO-403, and real provider/channel,
+image and deployment remain open. Next work is the execution gates and owner
+stack decision (BIO-401/DEC-11); written launch/runbook work can continue independently.
+Account deletion requires DEC-07; API implementation requires DEC-11.
 Review the CN-026 proposal and settle role cardinality/composition and initial
 Admin/staff provisioning before implementing BIO-406.
 
@@ -352,6 +386,7 @@ Jira breakdown is undone; only a placeholder test exists; PR #32 is still
 open; project license/import policy is undecided. The 2026-11-05 snapshot in
 handoff §3 is historical. Several coverage gap descriptions lag later wiring;
 retain their current status counts while consulting code and CN-018–025 for
-the exact remaining gap. No implementation requirement changed during intake
+the exact remaining gap. CN-027 adds interim service commands without closing any
+requirement status. No implementation requirement changed during intake
 or the BIO-406 documentation slice. The user/role/Organizer-assignment contract
 is no longer absent; it is proposed in API_CONTRACT §2.1–2.3, not implemented.

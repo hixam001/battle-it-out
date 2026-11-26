@@ -1,6 +1,6 @@
 # work_queue
 
-A durable job queue and a worker program that runs outside the web/API process (BIO-EPIC-03, SRD-007; `docs/CHANGE_NOTICES.md` CN-017). Standard library only. It connects two things that already existed as libraries: the **upload check** (`submission_registry.run_check`) and the **round runner** (`bracket.run_round`). It is a worker, not a scheduler: nothing yet puts jobs in the queue except the commands below, because there is no API.
+A durable job queue and a worker program that runs outside the web/API process (BIO-EPIC-03, SRD-007; `docs/CHANGE_NOTICES.md` CN-017). Standard library only. It connects two things that already existed as libraries: the **upload check** (`submission_registry.run_check`) and the **round runner** (`bracket.run_round`). `tournament_flow.upload` queues checks and `start_round` queues rounds (CN-018). The [interim service runner](../services/README.md) enables notification hooks and runs roster-aware maintenance separately (CN-027); there is still no API.
 
 ## What it does
 
@@ -54,4 +54,4 @@ BIO_INTEGRATION=1 python3 -m unittest backend.work_queue.tests.test_handlers.Wor
 
 ## Not done
 
-No API or scheduler (nothing enqueues a check when a participant uploads, and nothing calls `purge_pending`, `verify_pins` or `deliver_emails`; the handlers tell the teams only with `--notify`, CN-023); more than one host (the engine port and the JSON stores assume one); a container or image for the worker; a real Admin alert channel; the orchestrator's own per-attempt lease (2400 s) is not renewed, so a single match longer than that is still treated as lost; the database (DEC-11); no independent review.
+No API or production deployment (the flow queues uploads and verifies pins; CN-027 supplies separate maintenance/email commands and a worker with notifications always enabled); more than one host (the engine port and the JSON stores assume one); a container or image for the worker; a real Admin alert channel; the orchestrator's own per-attempt lease (2400 s) is not renewed, so a single match longer than that is still treated as lost; the database (DEC-11); no independent review.

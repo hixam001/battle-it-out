@@ -45,4 +45,4 @@ python3 -m unittest backend.tournaments.tests.test_tournaments backend.tournamen
 
 ## Not done
 
-The API and authentication; real Organizer assignments (the creating Organizer counts as assigned); a timer that is wired by default to the roster (pass `registration=` to `tick`; the fallback is still "teams that uploaded"); a timer process (`tick(notifications=..., registration=...)` tells the excluded teams, CN-023; nothing runs it); cleanup of the data other libraries hold for a deleted tournament; the database (DEC-11); independent review.
+The API and authentication; real Organizer assignments (the creating Organizer counts as assigned); production deployment of the [interim maintenance process](../services/README.md) (CN-027), which always supplies `registration=`, notifications and the vault to `tick`; the library fallback without registration remains "teams that uploaded"; cleanup of the data other libraries hold for a deleted tournament; the database (DEC-11); independent review.

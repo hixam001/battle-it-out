@@ -1,0 +1,20 @@
+[Unit]
+Description=Battle It Out interim %i service
+After=network.target
+
+[Service]
+Type=simple
+User=bio
+Group=bio
+WorkingDirectory=/opt/battle-it-out
+ExecStart=/opt/battle-it-out/backend/.venvs/py3.15/bin/python -m backend.services.runner --config /etc/battle-it-out/services.json %i
+Restart=on-failure
+RestartSec=5
+UMask=0077
+# Signal the worker first so its match subprocesses can finish normally.
+KillMode=mixed
+# A round may contain many sequential matches. Allow it to drain without a forced bot loss.
+TimeoutStopSec=infinity
+
+[Install]
+WantedBy=multi-user.target
