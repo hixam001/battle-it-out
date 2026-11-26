@@ -235,3 +235,45 @@ class FeatureAPI(TestCase):
         self.assertEqual(client.post('/api/v1/auth/logout/').status_code,403)
         self.assertEqual(client.post('/api/v1/auth/logout/',HTTP_X_CSRFTOKEN=result.json()['csrf']).status_code,200)
         self.assertEqual(client.get(self.url('analytics/')).status_code,401)
+
+    def test_login_failures_and_session_csrf_share_the_error_contract(self):
+        client=Client(enforce_csrf_checks=True)
+        token=client.get('/api/v1/auth/session/').json()['csrf']
+        bad_login=client.post('/api/v1/auth/login/',data=json.dumps({'username':'captain-a','password':'wrong-fixture'}),content_type='application/json',HTTP_X_CSRFTOKEN=token)
+        self.assertEqual(bad_login.status_code,401)
+        self.assertEqual(bad_login.json()['error']['code'],'UNAUTHENTICATED')
+        self.assertEqual(bad_login.json()['error']['request_id'],bad_login['X-Request-ID'])
+        logged_in=client.post('/api/v1/auth/login/',data=json.dumps({'username':'captain-a','password':'test-fixture-passphrase'}),content_type='application/json',HTTP_X_CSRFTOKEN=token)
+        self.assertEqual(logged_in.status_code,200)
+        csrf_failure=client.post('/api/v1/auth/logout/')
+        self.assertEqual(csrf_failure.status_code,403)
+        self.assertEqual(csrf_failure.json()['error']['code'],'FORBIDDEN')
+        self.assertIn('CSRF verification failed',csrf_failure.json()['error']['message'])
+        self.assertEqual(csrf_failure.json()['error']['details'],{})
+        self.assertEqual(csrf_failure.json()['error']['request_id'],csrf_failure['X-Request-ID'])
+
+    def test_conflict_receipt_replay_gets_a_fresh_request_id(self):
+        item=self.open()
+        path=self.url(f"disputes/{item['id']}/")
+        first=self.post(path,{'expected_version':0,'message':'stale fixture'},'stale-fixture')
+        second=self.post(path,{'expected_version':0,'message':'stale fixture'},'stale-fixture')
+        for response in (first,second):
+            self.assertEqual(response.status_code,409)
+            self.assertEqual(response.json()['error']['code'],'STATE_CONFLICT')
+            self.assertEqual(response.json()['error']['request_id'],response['X-Request-ID'])
+        self.assertNotEqual(first['X-Request-ID'],second['X-Request-ID'])
+        stored=Receipt.objects.get(key='stale-fixture').body
+        self.assertNotIn('request_id',stored['error'])
+        self.assertEqual(Dispute.objects.get(pk=item['id']).version,1)
+
+    def test_hidden_and_missing_tournaments_have_identical_error_bodies(self):
+        self.client.force_authenticate(self.outsider)
+        errors=[]
+        for tid in ('cup','missing'):
+            response=self.client.get(f'/api/v1/tournaments/{tid}/analytics/')
+            self.assertEqual(response.status_code,404)
+            error=response.json()['error']
+            self.assertEqual(error.pop('request_id'),response['X-Request-ID'])
+            errors.append(error)
+        self.assertEqual(errors[0],errors[1])
+        self.assertEqual(errors[0]['code'],'NOT_FOUND')

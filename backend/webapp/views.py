@@ -6,7 +6,6 @@ import json
 import os
 import stat
 import time
-import uuid
 from datetime import timedelta
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.db import transaction
@@ -17,9 +16,8 @@ from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
-from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError, NotAuthenticated
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
-from rest_framework.views import exception_handler as drf_exception_handler
 from backend.submission_registry import registry as R
 from backend.submission_bundle import bundle as BU
 from backend.work_queue import jobs as J
@@ -27,32 +25,16 @@ from . import domain as D
 from .models import AuditEvent, Dispute, DisputeEvent, LoginAttempt, Receipt
 
 
-def exception_handler(exc, context):
-    if isinstance(exc, R.NotFound):
-        exc = NotFound('No such submission.')
-    elif isinstance(exc, R.Forbidden):
-        exc = PermissionDenied('This action is not available to your account.')
-    elif isinstance(exc, (BU.Invalid, ValueError)):
-        exc = ValidationError(str(exc)[:1000])
-    elif isinstance(exc, R.RegistryError):
-        error = APIException('The submission operation could not be completed.')
-        error.status_code = 503 if isinstance(exc, R.Unavailable) else 413 if isinstance(exc, R.TooLarge) else 409
-        exc = error
-    result = drf_exception_handler(exc, context)
-    if result is not None:
-        if isinstance(exc, NotAuthenticated):
-            result.status_code = 401
-        result.data = {'error': {'code': getattr(exc, 'default_code', 'request_failed'),
-                                 'message': str(getattr(exc, 'detail', 'Request failed.')),
-                                 'request_id': uuid.uuid4().hex}}
-        result['Cache-Control'] = 'private, no-store'
-    return result
-
-
 def private(body, status=200):
     response = Response(body, status=status)
     response['Cache-Control'] = 'private, no-store'
     return response
+
+
+@require_http_methods(['GET', 'HEAD'])
+def health(request):
+    """Process liveness only: no accounts, database, legacy stores or engine work."""
+    return JsonResponse({'status': 'ok'})
 
 
 @ensure_csrf_cookie
@@ -68,6 +50,8 @@ def session(request):
 @csrf_protect
 @require_http_methods(['POST'])
 def login_view(request):
+    if request.content_type != 'application/json':
+        return JsonResponse({'error': {}}, status=415)
     try:
         body = json.loads(request.body)
         if not isinstance(body, dict) or set(body) != {'username', 'password'} \

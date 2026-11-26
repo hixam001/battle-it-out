@@ -1,6 +1,6 @@
 # Battle It Out --- Test Plan
 
-**Version:** 1.2 (BIO-406 contract acceptance cases; CN-026)\
+**Version:** 1.3 (BIO-404 HTTP boundary regressions; CN-029)\
 **Status:** Baseline test strategy\
 **Date:** 2026-11-26
 
@@ -323,7 +323,7 @@ submission IDs, expected result, observed result, logs, and pass/fail
 evidence. Do not claim a test passed unless it was run.
 
 
-## 8. Activated feature verification — CN-028
+## 9. Activated feature verification — CN-028
 
 BIO-REQ-19–23 are now active. The following evidence complements the original
 TC-02/05/07/08 plan; it does not close the execution/production acceptance gates.
@@ -341,7 +341,7 @@ Use the documented package/backend runner plus the PostgreSQL-specific command:
 ```bash
 backend/.venvs/py3.15/bin/python backend/run_tests.py
 backend/.venvs/py3.15/bin/python backend/run_tests.py --integration
-backend/.venvs/web/bin/python backend/webapp/manage.py test backend.webapp.tests
+backend/.venvs/web/bin/python backend/webapp/manage.py test backend.webapp.tests backend.webapp.tests_http
 npm run build --prefix frontend
 npm test --prefix frontend
 ```
@@ -352,3 +352,23 @@ for the history triggers. Real matches run sequentially and all output stays in
 temporary directories. Other language runtimes, production deployment/load,
 full browser replay playback, formal accessibility and independent security
 review remain separate acceptance work.
+
+## 10. HTTP boundary verification — BIO-404 / CN-029
+
+The standalone `backend.webapp.tests_http` suite verifies the same JSON envelope
+for Django and DRF errors, direct refusals and unknown routes; stable status/code
+pairs; field errors/actionable validation; malformed JSON/media types; both CSRF
+paths; `Allow`/`Retry-After`; fresh header/body IDs with incoming IDs ignored;
+safe `404` and redacted server failures in debug and normal mode. Unexpected
+exceptions must still reach Django logging. ID/status completion logs must not
+copy private paths. Successful liveness must run without database access or
+legacy-store initialization; HEAD returns no body. Non-API responses are outside
+this middleware's scope.
+
+The PostgreSQL feature suite adds real login/session-CSRF checks, identical
+hidden/missing tournament errors, and idempotent `409` replay with a fresh ID
+while the stored receipt and dispute state remain unchanged. Use the explicit
+module labels above; directory discovery loses package context in this
+repository's namespace layout. These web suites are separate from the execution
+library runner. Database readiness, load, production monitoring and remaining
+BIO-404 pagination/global idempotency/concurrency are not covered by liveness.

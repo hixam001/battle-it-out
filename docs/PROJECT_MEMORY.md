@@ -22,9 +22,10 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
-- Latest continuation on 2026-11-26: PR #35 (BIO-409 service runner) merged;
-  fetched `origin/main` is `2e06a4b`. **BIO-EPIC-06 activated-feature suite**
-  starts there on `BIO-EPIC-06-deferred-feature-suite` (CN-028). The owner
+- Latest continuation on 2026-11-26: PR #36 (CN-028 activated-feature suite)
+  merged into `main`; fetched base is `7f25963`. **BIO-404 HTTP errors and
+  process liveness** starts there on `BIO-404-api-errors-health` (CN-029),
+  with no stacked dependency. The owner
   activated all five deferred groups, selected Django/DRF + PostgreSQL and
   React/TypeScript, chose private tournament live viewing, and chose Python
   bundles/curated dependencies before other language compatibility work.
@@ -35,6 +36,10 @@ remaining backlog after every task.
   timing analytics and CSV; PostgreSQL transactional disputes and append-only
   audit/history; read-only Admin operations. No production hosting or complete
   core API/JSON-store migration is claimed. Other languages remain follow-up.
+- CN-029 adds shared Django/DRF JSON errors, server-generated request IDs,
+  no-store API responses and public GET/HEAD process liveness. Framework and
+  application refusals share codes/envelopes; hidden-resource and server-error
+  wording is redacted. This is a BIO-404 slice, not complete core API acceptance.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -257,14 +262,16 @@ This list reconciles Claude's `project-unimplemented-backlog.md` after CN-025
 with current code and the coverage matrix; nothing here is closed by intake.
 
 1. **Backend foundation (epic 04):** full schema/migrations and replacement
-   of legacy JSON stores; complete core HTTP errors/pagination/idempotency/
-   concurrency/health; public invitation-linked account registration, verification
+   of legacy JSON stores; pagination/global idempotency/concurrency, remaining
+   core routes and dependency readiness/production health monitoring; public
+   invitation-linked account registration, verification
    email, password recovery and account lifecycle; global user/role/assignment
    API and role-composition/revision/last-Admin policy; unified permanent audit
    and production private file delivery. Django/DRF, PostgreSQL and React/TS are
    approved; hosting/email/object storage and other production choices are not.
    The feature session/scope adapter, operator roster linking, explicit Organizer
-   assignments and feature audit tables now exist. CN-026's full administration
+   assignments and feature audit tables now exist. CN-029 supplies shared HTTP
+   errors/request IDs and process liveness. CN-026's full administration
    proposal remains open. Legacy creator fallback remains outside these scoped
    feature routes and must be replaced before the full role API is implemented.
 2. **Service operation:** deploy/supervise the CN-027/028 worker, maintenance,
@@ -393,7 +400,7 @@ records unresolved role/provisioning decisions; none is an implemented default.
 | Source | Use |
 |---|---|
 | [PRD.md](PRD.md), [SRD.md](SRD.md) | Product rules and numbered requirements; read their change-notice headers |
-| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–026 decisions, corrections, defaults, proposals and test evidence |
+| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–029 decisions, corrections, defaults, proposals and test evidence |
 | [API_CONTRACT.md](API_CONTRACT.md), [DATA_MODEL.md](DATA_MODEL.md) | Proposed API, entities, constraints, state/access/retention matrices |
 | [APP_FLOW.md](APP_FLOW.md), [../PRODUCT.md](../PRODUCT.md) | User journeys, route inventory, product context; planned screens |
 | [ARCHITECTURE.md](ARCHITECTURE.md), [TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md) | Design boundaries, runner/worker mechanics, commands and troubleshooting |
@@ -445,3 +452,38 @@ PostgreSQL, previews and output are task-owned; existing user replays remain.
 Two bounded read-only research agents inspected engine streaming/native modules
 under the Sites skill's research-delegation guidance. They made no code changes
 or independent security audit. No public skill/index/graph update was needed.
+
+## CN-029 continuation evidence
+
+BIO-404 implements one JSON error envelope across Django/DRF exceptions,
+direct responses, CSRF, method refusals and unknown routes; fresh server-owned
+request IDs on all API responses; private/no-store responses; and public
+GET/HEAD `/api/v1/health/` process liveness without PostgreSQL/legacy-store/engine
+access. Status/retry/method headers survive normalization. Hidden resources use
+generic `404` wording; server failures are redacted even in debug mode and still
+reach Django exception logging. Ordinary unexpected `ValueError` is now a `500`,
+rather than a client-validation error. Login explicitly requires JSON (`415`).
+
+Current verification on project Python 3.15.2: 23 PostgreSQL feature tests plus
+17 HTTP-boundary tests pass, including real session CSRF and stored conflict
+replays with fresh request IDs. Django system checks and migration drift checks
+pass; no schema migration is needed. The standalone boundary suite also passes
+with database access forbidden. Full backend unit mode: 779 discovered,
+731 passed / 48 integration cases skipped, 11.470 seconds. No new real-engine,
+browser or four-version run is claimed; CN-025/028 remain historical evidence.
+Disposable private PostgreSQL clusters use Unix sockets under `/tmp` and are
+stopped after checks. Existing data/replays are preserved.
+
+Use explicit Django test labels `backend.webapp.tests backend.webapp.tests_http`:
+directory discovery loses package context in this namespace layout. The separate
+`backend/run_tests.py` runner covers execution-library suites, not web modules.
+An initial broad-label test attempt failed discovery; explicit labels pass.
+An initial module filename shadowed Python's `http` package under manage.py;
+the corrected `api_errors.py` avoids the collision.
+
+BIO-404 still needs pagination, global idempotency/concurrency, missing core
+routes and dependency/production readiness. Liveness is not database or worker
+readiness. Existing Django exception-log access/retention needs operational
+review. Requirement counts remain 17 DONE / 61 PARTIAL / 13 TODO / 0 DEFERRED;
+all nine complete backlog categories above remain. No new product/provider/
+hosting approval or public skill/derived graph/index change is made.
