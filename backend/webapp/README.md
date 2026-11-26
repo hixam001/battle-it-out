@@ -95,6 +95,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET | `/matches/{match_id}/` | Current-scope game and enclosing series result, including pinned version IDs and stored coin flip |
 | GET | `/tournaments/{id}/analytics.csv` | Authorized team CSV with formula escaping |
 | GET/POST | `/tournaments/{id}/teams/{team}/submissions/` | Authorized history; captain-only upload using the stored official deadline; queues validation |
+| GET | `/tournaments/{id}/teams/{team}/` | Team member/assigned Organizer/Admin profile with verified slots and captain, private/no-store |
 | GET | `/tournaments/{id}/submissions/{version}/download/` | Authorized source/bundle; staff reads audited; private/no-store |
 | GET/POST | `/tournaments/{id}/disputes/` | Team-private dispute list/create tied to a real match |
 | GET/POST | `/tournaments/{id}/disputes/{uuid}/` | Team/staff comments and review transitions with optimistic revision |

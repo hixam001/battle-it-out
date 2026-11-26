@@ -22,6 +22,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from backend.match_orchestrator import replays as P
+from backend.registration import registration as G
 from backend.submission_registry import registry as R
 from backend.submission_bundle import bundle as BU
 from backend.work_queue import jobs as J
@@ -100,11 +101,20 @@ def tournaments(request):
     who = D.actor(request.user)
     rt = D.runtime()
     records = rt.tournaments.store.snapshot()['tournaments'].values()
-    from backend.registration import registration as G
     return private({'items': [{**{k: r[k] for k in ('id', 'name', 'description', 'status', 'deadlines')},
                                'teams': sorted(who.team_ids & set(G.registered_teams(rt.registration, r['id'])))}
                               for r in records if r['status'] != 'deleted' and (who.role == 'admin' or r['id'] in who.tournament_ids)],
                     'role': who.role})
+
+
+@api_view(['GET'])
+def team_profile(request, tid, team):
+    who, _ = D.tournament(request.user, tid)
+    try:
+        profile = G.team_view(D.runtime().registration, who, tid, team)
+    except G.NotFound as exc:
+        raise NotFound() from exc
+    return private(profile)
 
 
 @api_view(['GET'])

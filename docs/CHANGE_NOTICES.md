@@ -509,3 +509,16 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Remaining:** matched worker-output and backup policy, production purge
   supervision, staging restore after real archive and permanent-delete workflow.
   Coverage evidence advances without changing the requirement statuses.
+
+## CN-045 — Private team profile (2026-11-27)
+
+- **BIO-503:** a team profile reports the official team name and verified
+  member slots, including which member is captain. The response omits contact
+  data and invitations. Current team membership or explicit Organizer/Admin
+  scope applies to each request, including archived tournaments.
+- **Policy:** the existing CN-020 rules govern roster size, names and
+  captaincy. The profile is read-only. Deletion and the final DEC-12 policy
+  remain separate.
+- **Checks:** all 83 Django cases passed with disposable PostgreSQL, and
+  system and migration checks passed. All 69 registration tests passed.
+  Requirement statuses remain unchanged.

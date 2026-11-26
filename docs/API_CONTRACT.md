@@ -529,12 +529,19 @@ authorized issuer at issuance and stored hashed where feasible.
 `{"reason":"Replacement for compromised code","confirm":true}`\
 **Success:** replacement issued. Old code remains unusable.
 
-### GET `/teams/{team_id}`
+### GET `/tournaments/{id}/teams/{team_id}/`
 
-**Purpose:** Team profile.\
-**Access:** team members, assigned Organizer, Admin.\
-**Success:** team data with deleted members omitted from historical
-roster display.
+**Implemented (BIO-503 / CN-045):** Current verified team members, an
+explicitly assigned Organizer and Admin can read `id`, `tournament_id`,
+`name` and verified `members` in member-number order. Each member has
+`member_number`, `role_label` and `is_captain`. The profile has no contact,
+account or invitation data. Archived profiles use the same current scope.
+Missing, foreign, mismatched and deleted scopes share `404`.
+
+The roster remains authoritative for team size, official name and captain.
+The existing CN-020 rules admit corrections only before a claim locks the
+affected entries. Account-deletion cleanup and final DEC-12 policy remain
+separate work.
 
 ### DELETE `/teams/{team_id}`
 

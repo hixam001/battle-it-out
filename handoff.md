@@ -686,3 +686,19 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   production build and all five Playwright tests. Tests used disposable
   PostgreSQL, local services and temporary replay paths. No provider or
   production environment was used.
+
+### 2026-11-27 — BIO-503: private team profiles
+
+- Cut BIO-503-team-profile from fetched origin/main at d66b95d. Read the
+  project memory, handoff, team access contract and roster policies.
+- Added the tournament-scoped team route. Current verified members, assigned
+  Organizers and Admin see the official name and verified slots with the
+  captain designation. Missing, mismatched and foreign scope share 404.
+  Archive keeps current access. Claimed-name and team size rules reuse
+  the existing roster implementation.
+- All 83 Django cases passed on disposable PostgreSQL in 8.521 s, including
+  four new team/profile cases. System and migration checks and all 69
+  targeted registration tests passed.
+- Updated the web and API guides, test plan, Jira, requirement evidence,
+  changelog, CN-045 and memory. All 91 statuses and nine backlog categories
+  remain. DEC-12 and historical account deletion are still open.

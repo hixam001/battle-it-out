@@ -145,6 +145,11 @@ email/team/member number/role. - Unused codes expire at close; extension
 preserves them until new deadline. - Incomplete registrations are
 excluded at deadline. - Only Admin can revoke/replace compromised code.
 
+**Team profile HTTP checks (BIO-503 / CN-045)** cover verified-member order,
+no contact data, pending verification, same-tournament team and cross-
+tournament refusals, Organizer revocation, archived visibility and the
+existing library's size and name-lock rules.
+
 ### TC-07 --- Permissions, privacy, audit, and deletion
 
 **Jira:** BIO-EPIC-04 / BIO-EPIC-05 / BIO-EPIC-06\
