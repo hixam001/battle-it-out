@@ -53,6 +53,7 @@ All backend tests: `python3 backend/run_tests.py` (this Python), `--matrix` (eve
 
 | Read this | If you want to |
 |---|---|
+| [`docs/PROJECT_MEMORY.md`](docs/PROJECT_MEMORY.md) | Resume from the reconciled Claude/Codex checkpoint, working rules and complete remaining backlog |
 | [`docs/PRD.md`](docs/PRD.md), [`docs/SRD.md`](docs/SRD.md) | Know what must be built and why |
 | [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) | See scope, phases, risks, and open decisions |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Understand how the system is designed and where the risks are |

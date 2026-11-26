@@ -8,6 +8,10 @@
 .agents/
 skills-lock.json
 
+# Codex instructions and local agent state, installed per developer.
+/AGENTS.md
+/.codex/
+
 # Python bytecode caches
 __pycache__/
 *.pyc
