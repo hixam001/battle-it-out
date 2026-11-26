@@ -455,3 +455,20 @@ Decisions from the owner that change or narrow what the requirement documents (P
   received an open stream may be in progress. Archive of worker-side copies,
   retention/restore, native indicator-text review, match-log HTTP delivery,
   browser playback and object storage remain open.
+
+## CN-033 — Interim operator runbook and console guides (2026-11-26)
+
+- **BIO-805:** document incident triage, paused matches, dead jobs, email
+  failures, deadline requests, replay purge, backup/restore and key rotation
+  against the existing console and service commands. Update Admin and User
+  guides for provisioned accounts, Python bundles, submissions, private live
+  boards, analytics and dispute review.
+- **Rehearsal:** backed up and restored disposable PostgreSQL and shared service
+  state, checked both backup digests and validated restored session scope,
+  submission digest, match/dispute references, notification preferences and
+  vault/archive state. Rotated a test signing key, confirmed an old session
+  receives `401` and verified a fresh CSRF login.
+- **Checks:** 18 service integration cases passed, including sandboxed real
+  games and archive, 34 queue tests passed and 53 tournament tests passed.
+  No production services, real provider, target-host recovery objectives or
+  operational action authority was selected.

@@ -71,8 +71,9 @@ All backend tests: `python3 backend/run_tests.py` (this Python), `--matrix` (eve
 | [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md) | Know how the work will be verified |
 | [`docs/JIRA_BREAKDOWN.md`](docs/JIRA_BREAKDOWN.md) | The proposed Jira tasks of BIO-EPIC-04 to BIO-EPIC-08 with requirements covered, state today and dependencies |
 | [`docs/REQUIREMENTS_COVERAGE.md`](docs/REQUIREMENTS_COVERAGE.md) | See, requirement by requirement, what Battlecode provides, what is built and what we still must develop |
-| [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | Learn the participant and organizer experience (planned platform) |
-| [`docs/ADMIN_GUIDE.md`](docs/ADMIN_GUIDE.md) | Learn the platform Admin's responsibilities (planned platform) |
+| [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | Use the current participant and Organizer console |
+| [`docs/ADMIN_GUIDE.md`](docs/ADMIN_GUIDE.md) | Use the Admin console and understand planned workflows |
+| [`docs/OPERATIONS_RUNBOOK.md`](docs/OPERATIONS_RUNBOOK.md) | Triage service incidents and rehearse local backup, recovery and signing-key rotation |
 
 Documents label what is confirmed, proposed (needs approval), and unresolved (`[DECIDE]`). Do not turn a proposal into a requirement silently.
 
