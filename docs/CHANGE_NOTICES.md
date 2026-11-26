@@ -412,3 +412,25 @@ Decisions from the owner that change or narrow what the requirement documents (P
   execution/production gates remain. Coverage evidence updates for SRD-060/061/
   064, BIO-REQ-16 and BIO-NFR-07; statuses stay 17 DONE / 61 PARTIAL / 13 TODO /
   0 DEFERRED. No new product/provider/hosting approval is inferred.
+
+## CN-032 — Private native replay download (2026-11-26)
+
+- **BIO-605:** `GET /api/v1/matches/{match_id}/replay/` streams the registered
+  engine-native `.bc26` as a private attachment from the existing replay vault.
+  Current verified roster scope, explicit Organizer assignments or Admin scope
+  authorize the request. The live list supplies the game match ID.
+- **Behavior:** the opened descriptor is verified against the stored replay
+  digest and size. Files and vault directories must be regular files and real
+  directories respectively. Archive is rechecked before handing off the stream.
+  Missing/out-of-scope/deleted entries return the same `404`. Visible archived
+  entries return `410` to all roles. A missing/damaged indexed file returns
+  `503` and records one incident.
+- **Verification:** 66 Django tests passed with disposable PostgreSQL, including
+  nine new replay cases. Django checks and migration-drift checks passed. Full
+  backend unit mode found 779 tests, with 731 passing and 48 expected skips.
+  All 39 targeted replay cases passed in integration mode, including a real
+  native engine replay stored and purged in a temporary vault.
+- **Remaining:** new requests are refused after archive. Transfers that already
+  received an open stream may be in progress. Archive of worker-side copies,
+  retention/restore, native indicator-text review, match-log HTTP delivery,
+  browser playback and object storage remain open.

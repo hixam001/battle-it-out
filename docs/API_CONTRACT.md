@@ -621,8 +621,23 @@ identifiers; no source code.
 
 **Purpose:** Retrieve replay while retained.\
 **Access:** authenticated tournament participant/staff with access.\
-**Success:** replay stream or short-lived authorized URL.\
-**Errors:** `404` if no access; `410` after archive/deletion.
+**Implemented (BIO-605 / CN-032):** `GET /api/v1/matches/{match_id}/replay/`
+streams the current vault artifact as an `application/octet-stream` attachment
+with a `.bc26` filename and `Cache-Control: private, no-store`. Use the game
+`match_id`, distinct from `series_id`; the live match list exposes both IDs.
+A session and current verified roster membership, explicit Organizer assignment,
+or Admin scope are required. The route verifies the opened file against the
+vault digest and rechecks vault archive state before returning the stream.
+
+**Errors:** `401` for no session. A missing vault entry, deleted tournament or
+record outside current scope returns the same `404`. A visible archived replay
+returns `410`, including for Admins. An indexed replay with a missing or damaged
+file returns `503` and records a staff incident. Errors use the shared JSON
+envelope even when the client requests `application/octet-stream`.
+
+The archive boundary blocks new downloads. A download admitted before the
+archive boundary may already be in progress. Object storage and browser
+playback remain follow-up work.
 
 ### GET `/matches/{match_id}/logs`
 
