@@ -1,6 +1,6 @@
 # Battle It Out --- API Contract
 
-**Version:** 1.0\
+**Version:** 1.1 (BIO-406 access-control proposal; CN-026)\
 **Status:** Proposed contract; endpoints require implementation review\
 **API style:** REST/JSON, versioned under `/api/v1`\
 **Notation:** Jira issue IDs link endpoint groups to delivery work.
@@ -114,9 +114,11 @@ consume code or permanently block a legitimate retry.
 
 **Purpose:** Current user's profile and role-scoped memberships.\
 **Access:** Authenticated.\
-**Success:** user identity, role, team/tournament memberships,
-notification preferences. Never return password hashes or invitation
-secrets.
+**Success:** user identity, `roles`, `access_version`, verified
+team/tournament memberships and active Organizer assignments (IDs only),
+notification preferences. An unverified claim is not an authorized
+membership. `roles` is a list representation; multiple-role policy remains
+`[DECIDE]` (see §2.1). Never return password hashes or invitation secrets.
 
 ### POST `/me/deletion-request`
 
@@ -136,6 +138,196 @@ elimination/tournament end.\
 **Access:** Requesting participant only.\
 **Success:** `{"status":"cancelled"}`.\
 **Errors:** `409` if already executed/not cancellable.
+
+### 2.1 Identity and authorization rules --- BIO-406
+
+**Proposal, not implemented or owner-approved:** §2.1–2.3 close the
+contract gap identified in CN-024. CN-026 records the proposed choices.
+The role/scope requirements remain PRD §6.6 and DATA_MODEL §7. DEC-11
+still gates API implementation; no auth mechanism is selected here.
+
+- Authenticate to a server-owned `User.id`, then load current account
+  status, effective role grants, active Organizer assignments and verified
+  registration memberships. Reject suspended/deleted accounts. A claim
+  awaiting email verification gives no team or tournament authority.
+- Build each library `Actor` through one trusted adapter: `user_id` from
+  authentication; staff role from grants; Organizer `tournament_ids` from
+  active assignments; participant `team_ids`, `captain_of` and
+  `tournament_ids` from verified registration. The existing
+  `registration.actor_for` supplies the participant membership rules, not
+  account authentication. Never deserialize an `Actor` from a request.
+- Resolve every resource's tournament/team from stored relationships.
+  A supplied path ID identifies a target; it never proves ownership.
+  Reject unexpected body fields, including client-supplied authority,
+  `assigned_by`, `granted_by`, or membership/captain flags.
+- Check the operation as well as scope: assignment does not allow
+  approving a tournament, replacing codes, editing locked roster fields,
+  or changing/activating a participant submission. A platform role is
+  separate from the locked roster's member/captain role; changing grants
+  cannot create a registration, change a team or bypass verification.
+- Apply current authorization before returning an idempotent replay or
+  issuing a file response. Revocation must take effect on subsequent
+  requests using existing sessions/tokens; stale role claims or caches
+  cannot preserve access. Recheck permission with the mutation's commit
+  so a concurrent revocation cannot authorize a later write.
+- `401` means no valid authentication. On Admin-only user/role routes,
+  authenticate and reject non-Admins with `403` before looking up target
+  IDs. For tournament routes, hidden and nonexistent tournaments (or
+  mismatched child IDs) both return `404 NOT_FOUND`; a caller who can see
+  the tournament but lacks the operation receives `403 FORBIDDEN`.
+- Role/assignment changes and their redacted audit event commit together
+  or through a durable transactional outbox. A failed audit write cannot
+  leave changed access without a durable event. A no-op retry creates no
+  second transition/event. These are permanent BIO-407 audit records,
+  not the current libraries' bounded local audit lists.
+- Every role/assignment mutation requires `Idempotency-Key`, an integer
+  `expected_version` from the relevant current record, `confirm:true` and a
+  non-empty trimmed `reason`. Keys are scoped to authenticated caller and
+  method/target; reusing a key with a different payload is `409`. After
+  current authorization, an identical replay returns its stored response
+  before revision comparison. A fresh request with a stale revision
+  conflicts even when it would otherwise be a no-op.
+
+`[DECIDE]` One role or multiple roles per account, combinations of staff
+and participant roles, and permission composition if multiple are allowed.
+The current `Actor.role` is singular; neither an implicit role union nor
+a client-selected role is authorized by this proposal. Resolve the policy
+and adapter design before implementing role mutation. Initial Admin/staff
+account provisioning and recovery also need an owner decision; public
+registration never accepts a requested staff role.
+
+### 2.2 Users and roles --- BIO-406
+
+All routes in this subsection are **Admin-only**. Other users use `/me`
+and existing scoped team/roster routes. They do not get a global user
+directory, account-email lookup or another user's profile.
+
+#### GET `/users`
+
+**Purpose:** Find existing accounts for access administration.\
+**Success `200`:** paginated summaries with only `id`, `email`, `status`,
+`email_verified_at`, `roles`, `access_version`. Pagination follows the
+still-open §1 decision. Deleted-account email is omitted under the
+account-deletion policy. No password hashes, tokens, invitation secrets,
+source files or cross-tournament membership expansion.\
+**Errors:** `400` invalid query, `401`, `403`.
+
+#### GET `/users/{user_id}`
+
+**Purpose:** Read the same account summary and its current role revision
+before a change.\
+**Success `200`:** one summary in the `/users` shape.\
+**Errors:** `401`, `403`, `404` unknown user.
+
+#### GET `/roles`
+
+**Purpose:** Read the fixed role catalogue.\
+**Success `200`:** `{"roles":["ADMIN","ORGANIZER","PARTICIPANT"]}`.
+Wire names map explicitly to the libraries' lowercase role strings.
+No custom-role creation or permission-editing endpoint is proposed.\
+**Errors:** `401`, `403`.
+
+#### PUT `/users/{user_id}/roles`
+
+**Purpose:** Replace the account's effective role set atomically, after
+the role-cardinality decision above.\
+**Request:** `Idempotency-Key` header and:
+
+``` json
+{
+  "roles": ["ORGANIZER"],
+  "expected_version": 3,
+  "reason": "Appointed to tournament operations",
+  "confirm": true
+}
+```
+
+**Success `200`:** `user_id`, effective `roles`, new `access_version`,
+`audit_event_id`. `expected_version` compares the user's `access_version`,
+not a profile/settings revision. Duplicate names and unknown roles are
+invalid. A list representation does not decide how many grants are legal.\
+**Rules (proposed):** only an existing verified active account may receive
+grants. A role change never edits locked roster fields or credentials.
+With a current revision, replacing roles with the same set is a `200`
+no-op: unchanged `access_version` and `audit_event_id:null`.
+Removing `ORGANIZER` revokes all active assignments in the same commit;
+restoring the role never restores revoked assignments. Serialize changes
+that remove Admin access so they cannot remove the last active Admin;
+the initial-Admin/recovery path remains separate and unresolved.\
+**Errors:** `400` missing/invalid fields, `401`, `403`, `404` unknown user,
+`409 STATE_CONFLICT` stale revision, ineligible account, last-Admin
+removal, or idempotency key reused with a different request. An identical
+retry returns the stored response only after current authorization.
+
+### 2.3 Organizer assignments --- BIO-406
+
+An assignment grants tournament scope only while its account has the
+effective `ORGANIZER` role. Admin access remains global. Assignment does
+not change tournament approval, deadlines, team membership or roster locks.
+Admin manages assignments; Organizers cannot assign themselves or others.
+
+#### GET `/tournaments/{tournament_id}/organizer-assignments`
+
+**Access:** Admin or currently assigned Organizer; no participant access.\
+**Success `200`:** paginated assignment records plus the tournament's
+`access_version`. Each record exposes only `id`, `tournament_id`,
+`organizer_user_id`, `assigned_by`, `assigned_at`, `revoked_by`, `revoked_at`.
+Default list contains active assignments; `include_revoked=true` is
+Admin-only. Organizer responses do not expand account email/profile or
+include audit reasons.\
+**Errors:** `400` invalid query, `401`, `403`, safe `404` per §2.1.
+
+#### POST `/tournaments/{tournament_id}/organizer-assignments`
+
+**Access:** Admin only.\
+**Request:** `Idempotency-Key` header and:
+
+``` json
+{
+  "organizer_user_id": "usr_123",
+  "expected_version": 2,
+  "reason": "Assigned to operate this tournament",
+  "confirm": true
+}
+```
+
+**Success `201`:** `assignment`, new tournament `access_version`,
+`audit_event_id`. `assigned_by` and timestamps are server-owned.
+`expected_version` compares the tournament's assignment revision
+(`access_version`), separate from its settings `version`.\
+**Rules:** target account must be verified, active and hold `ORGANIZER`;
+tournament must exist and not be deleted. At most one active assignment
+per user/tournament. With a current revision, an already-active pair is a
+`200` no-op with the existing assignment and unchanged revision (no new
+audit event; `audit_event_id:null`). A revoked pair gets a new assignment
+ID when reassigned.\
+**Errors:** `400`, `401`, `403`, `404` unknown tournament/user,
+`409` stale revision, ineligible user, deleted tournament, or key conflict.
+
+#### DELETE `/tournaments/{tournament_id}/organizer-assignments/{assignment_id}`
+
+**Access:** Admin only.\
+**Request:** `Idempotency-Key` header and
+`{"expected_version":3,"reason":"Assignment ended","confirm":true}`.\
+**Success `200`:** revoked `assignment`, new tournament `access_version`,
+`audit_event_id`. This revokes access, not the history record. With a
+current revision, an already-revoked assignment is a `200` no-op with
+unchanged revision and `audit_event_id:null`.\
+**Errors:** `400`, `401`, `403`, `404` missing or cross-tournament
+assignment, `409` stale revision or key conflict.
+
+**Creator and revocation rules (proposed):** creating an Organizer draft
+also creates that Organizer's assignment and its audit event atomically.
+The creator remains subject to Admin approval. Creation is the only
+automatic assignment; after revocation, `created_by` remains history and
+cannot grant access, including edit/resubmit. Removing the `ORGANIZER`
+role revokes assignments and increments each affected tournament's
+`access_version`; role and assignment mutations must serialize with each
+other. Reassignment never revives old records. Tournament deletion removes
+operational assignments while retaining their permanent redacted audit.
+The current `tournaments._manages` creator fallback must be replaced when
+BIO-406 is implemented; constructing an empty-scope `Actor` alone cannot
+enforce creator revocation. No current library behavior changes here.
 
 ## 3. Tournament administration --- BIO-EPIC-06
 
@@ -186,7 +378,7 @@ override is separate endpoint.\
 ### POST `/tournaments/{id}/submit-for-approval`
 
 **Purpose:** Submit Organizer-created draft for Admin approval.\
-**Access:** Creating Organizer.\
+**Access:** Creating Organizer with a current assignment (see §2.3).\
 **Success:** `{"status":"pending_approval"}`.
 
 ### POST `/tournaments/{id}/approve`
@@ -481,6 +673,10 @@ advance a bracket twice.
     concurrent edits could corrupt tournament state.
 10. All important mutations must create immutable audit events and
     notification events where required.
+11. `[DECIDE]` One role or multiple roles, staff/participant combinations
+    and permission composition; initial Admin/staff account provisioning
+    and recovery. CN-026's Admin-only grant/assignment control, last-Admin
+    protection and creator/revocation rules are proposals awaiting review.
 
 ## 10. Reusable implementation prompt
 

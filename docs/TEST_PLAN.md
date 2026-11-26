@@ -1,8 +1,8 @@
 # Battle It Out --- Test Plan
 
-**Version:** 1.1 (Jira references aligned with PRD §10 ID scheme)\
+**Version:** 1.2 (BIO-406 contract acceptance cases; CN-026)\
 **Status:** Baseline test strategy\
-**Date:** 2026-11-05
+**Date:** 2026-11-26
 
 > **Owner change notice (2026-11-24):** the Python runtime target is now the latest stable CPython (3.15.2 tested; 3.13 remains in the matrix) Java bots are removed (the Java engine server stays), the project license is AGPL-3.0 (same as the Battlecode scaffold) and the bot rules are the engine's own (imports `random`, `math`, `enum`, `battlecode26` only; this replaces any "standard library" wording). See [`CHANGE_NOTICES.md`](CHANGE_NOTICES.md) CN-001 to CN-004. The text below is unchanged.
 
@@ -157,6 +157,29 @@ tournament. - Queued deletion can be cancelled; deleted participant is
 removed from historical roster display. - Results/brackets/standings
 remain unchanged by participant/team deletion. - Audit logs are
 immutable and retained after tournament deletion.
+
+#### TC-07 access-control contract cases --- BIO-406 / BIO-410
+
+**Planned, not executed:** these check the proposed API_CONTRACT §2.1–2.3
+after DEC-11, the role-cardinality policy and CN-026 choices are resolved.
+Documentation checks cannot satisfy the API permission exit gate.
+
+| Case | Request / setup | Expected result |
+|---|---|---|
+| AC-01 | Anonymous requests to every user/role/assignment route | `401`; no directory or assignment data |
+| AC-02 | Admin lists/reads users and roles; Organizer/participant tries the same with known and unknown user IDs | Admin sees only documented summary fields; non-Admins always get `403` before target lookup; own profile stays on `/me` |
+| AC-03 | Client adds role, scope, captain flags or grant-author fields to public registration, profile or assignment bodies | Rejected; no staff grant, membership or caller-controlled `Actor` |
+| AC-04 | Admin grants a legal role set, including a same-role no-op and an identical idempotent retry | One effective transition/audit event at most; stable revision on no-op; roster locks and membership unchanged |
+| AC-05 | Unknown/duplicate roles, illegal role combination under the chosen policy, unverified/suspended/deleted target, stale revision, missing reason/confirmation, or changed payload under the same key | `400` or `409` per contract, no partial grant or audit; exact status selected by the documented validation category |
+| AC-06 | Concurrent Admin removals that would leave no active Admin | One must conflict; last-active-Admin invariant survives concurrency |
+| AC-07 | Admin assigns an eligible Organizer; retries; revokes; reassigns | One active pair, no duplicate event on no-op/retry, increasing collection revision on changes, new ID after revocation |
+| AC-08 | Unassigned Organizer guesses a tournament; participant lists assignments; assigned Organizer attempts assignment writes | Hidden/missing tournament both `404`; visible but forbidden operation `403`; no email/profile expansion |
+| AC-09 | Assignment ID from another tournament; Admin assigns an ineligible account or deleted tournament | Cross-tournament child `404`; ineligible/deleted state `409`; no new assignment |
+| AC-10 | Revoke creator assignment, then use old session/token or idempotency key to edit/resubmit or download source | Denied by current scope; `created_by`, cached claims and stored responses cannot restore authority |
+| AC-11 | Remove Organizer role while assignment creation races; later restore role | No effective assignment survives removal; relevant revisions advance; no old assignment revives; current authorization checked at mutation commit |
+| AC-12 | Build participant Actor from unverified claim, verified member, captain, and unrelated team | Only verified membership supplies scope; only the current captain can upload under the interim default; no unrelated source access |
+| AC-13 | Fail audit/outbox persistence during role/assignment mutation, then retry; delete tournament afterward | No unaudited committed change; at most one transition/event; redacted permanent audit survives tournament deletion |
+| AC-14 | Assigned Organizer reads source then attempts upload/activation, code replacement or approval | Read is allowed and staff source read audited; forbidden mutation remains forbidden despite assignment |
 
 ### TC-08 --- Replay, notifications, archive, and recovery
 

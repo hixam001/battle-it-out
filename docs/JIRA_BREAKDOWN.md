@@ -1,8 +1,8 @@
 # Battle It Out --- Jira breakdown of BIO-EPIC-04 to BIO-EPIC-08
 
-**Version:** 1.0 (proposed)\
-**Date:** 2026-11-25\
-**Change notice:** CN-024 in `CHANGE_NOTICES.md`\
+**Version:** 1.1 (proposed; BIO-406 contract progress)\
+**Date:** 2026-11-26\
+**Change notices:** CN-024, CN-026 in `CHANGE_NOTICES.md`\
 **Audience:** the project owner and contributors who must order the remaining work and open the matching Jira issues.
 
 PRD §10 and PROJECT_PLAN §6 define the tasks of BIO-EPIC-00 to BIO-EPIC-03 and leave the later epics "to be broken down". This file does that. It follows the ID scheme of PRD §10: a Jira key is `BIO-NNN` and the hundreds digit is the epic number. **These numbers are proposed.** If the tracker assigns other numbers, change them here and in the references (never give one number two meanings).
@@ -44,7 +44,7 @@ These keep their original keys. They are listed because later epics wait for the
 | BIO-403 | Replace the JSON-file stores of the libraries behind their existing interfaces (submission registry, work queue, tournaments, registration, notifications, orchestrator and bracket, replay vault index). Keep every library test passing on the new store; add a crash and concurrency test per store | SRD-012, SRD-053; BIO-NFR-04 | Library done, JSON stand-ins | BIO-402 |
 | BIO-404 | API skeleton: `/api/v1`, error envelope with `request_id`, status mapping (`400` to `503`), idempotency keys, pagination, optimistic concurrency (`expected_version`), health | API_CONTRACT §1 | Not started | BIO-401 |
 | BIO-405 | Accounts and sessions: create an account from a verified registration claim, password hashing, email verification, login, logout, `GET /me`, rate limiting on login and code claims, CSRF as the chosen model requires | SRD-039, SRD-040; BIO-REQ-11; API_CONTRACT §2 | Not started (the claim and `confirm_email` rules exist, CN-020) | BIO-401, BIO-404 |
-| BIO-406 | Roles and tournament scope: user and role records, **Organizer assignment records**, policy functions, one place that builds the `Actor` each library takes, server-side check on every operation, safe `404` for hidden resources. Close the contract gap: add the user, role and Organizer-assignment endpoints to `API_CONTRACT.md` (open question: may one user hold several roles) | BIO-REQ-11, BIO-NFR-05, SRD-063; TC-07 | Not started (the libraries each carry a small role rule; the creating Organizer counts as assigned) | BIO-404, BIO-405 |
+| BIO-406 | Roles and tournament scope: user and role records, **Organizer assignment records**, policy functions, one place that builds the `Actor` each library takes, server-side check on every operation, safe `404` for hidden resources. Close the contract gap: add the user, role and Organizer-assignment endpoints to `API_CONTRACT.md` (open question: may one user hold several roles) | BIO-REQ-11, BIO-NFR-05, SRD-063; TC-07 | **Contract proposal drafted (CN-026):** API §2.1–2.3, model constraints and planned TC-07 cases. Implementation not started; role-cardinality/composition and provisioning remain open. Current library creator fallback must be replaced to support revocation | BIO-404, BIO-405; owner reviews CN-026 and role policy before implementation |
 | BIO-407 | Append-only audit log: permanent, written in the same transaction or a durable outbox, read by role and tournament scope, kept after a tournament is deleted. Feed it from the audit entries, series history and incidents the libraries already keep | SRD-062, SRD-063, BIO-NFR-06; TC-07 | Not started (sources exist) | BIO-402 |
 | BIO-408 | Private file storage: submissions and replays outside the web root, streamed after authorization, short-lived private URLs, no long-lived public link; the 256 KiB upload cap (interim) confirmed | BIO-NFR-08, SRD-056, SRD-058, BIO-REQ-08 | Not started (files are read-only folders and a vault, CN-012, CN-016) | BIO-401 |
 | BIO-409 | Run the services: the queue worker (`--notify`), the deadline timer (`scheduler.tick`), `deliver_emails` and `housekeeping` as supervised processes with configuration; a real Admin alert channel for dead jobs, given-up emails and retry caps; a worker image with pinned runtime | SRD-002, SRD-006, SRD-007, BIO-NFR-03; PROJECT_PLAN D5 | Not started (all four exist as library calls or a command line) | BIO-403 |
@@ -119,7 +119,7 @@ These keep their original keys. They are listed because later epics wait for the
 ## Order that the dependencies allow
 
 1. **Owner answers that unlock work:** DEC-11 (BIO-401), then DEC-06, DEC-14, DEC-04, DEC-07, DEC-10, DEC-12, DEC-13 in the order the tasks above need them. Confirming the change-notice defaults listed in `handoff.md` removes the rest of the open questions.
-2. **Stack-neutral work that does not wait:** the API contract gap of BIO-406 (users, roles, Organizer assignments), Admin alert design and service wiring on the current JSON stores, and the written parts of BIO-805 and BIO-806.
+2. **Stack-neutral work that does not wait:** review the drafted BIO-406 access-control contract (CN-026), Admin alert design and service wiring on the current JSON stores, and the written parts of BIO-805 and BIO-806. The BIO-406 documentation slice is drafted; the implementation still needs its dependencies and owner decisions.
 3. **Critical path:** BIO-401 → BIO-402/404 → BIO-403/405/406/407/408 → BIO-409 → BIO-410 (epic 04 exit) → epic 05 and 06 endpoints in parallel → BIO-701 and the screens → BIO-801 to BIO-808.
 
 ## Keeping this file true

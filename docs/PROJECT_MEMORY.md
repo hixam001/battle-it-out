@@ -22,6 +22,12 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- Latest continuation on 2026-11-26: PR #33 (the shared-memory handoff) is
+  merged; fetched `origin/main` is `3e4f867`. **BIO-406's documentation
+  slice** starts there on `BIO-406-access-control-contract`: CN-026 proposes
+  user/role/Organizer-assignment API routes, model constraints and 14 planned
+  TC-07 cases. No endpoint, authentication, role store or library behavior
+  was implemented. BIO-406 remains open for owner decisions and implementation.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -211,8 +217,12 @@ with current code and the coverage matrix; nothing here is closed by intake.
    common errors/pagination/idempotency/concurrency; accounts/passwords/email
    verification/login/logout/sessions/recovery; centralized roles and real
    Organizer assignments; append-only permanent audit with transactional/outbox
-   writes; private authorized file delivery. The contract lacks user/role and
-   Organizer-assignment endpoints. Multiple roles per user remains undecided.
+   writes; private authorized file delivery. User/role/Organizer-assignment
+   routes now have a contract proposal (BIO-406, CN-026), with no implementation.
+   Single/multiple roles, staff/participant combinations, permission composition
+   and initial Admin/staff provisioning/recovery remain undecided. Review
+   CN-026's proposed access/revocation rules before implementing them; replace
+   the creator-based permission fallback, not only the `Actor` construction.
 2. **Service operation:** supervise worker, deadline tick, email delivery and
    housekeeping; real Admin alerts for capped matches/dead jobs/failed email;
    worker container/image and runtime digest; secure deployment/configuration.
@@ -269,11 +279,29 @@ with current code and the coverage matrix; nothing here is closed by intake.
 
 The proposed React/TypeScript + Django/DRF + PostgreSQL + Celery/Redis +
 S3-compatible stack is **not approved**. **DEC-11 / BIO-401** unlocks the backend.
-Claude's final suggested options were the **BIO-406 contract gap** (documents,
-user/role/Organizer-assignment API) or **BIO-409 service wiring** on current
-stores (interim; production persistence still depends on BIO-403). Account
-deletion requires DEC-07; API implementation requires DEC-11. Intake did not
-select or implement the next development task.
+The **BIO-406 contract gap** now has a reviewable documentation proposal
+(CN-026); user/role/assignment persistence, policies and HTTP implementation
+remain open. The next independent engineering candidate is **BIO-409 service
+wiring** on current stores (interim; production persistence still depends on
+BIO-403). Account deletion requires DEC-07; API implementation requires DEC-11.
+Review the CN-026 proposal and settle role cardinality/composition and initial
+Admin/staff provisioning before implementing BIO-406.
+
+CN-026 proposes Admin-only global user/role/access administration, a scoped
+assignment list for Organizers, current authorization on requests/idempotent
+responses and mutation commit, separate user/tournament access revisions,
+atomic access/audit writes, and concurrent last-active-Admin protection.
+Organizer creation would record an explicit assignment; revocation would
+remove creator access and role restoration would not revive old assignments.
+These are **proposals for review**, not newly approved requirements or
+running defaults. Current `tournaments._manages` still grants creator access;
+clearing an Actor's assignment scope alone cannot implement revocation.
+
+BIO-406 documentation verification on 2026-11-26: JSON examples, local links,
+unique method/path pairs (seven new routes), 14 unique planned TC-07 cases,
+all 91 unchanged requirement statuses, preserved nine-category backlog,
+whitespace and added-line credential scan. Backend tests and real games were
+not rerun for this docs-only change. No HTTP permission result is claimed.
 
 | Decision | Current position |
 |---|---|
@@ -292,14 +320,16 @@ CN-018 D4, CN-019 D1–D7, CN-020 D1/D2/D4/D5/D6, CN-021 D1/D3,
 CN-022 D2/D3/D5, CN-023 D2/D3/D4/D6, CN-024 D1/D4. CN-008's
 protocol/deadline rules were explicitly retained by the owner; numeric slack
 still needs benchmarking. The project license and engine-derived bot policy
-were decided in CN-003/004; they are not fresh open decisions.
+were decided in CN-003/004; they are not fresh open decisions. Separately,
+CN-026 D1–D3 are proposed access-control policies awaiting review, and D4
+records unresolved role/provisioning decisions; none is an implemented default.
 
 ## Source map and stale-context corrections
 
 | Source | Use |
 |---|---|
 | [PRD.md](PRD.md), [SRD.md](SRD.md) | Product rules and numbered requirements; read their change-notice headers |
-| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–025 decisions, corrections, defaults and test evidence |
+| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–026 decisions, corrections, defaults, proposals and test evidence |
 | [API_CONTRACT.md](API_CONTRACT.md), [DATA_MODEL.md](DATA_MODEL.md) | Proposed API, entities, constraints, state/access/retention matrices |
 | [APP_FLOW.md](APP_FLOW.md), [../PRODUCT.md](../PRODUCT.md) | User journeys, route inventory, product context; planned screens |
 | [ARCHITECTURE.md](ARCHITECTURE.md), [TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md) | Design boundaries, runner/worker mechanics, commands and troubleshooting |
@@ -322,4 +352,6 @@ Jira breakdown is undone; only a placeholder test exists; PR #32 is still
 open; project license/import policy is undecided. The 2026-11-05 snapshot in
 handoff §3 is historical. Several coverage gap descriptions lag later wiring;
 retain their current status counts while consulting code and CN-018–025 for
-the exact remaining gap. No implementation requirement changed during intake.
+the exact remaining gap. No implementation requirement changed during intake
+or the BIO-406 documentation slice. The user/role/Organizer-assignment contract
+is no longer absent; it is proposed in API_CONTRACT §2.1–2.3, not implemented.
