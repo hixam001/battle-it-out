@@ -62,6 +62,24 @@ def series_for(tid, sid):
                     return state['series'][sid]
     raise NotFound('No such match.')
 
+def submission_match_ids(tid, versions):
+    """Official game IDs that reference the requested versions in this tournament."""
+    references = {version: set() for version in versions}
+    if not references:
+        return {}
+
+    state, brackets = bracket_for(tid)
+    series_ids = {pairing['series_id'] for bracket in brackets for rd in bracket['rounds']
+                  for pairing in rd['matches'] if pairing['series_id'] is not None}
+    for series_id in series_ids:
+        series = state['series'][series_id]
+        for game in series['games']:
+            match = state['matches'][game['match_id']]
+            for version in (match['submission_a'], match['submission_b']):
+                if version in references:
+                    references[version].add(game['match_id'])
+    return {version: sorted(ids) for version, ids in references.items()}
+
 def analytics(tid):
     state, brackets = bracket_for(tid)
     teams, maps, rounds, versions, durations = {}, {}, [], {}, []
