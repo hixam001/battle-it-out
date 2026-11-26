@@ -82,6 +82,12 @@ supersedes previous valid version. - Invalid replacement never replaces
 active version. - Every version and validation outcome remains in
 history.
 
+**HTTP checks (BIO-504 / CN-040):** single multipart file, supported filename
+or flat ZIP, missing/duplicate fields, size limits (including the expanded ZIP),
+actionable static rejection and retained history, foreign tournament scope,
+stored-deadline closure and reopening on extension, same-key retry and
+conflict for a different body. Rejected static versions never queue a check.
+
 ### TC-03 --- Two-bot match and resource enforcement
 
 **Jira:** BIO-203 / BIO-204 / BIO-205\

@@ -686,3 +686,24 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   production build and all five Playwright tests. Tests used disposable
   PostgreSQL, local services and temporary replay paths. No provider or
   production environment was used.
+
+### 2026-11-27 — BIO-504: submission upload contract
+
+- Started BIO-504-upload-contract from fetched origin/main at d66b95d while
+  PRs #44–47 were open against main. Read project memory, latest handoff and
+  the upload, deadline, requirements and acceptance specifications.
+- Updated the HTTP upload route, bundle size errors and tournament flow.
+  Exactly one multipart bot.py or bounded ZIP is accepted from the current
+  captain. The tournament store lock protects the deadline while the shared
+  flow stores and queues the upload. The 201 version shape stays compatible.
+  Actionable static 422 details identify the stored rejected version and its
+  findings. The console refreshes history after a rejected attempt.
+- All 84 Django cases passed with disposable PostgreSQL on the final run
+  (7.784 s), with system and migration-drift checks. All 102 targeted
+  bundle/registry/tournament-flow integration cases passed (62.693 s).
+  The production frontend build and all five Playwright cases passed (9.8 s).
+  Checks used disposable state and replays.
+- Updated the API and app guides, Jira, requirement coverage, test plan,
+  changelog, CN-040 and project memory. SRD-050 and SRD-054 are DONE for the
+  upload contract. All 91 rows and nine backlog categories remain. The
+  product size limits and deployed edge request limits remain open.

@@ -1080,6 +1080,7 @@ function Submissions({ cup, role }: { cup: Cup; role: string }) {
               if (!file) return;
               setBusy(true);
               setError("");
+              setMessage("");
               try {
                 const body = new FormData();
                 body.append("file", file);
@@ -1093,6 +1094,7 @@ function Submissions({ cup, role }: { cup: Cup; role: string }) {
                 load();
               } catch (e) {
                 setError((e as Error).message);
+                load();
               } finally {
                 setBusy(false);
               }

@@ -16,14 +16,15 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from rest_framework.decorators import api_view, permission_classes, parser_classes, renderer_classes
-from rest_framework.parsers import JSONParser
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, UnsupportedMediaType, ValidationError
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from backend.match_orchestrator import replays as P
 from backend.submission_registry import registry as R
 from backend.submission_bundle import bundle as BU
+from backend.tournament_flow import flow as F
 from backend.work_queue import jobs as J
 from backend.notifications import notifications as N
 from backend.tournaments import tournaments as T
@@ -290,31 +291,51 @@ def mutate(request, tid, action):
 
 
 @api_view(['GET', 'POST'])
+@parser_classes([MultiPartParser])
 def submissions(request, tid, team):
-    who, record = D.tournament(request.user, tid)
+    who, _ = D.tournament(request.user, tid)
     rt = D.runtime()
     if request.method == 'GET':
         return private({'items': R.history(rt.flow.registry, who, team)})
+    if who.role == 'participant':
+        from backend.registration import registration as G
+        if team not in who.team_ids or team not in G.registered_teams(rt.registration, tid):
+            raise NotFound('No such team.')
     if who.role != 'participant' or team not in who.captain_of:
         raise PermissionDenied('Only this team’s captain may upload.')
-    if set(request.data) != {'file'} or 'file' not in request.FILES:
+    if request.content_type.partition(';')[0].strip().lower() != 'multipart/form-data':
+        raise UnsupportedMediaType(request.content_type)
+    if set(request.data) != {'file'} or len(request.data.getlist('file')) != 1 or 'file' not in request.FILES:
         raise ValidationError('Upload one bot.py or Python bundle ZIP as file.')
-    upload = request.FILES['file']
-    raw = upload.read(BU.MAX_BYTES + 1)
-    if len(raw) > BU.MAX_BYTES:
-        return private({'error': {'message': 'Upload exceeds the interim 256 KiB limit.'}}, 413)
     key = request.headers.get('Idempotency-Key', '')
     if not R.KEY_RE.fullmatch(key):
-        raise ValidationError('An Idempotency-Key is required.')
-    # Registry owns immutable bytes, idempotency, audit and the official deadline gate; queue insertion heals on retry.
-    if upload.name.endswith('.zip'):
-        result = R.submit_bundle(rt.flow.registry, who, team, tid, raw, idempotency_key=key,
-                                 deadline_at=record['deadlines']['submission'])
-    else:
-        result = R.submit(rt.flow.registry, who, team, tid, upload.name, raw, idempotency_key=key,
-                          deadline_at=record['deadlines']['submission'])
-    if result['validation_status'] == R.VALIDATING:
-        J.enqueue_check(rt.flow.queue, result['id'])
+        raise ValidationError('A safe Idempotency-Key of 1–128 characters is required.')
+    upload = request.FILES['file']
+    is_bundle = upload.name.endswith('.zip')
+    limit = min(rt.flow.registry.max_bytes, BU.MAX_BYTES) if is_bundle else rt.flow.registry.max_bytes
+    raw = upload.read(limit + 1)
+    if len(raw) > limit:
+        return private({'error': {'message': f'Upload is larger than {limit} bytes.'}}, 413)
+    if not is_bundle and upload.name != R.STORED_NAME:
+        return private({'error': {'message': 'Name the Python file bot.py, or upload a Python bundle ZIP.'}}, 422)
+    # Hold the tournament lock while storing the version against its current deadline.
+    try:
+        with rt.tournaments.store.transaction() as state:
+            record = state['tournaments'].get(tid)
+            if not record or record['status'] == T.DELETED:
+                raise NotFound('No such tournament.')
+            result = F.upload(rt.flow, who, team, tid, upload.name, raw, bundle=is_bundle,
+                              idempotency_key=key, deadline_at=record['deadlines'][T.SUBMISSION])
+    except BU.TooLarge as exc:
+        return private({'error': {'message': str(exc)}}, 413)
+    except BU.Invalid as exc:
+        return private({'error': {'message': str(exc)}}, 422)
+    static = result['validations'][0]
+    if static['status'] == 'rejected':
+        reasons = static['reasons']
+        return private({'error': {'message': reasons[0]['message'],
+                                  'details': {'submission_id': result['id'], 'reasons': reasons}}}, 422)
+    del result['check_job']
     return private(result, 201)
 
 

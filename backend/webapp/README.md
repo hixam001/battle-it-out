@@ -94,7 +94,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET | `/tournaments/{id}/bracket/` | Current-scope recorded bracket, with `null` before draw, game IDs and progression |
 | GET | `/matches/{match_id}/` | Current-scope game and enclosing series result, including pinned version IDs and stored coin flip |
 | GET | `/tournaments/{id}/analytics.csv` | Authorized team CSV with formula escaping |
-| GET/POST | `/tournaments/{id}/teams/{team}/submissions/` | Authorized history; captain-only upload using the stored official deadline; queues validation |
+| GET/POST | `/tournaments/{id}/teams/{team}/submissions/` | Authorized history; one multipart bot.py or bounded flat ZIP, current captain and stored deadline, idempotent queued validation |
 | GET | `/tournaments/{id}/submissions/{version}/download/` | Authorized source/bundle; staff reads audited; private/no-store |
 | GET/POST | `/tournaments/{id}/disputes/` | Team-private dispute list/create tied to a real match |
 | GET/POST | `/tournaments/{id}/disputes/{uuid}/` | Team/staff comments and review transitions with optimistic revision |
@@ -106,6 +106,18 @@ Missing runtime samples remain absent rather than invented zeroes. Attempt p95
 uses the nearest rank; median uses the ordinary sample median. Version IDs are
 match metadata; source bytes, host paths, provider errors and claim tokens are
 not part of analytics, live boards or the operations reader.
+
+## Submission upload (BIO-504 / CN-040)
+
+POST requires one `file` in multipart form data, a session CSRF token and
+`Idempotency-Key`. A supported upload creates a version and returns `201`.
+Static failures return `422` with an actionable message. A rejected
+single-file version that reaches the static check remains in history with its
+findings and never enters the queue. Invalid ZIPs and wrong filenames are
+refused before storage. Size or ZIP member ceilings return `413` under the
+interim limits. An Admin deadline extension is reflected on the next upload.
+See the [HTTP contract](../../docs/API_CONTRACT.md#5-bot-submissions----bio-epic-05)
+for response details.
 
 ## Recipient notifications (BIO-607 / CN-030)
 
