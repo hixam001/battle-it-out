@@ -263,6 +263,17 @@ Removed (CN-002). The Java engine server remains and is not a bot language.
 
 The scaffold's only test (a Java `1 + 1` placeholder) was removed with the Java bots. Tests now are the launcher's: `backend/.venvs/py3.15/bin/python -m unittest backend.match_runner.tests.test_launcher` (14 unit tests, run on 3.12 to 3.15), `backend.match_runner.tests.test_limits_sandbox` (limits, sandbox, router) and `backend.match_runner.tests.test_failure_classification` (BIO-205; 16 unit tests, 8 real-match tests with `BIO_INTEGRATION=1`), `backend.match_runner.tests.test_structured_log` (BIO-206; frame and text sanitising, parser forgery, redaction, event building and views, plus 4 real matches with `BIO_INTEGRATION=1`), plus real-match integration tests with `BIO_INTEGRATION=1 python3 -m unittest backend.match_runner.tests.test_launcher` (feature bot against `expected_featuretest.txt`, and a hanging bot stopped by the timeout). **Run everything:** `python3 backend/run_tests.py` runs every backend test module on the current Python (751 tests; 48 skipped without `BIO_INTEGRATION`); `python3 backend/run_tests.py --matrix` runs them on each `tested_python` of `versions.lock.json` through `uv`; add `--integration` for real engine games (about 6 minutes per Python, one match at a time because the engine port is fixed); a name prefix (`backend.work_queue`) filters. The exit code is not 0 if a module does not import, no test ran or any version failed. Three tests (`AgainstEngine`, `RunnerEntry`) need the engine package inside the interpreter and run only in the `backend/.venvs/py<version>` environments. Result of 2026-11-25 (CN-025): 751 pass on 3.12, 3.13, 3.14 and 3.15, unit and with real games. The planned test strategy and eight critical cases are in `TEST_PLAN.md`.
 
+### 4.4 Interim service processes (BIO-409; CN-027)
+
+`backend/services/runner.py` wires the worker (notification hooks always on),
+roster-aware maintenance (`scheduler.tick` with notifications and replay vault),
+email outbox and incident/failed-email alerts as four independent processes.
+See the [service README](../backend/services/README.md) for configuration,
+one-shot/recurring commands, adapter contract, status and the reviewable
+systemd template. Missing adapters leave delivery pending. Maintenance never
+starts a round. No production service is installed or enabled; the pinned
+worker image, providers/channels and target-host supervision remain open.
+
 ## 5. Database (proposed, not implemented)
 
 Full definitions: `DATA_MODEL.md`. Summary for developers:

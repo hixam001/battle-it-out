@@ -51,4 +51,4 @@ python3 -m unittest backend.notifications.tests.test_notifications backend.notif
 
 ## Not done
 
-The HTTP API; a real email provider and its templates in HTML or other languages; the announcement event (an Organizer writes it; needs the API) and calling `notify_notice` after `extend_deadline`/`emergency_override` (the caller still has to); the worker and timer as running services started with `--notify`; mandatory security or account emails (open decision); account deletion (SRD-065..067); the database (DEC-11); independent review.
+The HTTP API; a real email provider and its templates in HTML or other languages; the announcement event (an Organizer writes it; needs the API) and calling `notify_notice` after `extend_deadline`/`emergency_override` (the caller still has to); production deployment of the [configured service processes](../services/README.md) (CN-027 supplies the worker with hooks on, roster-aware maintenance, email delivery and retryable alerts through optional adapters); mandatory security or account emails (open decision); account deletion (SRD-065..067); the database (DEC-11); independent review.
