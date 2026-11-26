@@ -1,7 +1,7 @@
 # Battle It Out --- API Contract
 
-**Version:** 1.1 (BIO-406 access-control proposal; CN-026)\
-**Status:** Proposed contract; endpoints require implementation review\
+**Version:** 1.2 (BIO-404 HTTP boundary; CN-029)\
+**Status:** Proposed core contract with the implemented feature subset identified below\
 **API style:** REST/JSON, versioned under `/api/v1`\
 **Notation:** Jira issue IDs link endpoint groups to delivery work.
 
@@ -53,6 +53,35 @@
     approach before implementation.
 -   File download endpoints must stream only after authorization;
     storage URLs must be short-lived and private.
+
+### 1.1 Implemented HTTP boundary --- BIO-404 / CN-029
+
+The Django feature API now implements the error envelope above for application
+and framework responses under `/api/v1`. Every response receives a fresh
+server-generated `X-Request-ID` (`req_` plus 32 hexadecimal characters); every
+error repeats it in `error.request_id` and includes object-shaped `details`.
+Caller-supplied IDs are ignored. Responses use `private, no-store`, including
+login failures and framework errors. Idempotent replays receive new request IDs;
+stored mutation results do not retain request correlation metadata.
+
+The common status/code pairs above are implemented; additional framework pairs
+are `405 METHOD_NOT_ALLOWED` and `406 NOT_ACCEPTABLE`. Original HTTP status,
+`Allow`, `Retry-After` and cookies survive normalization. Known library refusals
+map to their documented `403`/`404`/`409`/`413`/`503` statuses. Single validation
+messages remain actionable; field errors appear in `details`. All `404` errors
+use generic identical wording, and all server errors have fixed wording with
+empty details, including when debug mode is enabled. Unexpected exceptions,
+including ordinary `ValueError`, stay server failures and reach Django logging.
+
+GET/HEAD `/health/` is public, returns `200 {"status":"ok"}`, and checks only
+web-process liveness. It does not access accounts, PostgreSQL, JSON stores or the
+engine; database/worker readiness and production health monitoring remain open.
+The implemented `/auth/login/` takes JSON `username`/`password` (CN-028) and now
+returns `415` for unsupported request media types. CSRF refusals use the same
+JSON envelope without exposing origin/configuration diagnostics.
+
+This slice does not standardize pagination, add missing core endpoints or
+extend idempotency/concurrency to every mutation. Those BIO-404 gaps remain open.
 
 ## 2. Authentication and profile --- BIO-EPIC-04
 
@@ -690,7 +719,7 @@ integration, inspect the real Battlecode runner interface rather than
 inventing engine APIs.
 
 
-## 10. Implemented feature API — CN-028
+## 11. Implemented feature API — CN-028 / CN-029
 
 The owner activated BIO-REQ-19–23 and selected Django/DRF/PostgreSQL with a React
 frontend. The authoritative implemented route table, session/CSRF behavior,
@@ -699,6 +728,7 @@ private access rules and request shapes are in the
 feature slice; older endpoint groups above remain proposed unless implemented.
 Canonical new paths use a trailing slash except `analytics.csv`.
 
+- GET/HEAD `/health/` implements process liveness; §1.1 records the shared error/request-ID behavior.
 - Session lifecycle: GET `/auth/session/`, POST `/auth/login/`, POST `/auth/logout/`.
 - GET `/tournaments/` lists current accessible records; GET `/dependencies/` is a public pinned catalogue.
 - GET `/tournaments/{id}/live/` supplies numeric board snapshots and safe match metadata, with current authorization on every poll, private/no-store cache policy and 410 after archive.

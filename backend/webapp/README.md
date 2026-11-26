@@ -79,6 +79,7 @@ Canonical paths use a trailing slash, except the CSV export.
 
 | Method | `/api/v1` path | Behavior |
 |---|---|---|
+| GET/HEAD | `/health/` | Public process liveness only; no database, account, legacy-store or engine access |
 | GET | `/auth/session/` | Current user or null and masked CSRF token; private/no-store |
 | POST | `/auth/login/`, `/auth/logout/` | CSRF-protected session lifecycle |
 | GET | `/tournaments/` | Only current accessible tournaments and own teams |
@@ -124,11 +125,41 @@ notifications and a broader Admin mutation console need separate policies/work.
 Existing source-upload mutations retain the registry's own durable audit and
 idempotency; cross-store SQL/JSON transactions are not claimed.
 
+## HTTP errors and request IDs (BIO-404 / CN-029)
+
+Every `/api/v1` response has a fresh server-generated `X-Request-ID` and
+`Cache-Control: private, no-store`. Incoming request IDs are ignored. Every
+application/framework error uses the API contract's JSON envelope:
+
+```json
+{"error":{"code":"STATE_CONFLICT","message":"The dispute changed. Reload before editing.","details":{},"request_id":"req_0123456789abcdef0123456789abcdef"}}
+```
+
+The body ID matches the response header, including on idempotent conflict
+replays; request IDs are not saved in mutation receipts. Codes are stable
+uppercase values from [API_CONTRACT](../../docs/API_CONTRACT.md). Field validation
+keeps structured `details`; single validation messages remain actionable.
+Login requires JSON and unsupported media types return `415`.
+
+The outer response middleware covers DRF exceptions, directly returned errors,
+Django CSRF failures, method refusals and unknown routes. It retains status codes,
+cookies and headers such as `Allow` and `Retry-After`. Missing/hidden resources
+share generic `404` text. Unexpected failures remain `500`, use fixed wording
+with empty details even in debug mode, and still reach Django exception logs.
+The API completion logger records only the request ID and status; existing
+Django exception-log access/retention still requires operational controls.
+
+This follows Django's [exception-to-response middleware behavior](https://docs.djangoproject.com/en/dev/topics/http/middleware/#exception-handling)
+and addresses the [DRF handler's exception-only scope](https://www.django-rest-framework.org/api-guide/exceptions/#custom-exception-handling).
+The health endpoint only proves this web process can respond; it is **not**
+database/worker/engine readiness or production monitoring. Pagination, global
+idempotency/concurrency and remaining core routes are still BIO-404 work.
+
 ## Verification
 
 ```bash
 backend/.venvs/web/bin/python backend/webapp/manage.py check
-backend/.venvs/web/bin/python backend/webapp/manage.py test backend.webapp.tests
+backend/.venvs/web/bin/python backend/webapp/manage.py test backend.webapp.tests backend.webapp.tests_http
 backend/.venvs/py3.15/bin/python backend/run_tests.py
 backend/.venvs/py3.15/bin/python backend/run_tests.py --integration
 ```
@@ -137,6 +168,12 @@ Web tests require a disposable PostgreSQL database/role with permission to creat
 the test database; no SQLite fallback hides database trigger behavior. Test
 fixtures remain in temporary directories. Browser tests use explicitly labeled
 local fixture data; no real accounts or competitions are exercised.
+Use explicit test-module labels: directory discovery of `backend.webapp` loses
+the package context because `backend` is a namespace directory. The
+`backend.webapp.tests_http` boundary suite also runs independently without a
+database; the feature suite checks real session/CSRF, receipt and privacy behavior
+against PostgreSQL. `backend/run_tests.py` covers the separate execution-library
+suites and does not discover these web modules.
 
 Pinned web versions are Django 6.1.3, DRF 3.18.3 and psycopg 3.3.9; the separate
 web environment preserves the bot environment pins. Django documents Python 3.15
