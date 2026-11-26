@@ -625,3 +625,22 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   memory. The 91 statuses and nine backlog categories remain. Production
   restore, approved adapters, runbook sign-off, and operational mutation
   authority remain. Next independent candidate is BIO-603 bracket HTTP reads.
+
+### 2026-11-26 — BIO-603: scoped bracket and game results
+
+- Cut `BIO-603-bracket-result-api` from fetched `origin/main` at `22ec3dc`,
+  while BIO-703, BIO-605 and BIO-805 PRs were open against main. Read the
+  merged memory/handoff, API contract, requirements and bracket/series rules.
+- Added `backend/webapp/results.py`, routes and seven scoped web cases.
+  Exposes existing draw/bracket/byes, per-game IDs and states, result and
+  pinned bot version IDs, tie-break order and the stored coin flip.
+  Before a draw the bracket is null. Results survive archive. Signed-in
+  scope changes apply on the next request. Worker internals stay private.
+- All 64 Django tests passed in 5.786 s with disposable PostgreSQL. System
+  and migration-drift checks passed. Bracket/series unit mode found 55 cases,
+  51 passed and four integration cases skipped. No new engine run for this
+  read-only change.
+- Updated API/test docs, web README, Jira, coverage, CN-034 and memory.
+  SRD-028 moved to PARTIAL, for 17 DONE / 62 PARTIAL / 12 TODO / 0 DEFERRED
+  across 91 rows. All nine backlog categories remain. Round starts and
+  generation, map-pool selection, score fields and full results UI are open.

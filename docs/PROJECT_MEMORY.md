@@ -68,7 +68,7 @@ remaining backlog after every task.
   ran 20 times each on 3.13 and 3.15, totaling 120 real matches. Unit mode
   skips integration cases; three engine-dependent tests need the project venv.
   These are Claude's recorded results, not a new four-version run by Codex.
-- Coverage currently records **17 DONE / 61 PARTIAL / 13 TODO / 0 DEFERRED**
+- Coverage currently records **17 DONE / 62 PARTIAL / 12 TODO / 0 DEFERRED**
   across **91** requirements. DONE denotes the documented library/tool scope,
   not owner acceptance or an independent security review. Counts and row-level
   gaps live in [REQUIREMENTS_COVERAGE.md](REQUIREMENTS_COVERAGE.md).
@@ -310,15 +310,17 @@ with current code and the coverage matrix; nothing here is closed by intake.
    additional languages follow compatibility work, and arbitrary participant
    installs/custom runtimes remain unapproved.
 5. **Tournament operations and deletion:** remaining tournament/deadline/
-   bracket/round/archive HTTP operations and permission tests; explicit map-pool
-   selection; full result publication and paused-job mutation controls; queued/
+   bracket-generate/round-start/archive HTTP actions and permission tests;
+   explicit map-pool selection; full results UI, engine score display and
+   paused-job mutation controls; queued/
    cancelable account deletion, historical-roster removal without changed
    results, captain transfer/no successor (DEC-07), team delete/restore after
    archive, permanent tournament deletion across every legacy/new package with
    audit retained. Feature match disputes now support private comments/staff
    review/version/idempotency and immutable history; appeals/reopening/outcome
    correction policy and automatic notices remain. The Admin operations reader
-   is implemented; additional action controls remain open.
+   is implemented; additional action controls remain open. CN-034 delivers
+   current-scope bracket and game result reads, including archived history.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; announcements, automatic notice
    calls after extension/override, affected-user
@@ -418,7 +420,7 @@ records unresolved role/provisioning decisions; none is an implemented default.
 | Source | Use |
 |---|---|
 | [PRD.md](PRD.md), [SRD.md](SRD.md) | Product rules and numbered requirements; read their change-notice headers |
-| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–033 decisions, corrections, defaults, proposals and test evidence |
+| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–034 decisions, corrections, defaults, proposals and test evidence |
 | [API_CONTRACT.md](API_CONTRACT.md), [DATA_MODEL.md](DATA_MODEL.md) | Proposed API, entities, constraints, state/access/retention matrices |
 | [APP_FLOW.md](APP_FLOW.md), [../PRODUCT.md](../PRODUCT.md) | User journeys, route inventory, product context; planned screens |
 | [ARCHITECTURE.md](ARCHITECTURE.md), [TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md) | Design boundaries, runner/worker mechanics, commands and troubleshooting |
@@ -611,3 +613,20 @@ provider/target-host outage drills, recovery objectives and runbook sign-off
 remain pending. All 91 requirement statuses and all nine backlog categories
 remain. Independent next work can expose the existing bracket state to scoped
 HTTP reads (BIO-603).
+
+## CN-034 continuation evidence
+
+BIO-603 started from `22ec3dc` on `BIO-603-bracket-result-api` while three
+other task PRs were open to main. Current session scope gates
+`GET /api/v1/tournaments/{id}/bracket/` and `GET /api/v1/matches/{match_id}/`.
+The bracket uses the scheduler's tournament ID or a linked legacy bracket.
+Match detail resolves a game ID through the stored bracket/series relationship.
+It exposes allowlisted result, map, version and coin-flip fields. Archive
+retains history; deleted and out-of-scope records share the missing response.
+The API performs no draw, retry, advancement or replay lookup during reads.
+
+All 64 Django tests passed (seven new, 5.786 s). System and migration-drift
+checks passed. Selected bracket/series unit mode found 55 cases, with 51
+passes and four real-game skips. SRD-028 advances to PARTIAL. Coverage remains
+91 rows and nine backlog categories. Bracket/round mutations, map-pool
+selection, score fields and complete results UI remain open.
