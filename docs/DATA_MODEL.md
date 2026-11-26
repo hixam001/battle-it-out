@@ -1,8 +1,8 @@
 # Battle It Out --- Data Model
 
-**Version:** 1.0\
+**Version:** 1.1 (BIO-406 access-control proposal; CN-026)\
 **Status:** Proposed logical model; physical schema requires review\
-**Date:** 2026-11-04
+**Date:** 2026-11-26
 
 ## 1. Modeling principles
 
@@ -58,6 +58,24 @@
                              `email_enabled`,        cannot be disabled.
                              `updated_at`            
   ----------------------------------------------------------------------------
+
+#### BIO-406 proposed access-record additions (CN-026)
+
+These extend the logical model for [API_CONTRACT §2.1–2.3](API_CONTRACT.md).
+They are a contract proposal, not an implemented schema or an approval of
+multiple roles. The existing single-role library `Actor` is unchanged.
+
+| Record | Proposed additions / meaning |
+|---|---|
+| `User` | `access_version`: revision of effective role grants; compared with `expected_version` on role replacement |
+| `UserRole` | `id`, `revoked_by`, `revoked_at`; retain grant/revocation history instead of overwriting a grant. Cardinality remains `[DECIDE]` |
+| `OrganizerAssignment` | `revoked_by` in addition to the existing `revoked_at`; a revoked record never becomes active again |
+| `Tournament` | `access_version`: revision of its assignment collection, independent of settings `version` |
+
+Role/assignment reasons and redacted before/after IDs belong in permanent
+`AuditLog` events. Do not copy directory email, passwords, codes, tokens or
+source into those events. These are platform grants, distinct from the
+locked roster's member/captain role. A grant cannot create a team membership.
 
 ### 2.2 Tournament and approval
 
@@ -370,6 +388,27 @@ or `requested/queued → cancelled`.
 
 ## 5. Constraints and validation
 
+### Identity access (proposed, CN-026)
+
+- A grant is effective only if it is not revoked and the account passes
+  authentication/status checks. An Organizer assignment additionally
+  requires an effective `ORGANIZER` role. Participant scope requires a
+  verified registration membership, never a role grant alone.
+- Organizer-created drafts get an explicit creator assignment in the same
+  transaction. `created_by` is historical metadata after creation, not a
+  continuing access rule. Admin alone manages later assignments.
+- Revoking the Organizer role revokes every active assignment atomically
+  and advances each affected tournament's `access_version`. Restoring a
+  role never restores assignments; reassignment creates a new record.
+- Check and increment the appropriate access revision in the same
+  transaction as the access change and durable audit/outbox event. Serialize
+  concurrent role/assignment writes and permission checks at mutation commit.
+- Prevent concurrent changes from removing the last active Admin. Initial
+  Admin provisioning/recovery is `[DECIDE]`, not a public registration path.
+- Operational grant/assignment rows follow account/tournament deletion
+  policy; permanent redacted audit remains. Do not keep removed roster
+  identities in assignment/audit payloads as a substitute roster.
+
 ### Identity / roster
 
 -   Normalize email before lookup and uniqueness checks.
@@ -518,9 +557,28 @@ or `requested/queued → cancelled`.
   override                                                
   --------------------------------------------------------------------------
 
+BIO-406 adds this **proposed** identity-administration scope to the matrix
+(CN-026; no API implementation):
+
+| Resource/action | Admin | Assigned Organizer | Participant |
+|---|---|---|---|
+| User directory, another user's account summary, role catalogue | Yes | No | No |
+| Replace effective platform roles | Yes, subject to last-Admin and account eligibility checks | No | No |
+| List active Organizer assignments | Yes | Assigned tournament only; IDs/metadata, no profile expansion | No |
+| List revoked assignment history | Yes | No | No |
+| Assign/revoke Organizer | Yes | No | No |
+| Own profile and authorized memberships (`/me`) | Own | Own | Own |
+
 ## 8. Recommended indexes / integrity constraints
 
 -   Unique index on normalized active user email.
+-   Proposed BIO-406: unique active `(user_id, role_id)` grant and active
+    `(tournament_id, organizer_user_id)` assignment; revoked history does
+    not block a new grant. Single-role cardinality, if approved, needs an
+    additional active-user uniqueness constraint.
+-   Proposed BIO-406: versioned role and assignment writes; enforce active
+    Organizer eligibility and the last-active-Admin invariant under
+    concurrency, not only through a preflight API query.
 -   Unique `(tournament_id, email_normalized)` on roster entries.
 -   Unique `(team_id, version_number)` on submissions.
 -   Partial unique index for one active valid submission per
@@ -537,7 +595,12 @@ or `requested/queued → cancelled`.
 
 ## 9. Open decisions
 
--   `[DECIDE]` Multiple roles per account or one role.
+-   `[DECIDE]` Multiple roles per account or one role, allowed staff/participant
+    combinations and permission composition; the list-shaped API does not
+    decide these. Initial Admin/staff provisioning and recovery are also open.
+-   CN-026 proposes Admin-only role/assignment administration, last-Admin
+    protection, explicit creator assignment and revocation semantics for owner
+    review. These are not new approved requirements or implemented behavior.
 -   `[DECIDE]` Invitation code granularity.
 -   `[DECIDE]` Team size and captain selection.
 -   `[DECIDE]` Roster import format and retention.

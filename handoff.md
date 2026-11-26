@@ -7,10 +7,12 @@
 
 Read [docs/PROJECT_MEMORY.md](docs/PROJECT_MEMORY.md) alongside the latest task-log
 entries. It reconciles Claude's memory and session history with code and GitHub:
-PR #32 / CN-025 is merged; `origin/main` = `7322441`, containing BIO-102 commit
-`8c32719` (Python matrix, test runner and protocol-violation race fix). There were
-no open PRs at intake. The sections dated 2026-11-05 below are historical; their
-old branch names, missing-library claims and next steps are not current status.
+PR #33 (memory handoff) is merged; `origin/main` = `3e4f867`, including PR #32 /
+CN-025 and BIO-102 commit `8c32719` (Python matrix, test runner and protocol race
+fix). BIO-406's latest task-log entry records the access-control contract
+proposal (CN-026); implementation remains open. The sections dated 2026-11-05
+below are historical; their old branch names, missing-library claims and next
+steps are not current status.
 The memory note retains the complete remaining backlog and owner decisions.
 
 ## 1. Project in one paragraph
@@ -436,3 +438,13 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - **Memory checks:** verified Markdown links and frontmatter, ignored local agent files, unchanged requirement counts (17 DONE / 50 PARTIAL / 19 TODO / 5 DEFERRED = 91), whitespace and privacy scan. No configured vault graph/index or skill update was needed; repository Markdown is the durable project memory destination.
 - **Risks/decisions:** no new product decisions or requirement-status changes. Earlier handoff snapshots and some coverage gap descriptions are stale; memory explicitly points to code and CN-018–025. No production stack, auth, API, database or website was implemented during intake.
 - **Next work retained:** stack-neutral BIO-406 API-contract gap or interim BIO-409 service wiring; DEC-11/BIO-401 before backend implementation, DEC-07 before account deletion. Full gaps and pending owner decisions are in `docs/PROJECT_MEMORY.md`, with `docs/REQUIREMENTS_COVERAGE.md` and `docs/JIRA_BREAKDOWN.md` remaining the detailed scope sources.
+
+### 2026-11-26 — BIO-406: access-control API contract proposal (branch `BIO-406-access-control-contract`, from merged `origin/main`, PR to `main`)
+
+- **Start-of-task check:** read shared project memory, handoff and relevant PRD/SRD/API/model/test specifications. Confirmed PR #33 merged and fetched `origin/main` = `3e4f867`; clean new branch, no stacked dependency. Chose the next stack-neutral candidate from the prior entry: BIO-406's documentation slice. This does not complete the BIO-406 implementation task or approve the backend stack.
+- **Changed files:** `docs/API_CONTRACT.md` adds seven user/role/Organizer-assignment routes, trusted Actor/scope rules, safe `403`/`404`, access revisions, idempotency, revocation and durable audit behavior; `/me` describes its safe fields. `docs/DATA_MODEL.md` aligns proposed records, constraints and access matrix. `docs/TEST_PLAN.md` adds 14 planned TC-07 cases. `docs/CHANGE_NOTICES.md` records CN-026; `docs/JIRA_BREAKDOWN.md` and `docs/REQUIREMENTS_COVERAGE.md` distinguish the drafted contract from unimplemented behavior. Updated `CHANGELOG.md`, this log and `docs/PROJECT_MEMORY.md` with the full remaining backlog retained.
+- **Source finding and risk:** `tournaments._manages` grants creator access independently of assignment scope. A future assignment-revocation endpoint would be ineffective for creators unless implementation replaces that fallback. CN-026 proposes an explicit assignment at draft creation, with no continuing creator bypass. No code changed or vulnerability proof is claimed.
+- **Decisions:** CN-026 D1–D3 are proposals for review (Admin-only access administration, creator/revocation behavior, revisions/audit/last-active-Admin invariant), not approved requirements or implemented interim defaults. D4 keeps single/multiple roles, staff/participant combinations, permission composition and initial Admin/staff provisioning/recovery unresolved. DEC-11 remains necessary before backend implementation, DEC-07 before account deletion; existing execution gates remain open.
+- **Checks/results:** documentation validation passed: eight fenced JSON examples; unique method/path pairs with seven added routes; 14 unique planned cases; local Markdown links; all 91 requirement statuses unchanged (17 DONE / 50 PARTIAL / 19 TODO / 5 DEFERRED); nine-category project backlog preserved; frontmatter, whitespace (`git diff --check`) and added-line credential scan. No application code, backend test suite, real engine game or HTTP permission test was run for this documentation-only task. Historical Python/integration evidence remains attributed to CN-025 and the prior intake.
+- **Memory/workflow:** used Obsidian memory closeout with repository Markdown as the established memory destination, and security-audit guidance for permission boundaries; no full security audit, skill update, generated graph/index or raw chat import. Configured commit author preserved; no co-author/generated-by attribution. PR explicitly targets `main`; do not merge without the owner's request.
+- **Next work / whole backlog:** interim BIO-409 service wiring is an independent candidate; BIO-401/DEC-11 unlocks production backend work. Review CN-026 and role/provisioning policy before implementing BIO-406. All nine backlog categories remain in `docs/PROJECT_MEMORY.md`: backend foundation; supervised services/alerts; execution gates; registration/submissions; tournament operations/deletion; notifications; replays/logs/privacy; website/launch; owner/legal/deferred work. No requirement status was advanced by this proposal.
