@@ -686,3 +686,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   production build and all five Playwright tests. Tests used disposable
   PostgreSQL, local services and temporary replay paths. No provider or
   production environment was used.
+
+### 2026-11-27 — BIO-509: reproducible Python bundle downloads
+
+- Started BIO-509-reproducible-bundle-exports from fetched origin/main at
+  d66b95d. Read the project memory and handoff, and the CN-028 bundle,
+  data-model, upload and verification contracts.
+- Updated authorized ZIP export to write stable ordered members and metadata.
+  The canonical requirements file is included when dependencies are declared.
+  Omitting it for dependency-free bundles preserves the 32-file limit on
+  re-upload. Existing stored manifests and content hashes stay compatible.
+- All 72 selected bundle/registry cases passed in 30.468 s with the real
+  engine. The unit matrix found 72 cases on each of Python 3.12–3.15, with
+  69 passes and three expected integration skips each. Tests use temporary
+  state and outputs.
+- Updated Jira, the bundle guide, test plan, requirement coverage, changelog,
+  CN-043 and project memory. All 91 requirement statuses and nine backlog
+  categories remain. The final cap, production acceptance and later
+  language work stay open.

@@ -165,12 +165,20 @@ def snapshot(folder: Path) -> dict[str, bytes]:
 
 
 def export(files: dict[str, bytes]) -> bytes:
+    """Recreate the upload members with stable ordering and ZIP metadata."""
+    dependencies = json.loads(files[MANIFEST])["dependencies"]
+    members = {name: raw for name, raw in files.items()
+               if name != MANIFEST and name[:-3] not in dependencies}
+    if dependencies:
+        members["requirements.json"] = json.dumps(
+            dependencies, sort_keys=True, separators=(",", ":")
+        ).encode()
+
     output = io.BytesIO()
-    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        # Export user inputs, not the internal manifest or curated copies. Requirements reproduce the pins.
-        dependencies = json.loads(files[MANIFEST])["dependencies"]
-        for name, raw in sorted(files.items()):
-            if name != MANIFEST and name[:-3] not in dependencies:
-                archive.writestr(name, raw)
-        archive.writestr("requirements.json", json.dumps(dependencies, sort_keys=True))
+    with zipfile.ZipFile(output, "w") as archive:
+        for name, raw in sorted(members.items()):
+            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+            info.create_system = 3  # Unix permissions, independent of the exporting host.
+            info.external_attr = (stat.S_IFREG | 0o600) << 16
+            archive.writestr(info, raw, compress_type=zipfile.ZIP_DEFLATED)
     return output.getvalue()

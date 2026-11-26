@@ -54,6 +54,9 @@ remaining backlog after every task.
 - CN-032–035 add native replay downloads, the interim operations runbook,
   bracket/game history reads and confirmed archive with retryable vault purge.
   Browser replay playback, full results screens and production recovery remain open.
+- CN-043 completes the local BIO-509 bundle export. Stable ZIP metadata and
+  optional dependency declarations allow a 32-file bundle to be uploaded
+  again with its original hash when it has no dependencies.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -310,7 +313,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    approved upload/version/limiter caps and manual-activation decision. HTTP
    upload/history/source/bundle delivery and queued checks now exist and use the
    official stored deadline/current roster Actor. Interim caps are 256 KiB and
-   500 versions/team; bundle input ceiling is 32 files. Native flat modules and
+   500 versions/team; bundle input ceiling is 32 files, verified on export and
+   re-upload (BIO-509). Native flat modules and
    curated biohelpers 1.0.0 are supported; more packages require review/pins,
    additional languages follow compatibility work, and arbitrary participant
    installs/custom runtimes remain unapproved.

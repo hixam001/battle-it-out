@@ -6,6 +6,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Reproducible Python bundle downloads (BIO-509; CN-043)** use stable ZIP
+  metadata. A bundle at the 32-file limit with no dependencies can be
+  uploaded again with the same content hash.
+
 - **Private replay download (BIO-605; CN-032):** authenticated `.bc26` attachment from the existing vault after current tournament authorization and digest verification. Archive denies new downloads for every role, and hidden replays share the missing response. The live match list now exposes the game ID for downloads.
 
 - **Participant dashboard and inbox (BIO-703; CN-031):** direct `/dashboard` and `/notifications` routes, tournament deadlines with timezone and recent notices, and a private inbox with read/unread actions, paging and optional email. Dashboard notices stay active when email is off. Local Playwright tests cover real sessions and preference persistence.

@@ -404,7 +404,7 @@ TC-02/05/07/08 plan; it does not close the execution/production acceptance gates
 
 | Surface | Required verification / implemented checks |
 |---|---|
-| Python bundles | ZIP traversal/duplicates/symlinks/expansion limits; every module checked; curated exact versions; complete-digest verdict and pin binding; changed helper/dependency refusal; authorized reproducible export; real two-sided native-module engine trial |
+| Python bundles | ZIP traversal/duplicates/symlinks/expansion limits; every module checked; curated exact versions; complete-digest verdict and pin binding; changed helper/dependency refusal; authorized export with stable ZIP metadata and round trip at 32 files; real two-sided native-module engine trial |
 | Private live board | Real board changes observed before completion; native schema only; no raw WebSocket listener; numeric allowlist/private file mode; baseline engine round/reason comparison; scope revoked on next poll; archived access denied and frame files purged |
 | PostgreSQL API | Anonymous/foreign scope denial; current roster/assignment authority; staff source read audit; stored deadline/captain upload gate; CSRF/session and independent durable source/account login limits |
 | Disputes | Team-private actual match reference; idempotent create; payload mismatch; optimistic conflict; staff-only transitions/reason; comments/closed-state behavior; result records unchanged; state/audit/receipt rollback; database rejection of audit-history changes |

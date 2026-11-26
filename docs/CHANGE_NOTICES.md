@@ -509,3 +509,16 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Remaining:** matched worker-output and backup policy, production purge
   supervision, staging restore after real archive and permanent-delete workflow.
   Coverage evidence advances without changing the requirement statuses.
+
+## CN-043 — Reproducible native Python bundle export (2026-11-27)
+
+- **BIO-509:** bundle exports use sorted members and fixed timestamps and
+  regular-file permissions. They include the pinned dependency manifest only
+  when needed. A bundle containing 32 Python files with no dependencies can
+  round-trip without exceeding the upload file count or changing its hash.
+- **Checks:** all 72 bundle/registry tests passed with real-engine coverage.
+  Unit mode found 72 tests on each of Python 3.12–3.15 and passed 69 with
+  three expected real-engine skips per version.
+- **Coverage:** SRD-004 and BIO-REQ-21 stay PARTIAL for the final caps,
+  production acceptance and later languages. The local BIO-509 bundle
+  implementation and export are complete.
