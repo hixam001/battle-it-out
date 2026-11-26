@@ -412,3 +412,23 @@ Decisions from the owner that change or narrow what the requirement documents (P
   execution/production gates remain. Coverage evidence updates for SRD-060/061/
   064, BIO-REQ-16 and BIO-NFR-07; statuses stay 17 DONE / 61 PARTIAL / 13 TODO /
   0 DEFERRED. No new product/provider/hosting approval is inferred.
+
+## CN-035 — Confirmed tournament archive API (2026-11-26)
+
+- **BIO-606:** implemented the archive endpoint for an Admin or explicitly
+  assigned Organizer with session CSRF and exact JSON confirmation. The archive
+  records the transition once, retains match history and returns
+  whether the shared replay vault was purged. An incomplete purge is retried
+  by maintenance while the archive boundary stays in force.
+- **Consistency:** the current Organizer grant uses the same account lock as
+  operator provisioning. Archive checks lifecycle and audit capacity before
+  mutating the vault, holding the tournament store lock through its transition.
+  A per-tournament filesystem lock serializes purge with maintenance. A
+  confirmed retry can finish the legacy lifecycle update after interruption.
+- **Checks:** 63 Django cases passed with disposable PostgreSQL, including six
+  archive regressions. Django system and migration checks passed. All 111
+  targeted replay/tournament/service tests passed in real-game mode, including
+  real runner/vault handling. Test artifacts stayed temporary.
+- **Remaining:** matched worker-output and backup policy, production purge
+  supervision, staging restore after real archive and permanent-delete workflow.
+  Coverage evidence advances without changing the requirement statuses.

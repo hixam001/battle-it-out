@@ -86,7 +86,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | SRD-067 | Captaincy transfers on captain deletion | None | **TODO** | BIO-EPIC-06 | DEC-07 (no successor) |
 | SRD-068 | Team deletion after archive; Admin-only restore | None | **TODO** | BIO-EPIC-06 | - |
 | SRD-069 | Permanent tournament deletion, Admin only, audit kept | None | **TODO** | BIO-EPIC-06 | - |
-| SRD-070 | Archive deletes replays, keeps results and history | None (engine only writes the replay file) | **PARTIAL** | Replay archive, purge and disk verification with retained history (CN-012); maintenance retries interrupted purges and collects finished replays (CN-027), including a real service lifecycle/archive test | Archive endpoint/authorization, deployed schedule, vault backups and restore drill |
+| SRD-070 | Archive deletes replays, keeps results and history | None (engine only writes the replay file) | **PARTIAL** | Vault and scheduled recovery (CN-012/027); scoped, confirmed archive HTTP, purge serialization and tests for on-disk deletion, retry and history retained (CN-035) | Production schedule, worker-output retention, vault backups and full restore drill |
 | BIO-REQ-01 | Audit the Battlecode repository and scaffold | None | **DONE** | Docs, handoff, scaffold findings | - |
 | BIO-REQ-02 | Reproducible scaffold compatible with the Python target | Partly | **PARTIAL** | See SRD-002, SRD-003 | See SRD-002 |
 | BIO-REQ-03 | Execute a single-file Python bot with the engine | Provides (official runner) | **DONE** | Launcher over `runner_entry.py` | - |

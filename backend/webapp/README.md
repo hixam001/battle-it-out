@@ -86,6 +86,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | PATCH | `/notifications/{id}/` | Recipient-only read/unread setter; same-team notices remain private |
 | GET/PATCH | `/me/notification-preferences/` | Shared worker email preference; dashboard always enabled |
 | GET | `/tournaments/` | Only current accessible tournaments and own teams |
+| POST | `/tournaments/{id}/archive/` | Admin/assigned Organizer, exact JSON `{"confirm":true}` and CSRF; completed/archived only, purge status in response |
 | GET | `/dependencies/` | Public curated dependency names, versions and hashes |
 | GET | `/tournaments/{id}/live/` | Authoritative match metadata and allowlisted numeric latest boards; authorization on every poll; archived returns 410 |
 | GET | `/tournaments/{id}/analytics/` | Team win rates/byes, series decisions, failures, maps, version results, round progress and median/p95 attempt time |
@@ -190,7 +191,7 @@ idempotency/concurrency and remaining core routes are still BIO-404 work.
 
 ```bash
 backend/.venvs/web/bin/python backend/webapp/manage.py check
-backend/.venvs/web/bin/python backend/webapp/manage.py test backend.webapp.tests backend.webapp.tests_http backend.webapp.tests_notifications
+backend/.venvs/web/bin/python backend/webapp/manage.py test backend.webapp.tests backend.webapp.tests_http backend.webapp.tests_notifications backend.webapp.tests_archive
 backend/.venvs/py3.15/bin/python backend/run_tests.py
 backend/.venvs/py3.15/bin/python backend/run_tests.py --integration
 ```
@@ -210,6 +211,12 @@ suites and does not discover these web modules.
 collision privacy, filters/paging, idempotent read/preference, rollback and
 shared-worker outbox tests. Injected provider failures are local test doubles,
 not evidence of a real provider-outage drill.
+
+`tests_archive` verifies confirmation and session scope, on-disk vault purge,
+retained history, recovery from failed purge and a refusal before vault changes
+when the audit is full. An archived response can have `replays_deleted:false`.
+The archive already blocks replay access; the next maintenance pass retries
+the pending vault purge.
 
 Pinned web versions are Django 6.1.3, DRF 3.18.3 and psycopg 3.3.9; the separate
 web environment preserves the bot environment pins. Django documents Python 3.15

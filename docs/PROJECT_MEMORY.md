@@ -307,7 +307,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    additional languages follow compatibility work, and arbitrary participant
    installs/custom runtimes remain unapproved.
 5. **Tournament operations and deletion:** remaining tournament/deadline/
-   bracket/round/archive HTTP operations and permission tests; explicit map-pool
+   bracket/round HTTP operations and permission tests; explicit map-pool
    selection; full result publication and paused-job mutation controls; queued/
    cancelable account deletion, historical-roster removal without changed
    results, captain transfer/no successor (DEC-07), team delete/restore after
@@ -315,7 +315,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    audit retained. Feature match disputes now support private comments/staff
    review/version/idempotency and immutable history; appeals/reopening/outcome
    correction policy and automatic notices remain. The Admin operations reader
-   is implemented; additional action controls remain open.
+   is implemented; additional action controls remain open. CN-035 exposes
+   confirmed archive to current Admins/assigned Organizers and retains history.
 6. **Notifications:** screens, staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; announcements, automatic notice
    calls after extension/override, affected-user
@@ -536,3 +537,22 @@ full PostgreSQL migration and every retained execution gate remain open. All
 91 statuses stay **17 DONE / 61 PARTIAL / 13 TODO / 0 DEFERRED**; all nine complete
 backlog categories above remain. No public skill or generated graph/index update
 is needed; repository Markdown is the durable memory destination.
+
+## CN-035 continuation evidence
+
+BIO-606 `BIO-606-tournament-archive-api` starts from `22ec3dc` while earlier
+task PRs are open against main. The session-CSRF archive endpoint admits Admin
+and current explicit Organizer assignments, validates exact confirmation and
+only archives completed/already archived tournaments. It uses the shared
+vault. The transition is recorded once and failing deletion returns
+`replays_deleted: false` while access stays blocked. Maintenance retries the
+purge. Per-tournament purge locking protects the shared filesystem. The
+legacy tournament store is locked through purge to preserve the audit slot;
+archive is a low-frequency blocking operation on that store.
+
+63 Django tests passed (six new, 6.143 s) with disposable PostgreSQL, plus
+system and migration-drift checks. All 111 selected replay, tournament and
+service integration cases passed in 48.461 s with real engine runs. Current
+verification used temporary paths. Full production purge of worker outputs,
+backup/restore after live archive, permanent-delete workflow and other
+remaining backlog categories still apply. All 91 requirement rows remain.

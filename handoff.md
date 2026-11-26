@@ -553,3 +553,23 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   requirement statuses are unchanged; backlog categories 1–5 and 7–9 are
   byte-for-byte unchanged, with category 6 reconciled to this implementation.
   No generated/runtime/frontend/agent artifacts are included.
+
+### 2026-11-26 — BIO-606: confirmed tournament archive API
+
+- Cut `BIO-606-tournament-archive-api` from fetched `origin/main` at
+  `22ec3dc` while earlier task PRs were open against main. Read the merged
+  memory/handoff and archive, role, vault and recovery requirements.
+- Added the CSRF-protected archive route for Admins and explicitly assigned
+  Organizers. It requires `{"confirm":true}` and checks the lifecycle, current
+  grant and audit capacity before touching the shared vault. The tournament
+  store lock protects the audit slot through the transition. A per-tournament
+  purge lock serializes archive and maintenance for the same vault folder.
+- Added six archive HTTP cases and a vault lock regression. 63 PostgreSQL web
+  cases passed in 6.143 s, including denial, malformed requests, one history
+  event, on-disk purge and no replay access after a failed purge. System and
+  migration checks passed. All 111 targeted replay/tournament/service tests
+  passed in real-engine mode in 48.461 s. Temporary outputs only.
+- Updated API/web/test/Jira/coverage docs, CN-035 and shared memory. The
+  requirement statuses and nine backlog categories remain. The endpoint
+  reports the shared vault purge state. Retention of worker output and
+  production backups, supervision and permanent deletion remain open.

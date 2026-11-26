@@ -116,9 +116,13 @@ def _iso(t: float) -> str:
 
 
 def _audit(state: dict, t: float, actor: str, action: str, tournament_id: str, **detail) -> None:
+    _check_audit_capacity(state)
+    state["audit"].append({"at": _iso(t), "actor": actor, "action": action, "tournament": tournament_id, **detail})
+
+
+def _check_audit_capacity(state: dict) -> None:
     if len(state["audit"]) >= MAX_AUDIT:
         raise Conflict("the audit list is full; an operator must archive it before anything else changes")
-    state["audit"].append({"at": _iso(t), "actor": actor, "action": action, "tournament": tournament_id, **detail})
 
 
 def _id(value) -> str:
@@ -524,11 +528,11 @@ def archive(reg: Tournaments, actor: R.Actor | None, tournament_id: str, vault: 
         rec = _managed_rec(state, actor, tournament_id)
         if rec["status"] not in (COMPLETED, ARCHIVED):
             raise Conflict(f"a tournament that is {rec['status']} cannot be archived (only a completed one)")
-    # The purge runs outside the lock: it touches many files, and the replay vault has its own lock. A crash
-    # here leaves the tournament `completed` with the vault already marked, and a retry finishes both.
-    out = P.archive_tournament(vault, tournament_id, actor.user_id, now=now)
-    with reg.store.transaction() as state:
-        rec = _rec(state, tournament_id)
+        if rec["status"] == COMPLETED:
+            _check_audit_capacity(state)
+        # Keep the audit slot available until the archive transition commits.
+        # A crash leaves the vault archived; another confirmed call can finish.
+        out = P.archive_tournament(vault, tournament_id, actor.user_id, now=now)
         if rec["status"] == COMPLETED:
             rec["archived_at"] = _iso(now())
             _move(rec, ARCHIVED, state, now(), actor.user_id, "archive", replays_deleted=out["replays_deleted"])
