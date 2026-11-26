@@ -52,7 +52,7 @@ def notification_hooks(data_dir: Path, reg: R.Registry, store: JsonFileStore):
 
 def build_worker(data_dir: Path, *, python_version: str | None = None, python: Path | None = None, name: str | None = None,
                  lease: float = J.DEFAULT_LEASE, alert=None, sandbox: bool = True, play=None, run_fn=None,
-                 max_attempts: int = J.DEFAULT_MAX_ATTEMPTS, notify: bool = False, **worker_kw) -> Worker:
+                 max_attempts: int = J.DEFAULT_MAX_ATTEMPTS, notify: bool = False, live_dir: Path | None = None, **worker_kw) -> Worker:
     """Wire the real launcher to both handlers. `play` and `run_fn` can be replaced (tests). `notify=True` adds
     the notification hooks (`notification_hooks`); off by default, so a data dir without a roster keeps working."""
     data_dir = Path(data_dir)
@@ -66,7 +66,7 @@ def build_worker(data_dir: Path, *, python_version: str | None = None, python: P
             play = T.launcher_play(L.DEFAULT_SCAFFOLD, py, data_dir / "out" / "checks", lock_path=lock_path, sandbox=sandbox)
         if run_fn is None:
             run_fn = O.launcher_run_fn(L.DEFAULT_SCAFFOLD, py, reg.root, data_dir / "out" / "matches",
-                                       lock_path=lock_path, sandbox=sandbox)
+                                       lock_path=lock_path, sandbox=sandbox, live_dir=live_dir)
     on_decided, on_round = notification_hooks(data_dir, reg, store) if notify else (None, None)
     handlers = {
         J.CHECK_SUBMISSION: H.check_submission_handler(reg, lambda folder: T.check_submission(folder, play=play),

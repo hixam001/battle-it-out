@@ -195,7 +195,7 @@ class ServiceFlow(ServiceFixture):
     def test_worker_verifies_runtime_and_enables_notifications(self):
         with mock.patch.object(S.L, "verify", return_value=[]), mock.patch.object(S.W, "build_worker") as build:
             self.runtime.worker()
-            build.assert_called_once_with(self.dir, python_version="3.15", notify=True)
+            build.assert_called_once_with(self.dir, python_version="3.15", notify=True, live_dir=self.dir / "live")
         with mock.patch.object(S.L, "verify", return_value=["bad package"]), mock.patch.object(S.W, "build_worker") as build:
             with self.assertRaises(S.ConfigurationError):
                 self.runtime.worker()
@@ -297,4 +297,5 @@ class RealServiceLifecycle(ServiceFixture):
         T.archive(self.treg, ADMIN, "t1", self.runtime.vault, confirm=True)
         run("maintenance")
         self.assertFalse((self.dir / "replays" / "t1").exists())
+        self.assertFalse(list((self.dir / "live").glob("*.json")))
         self.assertEqual(self.flow.store.snapshot(), before)

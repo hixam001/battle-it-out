@@ -1,8 +1,8 @@
 # Battle It Out --- Jira breakdown of BIO-EPIC-04 to BIO-EPIC-08
 
-**Version:** 1.1 (proposed; BIO-406 contract progress)\
+**Version:** 1.2 (proposed numbering; CN-028 activated feature scope)\
 **Date:** 2026-11-26\
-**Change notices:** CN-024, CN-026 in `CHANGE_NOTICES.md`\
+**Change notices:** CN-024, CN-026, CN-027, CN-028 in `CHANGE_NOTICES.md`\
 **Audience:** the project owner and contributors who must order the remaining work and open the matching Jira issues.
 
 PRD §10 and PROJECT_PLAN §6 define the tasks of BIO-EPIC-00 to BIO-EPIC-03 and leave the later epics "to be broken down". This file does that. It follows the ID scheme of PRD §10: a Jira key is `BIO-NNN` and the hundreds digit is the epic number. **These numbers are proposed.** If the tracker assigns other numbers, change them here and in the references (never give one number two meanings).
@@ -35,20 +35,20 @@ These keep their original keys. They are listed because later epics wait for the
 
 ## BIO-EPIC-04 --- Backend foundation (P1)
 
-**Exit gate (PRD):** API permission and persistence tests pass (TC-07, part). Nothing here may start before DEC-11 is answered, except the tasks marked stack-neutral.
+**Exit gate (PRD):** API permission and persistence tests pass (TC-07, part). CN-028 resolves the application stack part of DEC-11; production providers/deployment and the complete core backend exit gate remain open.
 
 | Key | Task | Covers | State today | Needs |
 |---|---|---|---|---|
-| BIO-401 | Decide and record the stack: language/framework, database, email provider and domain, object storage, hosting, session model, pagination style. Approve the proposed stack in the technical documentation | DEC-11; API_CONTRACT §1, §9 | Owner first | Owner |
-| BIO-402 | Database schema and migrations from `DATA_MODEL.md` (entities, states, constraints, matrices); constraints that the libraries enforce in code become database constraints | BIO-NFR-04, BIO-NFR-06; TC-07 | Not started (the libraries keep JSON files) | BIO-401 |
+| BIO-401 | Decide and record the stack: language/framework, database, email provider and domain, object storage, hosting, session model, pagination style. Approve the proposed stack in the technical documentation | DEC-11; API_CONTRACT §1, §9 | **Partially decided (CN-028):** Django/DRF + PostgreSQL and React/TypeScript approved; hosting/email/object storage and remaining production choices open | Owner |
+| BIO-402 | Database schema and migrations from `DATA_MODEL.md` (entities, states, constraints, matrices); constraints that the libraries enforce in code become database constraints | BIO-NFR-04, BIO-NFR-06; TC-07 | Feature auth/identity/assignment/dispute/audit/receipt/limiter schema migrated (CN-028); full legacy-library schema still open | BIO-401 |
 | BIO-403 | Replace the JSON-file stores of the libraries behind their existing interfaces (submission registry, work queue, tournaments, registration, notifications, orchestrator and bracket, replay vault index). Keep every library test passing on the new store; add a crash and concurrency test per store | SRD-012, SRD-053; BIO-NFR-04 | Library done, JSON stand-ins | BIO-402 |
-| BIO-404 | API skeleton: `/api/v1`, error envelope with `request_id`, status mapping (`400` to `503`), idempotency keys, pagination, optimistic concurrency (`expected_version`), health | API_CONTRACT §1 | Not started | BIO-401 |
-| BIO-405 | Accounts and sessions: create an account from a verified registration claim, password hashing, email verification, login, logout, `GET /me`, rate limiting on login and code claims, CSRF as the chosen model requires | SRD-039, SRD-040; BIO-REQ-11; API_CONTRACT §2 | Not started (the claim and `confirm_email` rules exist, CN-020) | BIO-401, BIO-404 |
-| BIO-406 | Roles and tournament scope: user and role records, **Organizer assignment records**, policy functions, one place that builds the `Actor` each library takes, server-side check on every operation, safe `404` for hidden resources. Close the contract gap: add the user, role and Organizer-assignment endpoints to `API_CONTRACT.md` (open question: may one user hold several roles) | BIO-REQ-11, BIO-NFR-05, SRD-063; TC-07 | **Contract proposal drafted (CN-026):** API §2.1–2.3, model constraints and planned TC-07 cases. Implementation not started; role-cardinality/composition and provisioning remain open. Current library creator fallback must be replaced to support revocation | BIO-404, BIO-405; owner reviews CN-026 and role policy before implementation |
-| BIO-407 | Append-only audit log: permanent, written in the same transaction or a durable outbox, read by role and tournament scope, kept after a tournament is deleted. Feed it from the audit entries, series history and incidents the libraries already keep | SRD-062, SRD-063, BIO-NFR-06; TC-07 | Not started (sources exist) | BIO-402 |
-| BIO-408 | Private file storage: submissions and replays outside the web root, streamed after authorization, short-lived private URLs, no long-lived public link; the 256 KiB upload cap (interim) confirmed | BIO-NFR-08, SRD-056, SRD-058, BIO-REQ-08 | Not started (files are read-only folders and a vault, CN-012, CN-016) | BIO-401 |
+| BIO-404 | API skeleton: `/api/v1`, error envelope with `request_id`, status mapping (`400` to `503`), idempotency keys, pagination, optimistic concurrency (`expected_version`), health | API_CONTRACT §1 | Feature REST routes and scoped errors/idempotency implemented (CN-028); complete core API conventions/health remain open | BIO-401 |
+| BIO-405 | Accounts and sessions: create an account from a verified registration claim, password hashing, email verification, login, logout, `GET /me`, rate limiting on login and code claims, CSRF as the chosen model requires | SRD-039, SRD-040; BIO-REQ-11; API_CONTRACT §2 | Native Django login/logout/sessions, CSRF, durable failure limits and provisioned accounts implemented (CN-028); public registration/verification/recovery remain open | BIO-401, BIO-404 |
+| BIO-406 | Roles and tournament scope: user and role records, **Organizer assignment records**, policy functions, one place that builds the `Actor` each library takes, server-side check on every operation, safe `404` for hidden resources. Close the contract gap: add the user, role and Organizer-assignment endpoints to `API_CONTRACT.md` (open question: may one user hold several roles) | BIO-REQ-11, BIO-NFR-05, SRD-063; TC-07 | CN-026 contract proposal remains; feature-scoped identity/explicit assignment/current Actor adapter and operator provisioning implemented (CN-028), not the complete global role API/policy | BIO-404, BIO-405; owner reviews CN-026 and role policy before implementation |
+| BIO-407 | Append-only audit log: permanent, written in the same transaction or a durable outbox, read by role and tournament scope, kept after a tournament is deleted. Feed it from the audit entries, series history and incidents the libraries already keep | SRD-062, SRD-063, BIO-NFR-06; TC-07 | PostgreSQL feature audit/dispute history has append-only triggers and transactional writes (CN-028); unify legacy audit and full read/deletion scope remain | BIO-402 |
+| BIO-408 | Private file storage: submissions and replays outside the web root, streamed after authorization, short-lived private URLs, no long-lived public link; the 256 KiB upload cap (interim) confirmed | BIO-NFR-08, SRD-056, SRD-058, BIO-REQ-08 | Authorized feature source/bundle delivery implemented (CN-028); full private object storage/retention and production caps remain open | BIO-401 |
 | BIO-409 | Run the services: the queue worker (`--notify`), the deadline timer (`scheduler.tick`), `deliver_emails` and `housekeeping` as supervised processes with configuration; a real Admin alert channel for dead jobs, given-up emails and retry caps; a worker image with pinned runtime | SRD-002, SRD-006, SRD-007, BIO-NFR-03; PROJECT_PLAN D5 | **Interim JSON-store slice built (CN-027):** configured worker/maintenance/email/alert processes, reviewable systemd template and real-engine subprocess lifecycle. No production deployment, provider/channel or pinned image | BIO-403 for production; interim wiring is stack-neutral |
-| BIO-410 | Permission and persistence test suite for the exit gate: role by scope matrix, cross-tournament IDOR, restart and recovery of every store, duplicate delivery of a job | TC-07; security tests of TEST_PLAN §4 | Not started | BIO-406, BIO-407 |
+| BIO-410 | Permission and persistence test suite for the exit gate: role by scope matrix, cross-tournament IDOR, restart and recovery of every store, duplicate delivery of a job | TC-07; security tests of TEST_PLAN §4 | Feature PostgreSQL HTTP/permission/CSRF/rollback tests implemented (CN-028); full epic exit suite remains open | BIO-406, BIO-407 |
 
 ## BIO-EPIC-05 --- Registration and submissions (P1)
 
@@ -59,9 +59,9 @@ These keep their original keys. They are listed because later epics wait for the
 | BIO-501 | Roster endpoints: import (file format decided), correct an unregistered entry, staff report with the excluded | SRD-038, BIO-REQ-13; API_CONTRACT §4 | Library done (CN-020) | BIO-406; owner confirms CN-020 D1 |
 | BIO-502 | Invitation codes over the API: issue (Admin or assigned Organizer), revoke and replace (Admin only), list; **delivery of a code to its participant**; claim and confirm endpoints that use the failed-attempt limiter with the real source address | SRD-039, SRD-040, SRD-041, SRD-043; TC-06 | Library done (CN-020); delivery not built | BIO-405, BIO-406, BIO-607 for the email |
 | BIO-503 | Team endpoints: team view (no emails), roster display, captain and members; team size and name-edit policy applied | SRD-042; DEC-12; API_CONTRACT §4 | Library done (CN-020) | BIO-406; owner: DEC-12 |
-| BIO-504 | Upload endpoint: multipart with exactly `bot.py`, size cap (`413`), media type (`415`), static failures mapped to `422` with actionable reasons, the deadline read from `tournaments` (never from the client), check queued by `tournament_flow.upload` | SRD-004, SRD-050, SRD-054, BIO-REQ-14; TC-02 | Library done (CN-013, CN-016, CN-018) | BIO-404, BIO-406, BIO-408 |
-| BIO-505 | Submission read endpoints: history, validation result, download (team and assigned Organizer, staff reads audited), manual activation only if the owner wants it (default: latest valid is active) | SRD-051 to SRD-053, SRD-056, SRD-057; API_CONTRACT §5 | Library done (CN-016) | BIO-504 |
-| BIO-506 | Privacy tests over HTTP: another team's source, another tournament, guessed ids, path traversal and odd filenames, ZIP rejection, Organizer cannot change or activate | SRD-058, BIO-NFR-08; TC-07 | Library tests only | BIO-504, BIO-505 |
+| BIO-504 | Upload endpoint: multipart with exactly `bot.py`, size cap (`413`), media type (`415`), static failures mapped to `422` with actionable reasons, the deadline read from `tournaments` (never from the client), check queued by `tournament_flow.upload` | SRD-004, SRD-050, SRD-054, BIO-REQ-14; TC-02 | Feature multipart bot.py/bundle upload uses stored deadline and queues checks (CN-028); full error-contract mapping/cap approval/production acceptance remain | BIO-404, BIO-406, BIO-408 |
+| BIO-505 | Submission read endpoints: history, validation result, download (team and assigned Organizer, staff reads audited), manual activation only if the owner wants it (default: latest valid is active) | SRD-051 to SRD-053, SRD-056, SRD-057; API_CONTRACT §5 | HTTP history and source/bundle download plus React history implemented (CN-028); wider endpoint/retention/manual-activation decisions remain | BIO-504 |
+| BIO-506 | Privacy tests over HTTP: another team's source, another tournament, guessed ids, path traversal and odd filenames, ZIP rejection, Organizer cannot change or activate | SRD-058, BIO-NFR-08; TC-07 | HTTP team/foreign-scope/staff-write privacy and bundle path tests implemented (CN-028); full production/security matrix still open | BIO-504, BIO-505 |
 | BIO-507 | Registration and deadline transitions end to end (TC-06): unknown email, bad and expired code, retry after a failure, verification, extension keeps unused codes, close, exclusion at the deadline, with notices | SRD-041, SRD-044, SRD-054; TC-06 | Library tests (CN-020, CN-021) | BIO-502, BIO-504 |
 | BIO-508 | Account recovery and resend of the verification email, at the smallest scope the owner approves | DEC-13 | Owner first | Owner |
 
@@ -74,30 +74,30 @@ These keep their original keys. They are listed because later epics wait for the
 | BIO-601 | Tournament endpoints: create, list and get by role, edit with `expected_version`, submit for approval, approve, reject with a reason, resubmit | SRD-030 to SRD-033, BIO-REQ-12, BIO-REQ-15; API_CONTRACT §3 | Library done (CN-019) | BIO-406 |
 | BIO-602 | Deadline endpoints: extend (reopens uploads, count of affected participants in the answer) and emergency override; call `notify_notice` after each | SRD-034 to SRD-037; DEC-08 | Library done (CN-019, CN-022) | BIO-601, BIO-607 |
 | BIO-603 | Bracket and round endpoints: generate (the timer does it at the deadline), start a round (Organizer, one at a time), bracket and match views, map pool chosen and stored per tournament, tie-break and coin-flip data for display | SRD-020 to SRD-026, BIO-REQ-07; API_CONTRACT §6 | Library done (CN-010, CN-011, CN-014, CN-018) | BIO-406, BIO-409 |
-| BIO-604 | Admin operations on trouble: list and resume a paused match (who may resume is open), revive a dead job, read incidents; an Admin console of what is stuck | SRD-011, BIO-REQ-09, BIO-REQ-15 | Library done (CN-009, CN-017); no reader | BIO-409, BIO-406 |
+| BIO-604 | Admin operations on trouble: list and resume a paused match (who may resume is open), revive a dead job, read incidents; an Admin console of what is stuck | SRD-011, BIO-REQ-09, BIO-REQ-15 | Safe read-only operations API/UI implemented (CN-028); paused-match resume/dead-job mutation controls and policy remain open | BIO-409, BIO-406 |
 | BIO-605 | Replay and log endpoints: authorized replay before archive, `404`/`410` rules, role-scoped logs; browser playback decision | BIO-REQ-08, SRD-063; API_CONTRACT §6; DEC-10 | Library done (CN-007, CN-012) | BIO-408, BIO-406; owner: DEC-10 |
 | BIO-606 | Archive and retention jobs: archive endpoint (Admin or assigned Organizer by rule), scheduled `purge_pending`, vault backups | SRD-070; TC-08 | Library done (CN-012, CN-019) | BIO-409 |
 | BIO-607 | Notification endpoints and delivery: feed, read, preferences; announcements written by an Organizer; a real email provider adapter; mandatory security emails (owner decides which); the TC-08 provider-outage drill | SRD-060, SRD-061, BIO-REQ-16, BIO-NFR-07; TC-08; API_CONTRACT §7 | Library done (CN-022, CN-023) | BIO-401, BIO-409; owner: CN-022 D2/D3/D5 |
 | BIO-608 | Account deletion lifecycle: request queued while the team competes, cancel, execute when inactive, remove from rosters with results unchanged, captain transfer (DEC-07 for no successor) | SRD-065 to SRD-067, BIO-REQ-18; TC-07; FLOW-07 | Not started | BIO-406; owner: DEC-07 |
 | BIO-609 | Team deletion after archive and Admin-only restore; permanent tournament deletion (Admin only, audit kept) **including the data other libraries hold** (`purge_tournament` of registration, notifications, registry, flow, bracket) | SRD-068, SRD-069, BIO-REQ-18; TC-07; FLOW-08 | Library done for tournaments and replays; the rest not started | BIO-407, BIO-608 |
-| BIO-610 | Audit log read endpoint for a tournament and for the Admin | SRD-062, SRD-063; API_CONTRACT §7 | Not started | BIO-407 |
+| BIO-610 | Audit log read endpoint for a tournament and for the Admin | SRD-062, SRD-063; API_CONTRACT §7 | Recent feature audit is Admin-readable through operations (CN-028); unified scoped audit endpoint remains open | BIO-407 |
 | BIO-611 | Lifecycle test suite for the exit gate: approval flow, extension notices with email off, archive removes replays and keeps results, destructive actions need reason and confirmation | TC-07, TC-08 | Library tests | BIO-601 to BIO-610 |
 
 ## BIO-EPIC-07 --- Website and participant UI (P1)
 
-**Exit gate (PRD):** usability and end-to-end acceptance complete. The PRD allows no website work before the execution gate; the tasks below are ordered so that each screen needs only endpoints of the earlier epics. Design work follows `PRODUCT.md` and the `impeccable` skill (a `DESIGN.md` is recorded from the first finished screens).
+**Exit gate (PRD):** usability and end-to-end acceptance complete. CN-028 activates local feature/landing work while the execution gate remains open; the tasks below are ordered so that each screen needs only endpoints of the earlier epics. Design work follows `PRODUCT.md` and the `impeccable` skill (a `DESIGN.md` is recorded from the first finished screens).
 
 | Key | Task | Covers | State today | Needs |
 |---|---|---|---|---|
-| BIO-701 | Frontend foundation: stack (BIO-401), design tokens and `DESIGN.md`, routing and guards by role, API client with the error envelope and `request_id`, accessible components, mobile and keyboard baseline | BIO-NFR-12; APP_FLOW §7 | Not started | BIO-401, BIO-404 |
-| BIO-702 | Account screens: `/login`, `/register` (email, code, password, verification), `/account/settings` (email toggle, deletion request and cancel) | SRD-039, SRD-060, SRD-065; FLOW-03, FLOW-07 | Not started | BIO-405, BIO-502, BIO-608 |
-| BIO-703 | `/dashboard`, `/notifications`, tournament overview with deadlines and notices | SRD-060, BIO-REQ-17, BIO-NFR-12 | Not started | BIO-607 |
-| BIO-704 | `/participant/team` and `/participant/submissions`: upload, validating, valid, invalid with reasons, locked after the deadline, history | SRD-050 to SRD-054, BIO-NFR-12; FLOW-04 | Not started | BIO-503, BIO-504, BIO-505 |
-| BIO-705 | Bracket, results and match detail: pending, running, retrying, completed; tie-break maps and the coin flip shown and explained; replay page and player | SRD-026, SRD-028, BIO-REQ-17; FLOW-06 | Not started | BIO-603, BIO-605 |
+| BIO-701 | Frontend foundation: stack (BIO-401), design tokens and `DESIGN.md`, routing and guards by role, API client with the error envelope and `request_id`, accessible components, mobile and keyboard baseline | BIO-NFR-12; APP_FLOW §7 | React/TypeScript/Vite foundation, API client, local routes, DESIGN.md and desktop/mobile/keyboard checks implemented (CN-028); full product accessibility/route coverage remains | BIO-401, BIO-404 |
+| BIO-702 | Account screens: `/login`, `/register` (email, code, password, verification), `/account/settings` (email toggle, deletion request and cancel) | SRD-039, SRD-060, SRD-065; FLOW-03, FLOW-07 | Real session login/logout UI implemented (CN-028); registration/settings/verification/deletion screens remain open | BIO-405, BIO-502, BIO-608 |
+| BIO-703 | `/dashboard`, `/notifications`, tournament overview with deadlines and notices | SRD-060, BIO-REQ-17, BIO-NFR-12 | Accessible tournament selection/deadlines and feature console implemented (CN-028); notification feed and complete overview remain open | BIO-607 |
+| BIO-704 | `/participant/team` and `/participant/submissions`: upload, validating, valid, invalid with reasons, locked after the deadline, history | SRD-050 to SRD-054, BIO-NFR-12; FLOW-04 | Python/bundle upload, validation/active history and authorized downloads implemented (CN-028); complete team screen and richer rejection display remain open | BIO-503, BIO-504, BIO-505 |
+| BIO-705 | Bracket, results and match detail: pending, running, retrying, completed; tie-break maps and the coin flip shown and explained; replay page and player | SRD-026, SRD-028, BIO-REQ-17; FLOW-06 | Private match metadata/live board and analytics implemented (CN-028); full bracket/replay and coin-flip presentation remain open | BIO-603, BIO-605 |
 | BIO-706 | Organizer screens: new tournament, manage and resubmit, roster import and correction, rounds, teams and source download | BIO-REQ-15; FLOW-02, FLOW-03, FLOW-05 | Not started | BIO-501, BIO-601, BIO-603 |
-| BIO-707 | Admin screens: approvals, tournament management, deadlines and overrides, invitations, incidents and stuck jobs, global audit | BIO-REQ-15, SRD-062; FLOW-08 | Not started | BIO-502, BIO-602, BIO-604, BIO-610 |
-| BIO-708 | Usability and end-to-end acceptance: scripted walk of FLOW-01 to FLOW-08 for each role, accessibility check, copy review (English wording of notices is unreviewed) | BIO-NFR-12; TEST_PLAN §5 | Not started | BIO-702 to BIO-707 |
-| BIO-709 | Public landing page | BIO-REQ-19 | **Deferred (P2)**: only after the execution gate; owner schedules it | Owner |
+| BIO-707 | Admin screens: approvals, tournament management, deadlines and overrides, invitations, incidents and stuck jobs, global audit | BIO-REQ-15, SRD-062; FLOW-08 | Read-only Admin health/incident/dead-job/audit console implemented (CN-028); approvals and remaining Admin mutation screens remain open | BIO-502, BIO-602, BIO-604, BIO-610 |
+| BIO-708 | Usability and end-to-end acceptance: scripted walk of FLOW-01 to FLOW-08 for each role, accessibility check, copy review (English wording of notices is unreviewed) | BIO-NFR-12; TEST_PLAN §5 | Feature desktop/mobile keyboard/login/analytics/dispute/submission/Admin browser flows pass (CN-028); complete FLOW-01–08 and formal accessibility acceptance remain | BIO-702 to BIO-707 |
+| BIO-709 | Public landing page | BIO-REQ-19 | **Active, local implementation (CN-028):** React page with responsive/keyboard checks; public deployment/branding acceptance remain open | Owner activated; hosting remains open |
 
 ## BIO-EPIC-08 --- QA, pilot and production (P0 launch gate)
 
@@ -121,6 +121,28 @@ These keep their original keys. They are listed because later epics wait for the
 1. **Owner answers that unlock work:** DEC-11 (BIO-401), then DEC-06, DEC-14, DEC-04, DEC-07, DEC-10, DEC-12, DEC-13 in the order the tasks above need them. Confirming the change-notice defaults listed in `handoff.md` removes the rest of the open questions.
 2. **Stack-neutral work that does not wait:** review the drafted BIO-406 access-control contract (CN-026), review/deploy the interim BIO-409 service wiring (CN-027) with approved provider/channel adapters, and the written parts of BIO-805 and BIO-806. The BIO-406 documentation slice is drafted; the implementation still needs its dependencies and owner decisions.
 3. **Critical path:** BIO-401 → BIO-402/404 → BIO-403/405/406/407/408 → BIO-409 → BIO-410 (epic 04 exit) → epic 05 and 06 endpoints in parallel → BIO-701 and the screens → BIO-801 to BIO-808.
+
+## Activated feature tasks — CN-028
+
+The owner activated BIO-REQ-19–23, selected the application stack and narrowed
+initial language expansion to Python multi-file/curated dependencies. These keys
+extend the proposed numbering without reusing any existing task. No tracker
+issues were created. Existing execution/production gates remain open.
+
+| Key | Active scope / implementation | Remaining work |
+|---|---|---|
+| BIO-509 | Native flat Python bundle validation, immutable complete hashes, trial/activation/pins and HTTP upload/download | Final limits, production acceptance and additional-language compatibility follow-up |
+| BIO-510 | Exact-version curated source dependencies; initial biohelpers catalogue and pinned snapshot | Further package selection/review; custom runtimes are not approved |
+| BIO-612 | Team-private match disputes, comments, staff review, versions/idempotency and PostgreSQL audit/history | Appeals/reopening/outcome correction policy and notifications |
+| BIO-613 | Read-only Admin operations/incidents/dead-job/audit console | Additional mutation controls and resume authority policies |
+| BIO-710 | Private native-engine numeric live boards, current-scope HTTP polling and React rendering | Production scale/reconnect evidence and full viewer overlays |
+| BIO-711 | Team/version/map/round/failure/latency analytics with CSV and React views | Owner analytics acceptance and production data/load evidence |
+
+BIO-401 is now **partially decided**: Django/DRF, PostgreSQL and React/TypeScript
+are approved; hosting, email, object storage and remaining production choices
+are still open. BIO-405/406 have a feature-scoped native-session/identity/assignment
+adapter and operator provisioning, not their complete account/role endpoint
+scope. BIO-402/403 remain open for the full existing-library database migration.
 
 ## Keeping this file true
 

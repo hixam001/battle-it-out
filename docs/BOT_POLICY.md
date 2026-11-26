@@ -1,5 +1,7 @@
 # Bot policy
 
+> **CN-028 (owner-selected expansion):** Python entry point `bot.py` may now be uploaded alone or in a bounded flat-module ZIP. The engine-native local-module loader and exact-version curated `biohelpers` catalogue are used; no participant package installation or custom runtime is enabled. Original single-file-only wording is superseded for the explicit bundle path. See [bundle rules](../backend/submission_bundle/README.md). Additional languages follow compatibility work and are not enabled here.
+
 Status: adopted 2026-11-24 on the owner's instruction (CN-004 in [`CHANGE_NOTICES.md`](CHANGE_NOTICES.md)): **the platform's bot rules are the Battlecode engine's own rules.** Where the PRD or SRD say "standard library and preinstalled third-party libraries" (PRD section on bot contract, SRD-005), this policy replaces them, because the engine only allows the imports below.
 
 The machine-readable policy is [`backend/bot_validator/policy.json`](../backend/bot_validator/policy.json), generated from the installed engine package (`generate_policy.py`), and enforced early by the validator ([`backend/bot_validator/`](../backend/bot_validator/README.md)). The numbers below were read from engine package `battlecode26` 1.2.2 (the contents of the official 1.2.6 release) and checked against the real engine by tests.

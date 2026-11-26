@@ -1,5 +1,8 @@
 # Battle It Out --- Product Requirements Document (PRD)
 
+> **Owner scope update (2026-11-26; CN-028):** BIO-REQ-19–23 are active work. The selected application stack is Django/DRF + PostgreSQL and React/TypeScript. Live viewing is private to signed-in tournament members, assigned Organizers and Admins. Python multi-file bundles and curated dependencies come first; additional languages follow engine compatibility work. This request authorizes the new local web work while existing execution gates remain open; it does not declare those gates passed or approve hosting/email/storage. Earlier deferred/one-file-only text below is a historical baseline where it conflicts with this notice.
+
+
 **Project:** INNOFEST Battle It Out\
 **Document status:** Working baseline for implementation planning\
 **Version:** 1.1 (scope IDs renumbered to `BIO-REQ-nn`; see §10 ID scheme)\

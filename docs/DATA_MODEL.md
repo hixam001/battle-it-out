@@ -623,3 +623,32 @@ deleted. Preserve archive behavior: replay files are deleted while
 results/history remain. Enforce unique constraints and explicit state
 transitions. Keep sensitive data out of audit payloads. Mark every
 unresolved schema decision rather than inventing a value.
+
+
+## 8. Implemented feature records — CN-028
+
+The Django feature slice uses PostgreSQL migrations for native auth/session
+records and the following tables. This does not migrate legacy JSON stores.
+See [models](../backend/webapp/models.py) and [web operations](../backend/webapp/README.md).
+
+| Record | Implemented purpose |
+|---|---|
+| Identity | One provisioned scoped role per non-Admin account and an optional unique locked verified-roster user link; participant authority is reread from registration |
+| OrganizerAssignment | Active/revoked explicit scope with one active user/tournament pair; no creator fallback in feature HTTP permissions |
+| Dispute | Real tournament/series/team reference, author, title/description, review state, optimistic version and timestamps |
+| DisputeEvent | Append-only comment/review history, protected from update/delete by PostgreSQL trigger |
+| AuditEvent | Permanent feature action metadata, also protected from update/delete; no source/password/provider payload |
+| Receipt | Unique user/idempotency key, request fingerprint and stable result; current scope checked before replay |
+| LoginAttempt | Expiring hashed account/source limiter counters; no raw passwords, account names or source addresses |
+
+Legacy immutable submission rows gain optional `bundle_files`; their existing
+`content_hash` is the canonical aggregate of every file/hash for bundles. A
+platform-generated `bundle.json` records curated dependency versions and file
+names. Single-file rows keep their original digest semantics. Both trial sides,
+activation, download and tournament pins bind the complete snapshot.
+
+Live numeric snapshots are private filesystem data under `live/{game_id}.json`,
+not public object URLs. They carry board state only, are replaced atomically,
+and are unavailable after archive; maintenance removes archived board files.
+Full deletion/retention across legacy and new SQL stores remains open, with
+append-only audit preserved.

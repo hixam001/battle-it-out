@@ -111,6 +111,17 @@ class Runtime:
         result = S.tick(self.tournaments, self.flow, catalogue=catalogue,
                         engine_version=L.load_lock()["engine_version"], vault=self.vault,
                         registration=self.registration, notifications=self.notifications, now=now)
+        # Live boards have the same archive boundary as replays. Never retain a viewable archive board.
+        archived = {tid for tid, rec in self.tournaments.store.snapshot()["tournaments"].items()
+                    if rec["status"] in (T.ARCHIVED, T.DELETED)}
+        for bracket in self.flow.store.snapshot().get("brackets", {}).values():
+            if bracket.get("tournament_id") in archived:
+                state = self.flow.store.snapshot()
+                for rd in bracket["rounds"]:
+                    for pairing in rd["matches"]:
+                        series = state.get("series", {}).get(pairing.get("series_id"), {})
+                        for game in series.get("games", []):
+                            (self.config.data_dir / "live" / (game["match_id"] + ".json")).unlink(missing_ok=True)
         return {key: len(result[key]) for key in ("opened", "completed", "waiting", "blocked", "excluded")}
 
     def emails(self, *, now=time.time) -> dict:
@@ -144,7 +155,8 @@ class Runtime:
         if L.verify(L.DEFAULT_SCAFFOLD, py, L.load_lock()):
             raise ConfigurationError("worker runtime verification failed; run launcher.py verify")
         # The alerts process owns delivery, including after a worker dies with a stored incident.
-        return W.build_worker(self.config.data_dir, python_version=self.config.python_version, notify=True)
+        return W.build_worker(self.config.data_dir, python_version=self.config.python_version, notify=True,
+                              live_dir=self.config.data_dir / "live")
 
     def status(self) -> dict:
         stores = (self.flow.store, self.flow.queue.store, self.vault.index)
