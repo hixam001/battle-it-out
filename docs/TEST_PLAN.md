@@ -199,6 +199,15 @@ preference. - Email delivery follows preference and retries failures. -
 Backup/restore procedure recovers critical state without corrupting
 match references.
 
+#### Implemented replay download subset (BIO-605 / CN-032)
+
+`backend.webapp.tests_replays` checks byte-identical streamed attachments,
+current roster and explicit Organizer scope, safe errors, revoked access,
+damaged replay incidents and archive refusal. It exercises archive during
+file verification, confirms vault file deletion on disk and preserves bracket
+and match history. The real-engine `test_replays` suite separately exercises
+collection and purge for native engine output in a temporary vault.
+
 #### Implemented notification HTTP subset (BIO-607 / CN-030)
 
 `backend.webapp.tests_notifications` runs 17 cases with real PostgreSQL accounts
@@ -223,8 +232,17 @@ and temporary legacy notification/registration state:
   deliveries; new roster-derived team notices still appear once in the feed.
   Injected provider failure leaves dashboard notices intact.
 
-This does not close full TC-08: no real provider, notification UI, production
-outage or backup/restore drill is exercised. Staff recipients, announcement and
+#### Implemented browser subset (BIO-703 / CN-031)
+
+The Playwright suite uses real Django sessions and disposable PostgreSQL accounts
+with isolated notification data. It verifies direct dashboard/inbox links,
+timezone-labeled deadlines, tournament-scoped previews, historical personal
+notices, inbox pagination, keyboard filtering, read and email preference
+persistence across reload, account isolation on logout, and the unlinked-account
+refusal. Desktop and mobile layout checks are covered in the local browser suite.
+
+Full TC-08 still requires a real provider, production outage and backup/restore
+drill. Staff recipients, announcement and
 automatic deadline/override endpoints, and notification-store migration remain
 open. Web tests require explicit module labels in the webapp README; the backend
 execution runner does not discover these modules.

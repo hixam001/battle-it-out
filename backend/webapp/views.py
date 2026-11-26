@@ -10,20 +10,23 @@ import time
 from datetime import timedelta
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.db import transaction
-from django.http import JsonResponse, HttpResponse
+from django.http import FileResponse, JsonResponse, HttpResponse
 from django.middleware.csrf import get_token
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
-from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes, renderer_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from backend.match_orchestrator import replays as P
 from backend.submission_registry import registry as R
 from backend.submission_bundle import bundle as BU
 from backend.work_queue import jobs as J
 from backend.notifications import notifications as N
+from backend.tournaments import tournaments as T
 from . import domain as D
 from .models import AuditEvent, Dispute, DisputeEvent, LoginAttempt, Receipt
 
@@ -177,10 +180,40 @@ def live(request, tid):
                     continue
                 game = state['matches'][series['games'][-1]['match_id']]
                 board = safe_board(D.runtime().config.data_dir / 'live' / (game['id'] + '.json'))
-                matches.append({'series_id': series['id'], 'round': rd['number'], 'a': series['team_a'], 'b': series['team_b'],
+                matches.append({'series_id': series['id'], 'match_id': game['id'], 'round': rd['number'],
+                                'a': series['team_a'], 'b': series['team_b'],
                                 'status': series['status'], 'game_status': game['status'], 'map': game['map'],
                                 'winner': (series.get('result') or {}).get('winner_team'), 'board': board})
     return private({'items': matches, 'poll_after_ms': 1000})
+
+
+class ReplayDownloadRenderer(JSONRenderer):
+    # FileResponse streams the download. DRF uses this renderer only for errors
+    # when the client asks for binary, and middleware normalizes those to JSON.
+    media_type = 'application/octet-stream'
+    format = P.REPLAY_FORMAT
+
+
+@api_view(['GET'])
+@renderer_classes([JSONRenderer, ReplayDownloadRenderer])
+def replay(request, mid):
+    who = D.actor(request.user)
+    viewer = P.Viewer(who.role, who.tournament_ids)
+    rt = D.runtime()
+    tid = P.replay_tournament(rt.vault, mid, viewer)
+    with rt.tournaments.store.transaction() as state:
+        tournament = state['tournaments'].get(tid)
+        if not tournament or tournament['status'] == T.DELETED:
+            raise NotFound()
+        if tournament['status'] == T.ARCHIVED:
+            raise P.Gone('The tournament is archived.')
+    handle, stream = P.open_replay(rt.vault, mid, viewer, tournament_id=tid)
+    try:
+        return FileResponse(stream, as_attachment=True, filename=f'{handle.match_id}.{P.REPLAY_FORMAT}',
+                            content_type='application/octet-stream')
+    except BaseException:
+        stream.close()
+        raise
 
 
 def body_fields(request, allowed, required):

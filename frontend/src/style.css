@@ -554,21 +554,23 @@ textarea {
   display: grid;
   gap: 0.5rem;
 }
-.sidebar nav button {
+.sidebar nav a {
   display: flex;
   align-items: center;
   gap: 0.8rem;
   text-align: left;
   border-radius: 4px;
-  font-size: 1.1rem;
+  font-size: 0.875rem;
+  text-decoration: none;
   background: none;
   color: #9b9bb2;
   padding: 0.9rem 0.75rem;
 }
-.sidebar nav button span {
-  font-size: 0.875rem;
+.sidebar nav .nav-icon {
+  font-size: 1.1rem;
 }
-.sidebar nav button.active {
+.sidebar nav a[aria-current="page"],
+.sidebar nav a:hover {
   background: #303140;
   color: var(--lime);
 }
@@ -778,6 +780,137 @@ textarea {
 .panel > p {
   font-size: 0.875rem;
   color: var(--muted);
+}
+.notice-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+.notice-toolbar,
+.notice-actions,
+.notice-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.notice-toolbar {
+  justify-content: space-between;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+.notice-toolbar h2,
+.notice-toolbar p,
+.notice-pagination p {
+  margin: 0;
+}
+.notice-toolbar p,
+.notice-pagination p,
+.notice-meta,
+.notice-choice,
+.notice-control,
+.tournament-overview dt {
+  font-size: 0.875rem;
+}
+.notice-control {
+  min-height: 2.5rem;
+  padding: 0.45rem 0.75rem;
+  color: var(--ink);
+  background: #f5f4fc;
+  border: 1px solid #d5d2e6;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.notice-control[aria-pressed="true"] {
+  color: #fff;
+  background: #40386a;
+  border-color: #40386a;
+}
+.notice-control[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+.notice-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.notice-item {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1rem;
+  border-top: 1px solid #e2e0ec;
+  border-inline-start: 3px solid transparent;
+  overflow-wrap: anywhere;
+}
+.notice-item[data-unread="true"] {
+  background: #f8f7fe;
+  border-inline-start-color: #6553a0;
+}
+.notice-item h3 {
+  margin: 0.35rem 0;
+}
+.notice-item p {
+  margin: 0.35rem 0 0;
+  white-space: pre-wrap;
+}
+.notice-meta {
+  color: var(--muted);
+}
+.notice-state {
+  font-weight: 650;
+}
+.notice-pagination {
+  justify-content: space-between;
+  border-top: 1px solid #e2e0ec;
+  padding-top: 1rem;
+}
+.notice-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 2.5rem;
+  font-weight: 600;
+}
+.notice-choice input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+  accent-color: #40386a;
+}
+.notice-feed [role="status"]:not(:empty),
+.notice-preference [role="status"]:not(:empty) {
+  color: var(--muted);
+  margin: 0.75rem 0;
+}
+.tournament-overview dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+}
+.tournament-overview dt {
+  color: var(--muted);
+}
+.tournament-overview dd {
+  margin: 0.25rem 0 0;
+  font-weight: 650;
+}
+.tournament-status {
+  text-transform: capitalize;
+}
+@media (max-width: 1000px) {
+  .notice-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .notice-item {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
 }
 .table-wrap {
   overflow-x: auto;
@@ -1119,13 +1252,13 @@ code {
     gap: 0.3rem;
     margin: 1rem 0 0;
   }
-  .sidebar nav button {
+  .sidebar nav a {
     flex-shrink: 0;
     padding: 0.6rem;
     font-size: 0.875rem;
   }
-  .sidebar nav button span {
-    font-size: 0.7rem;
+  .sidebar nav .nav-icon {
+    font-size: 0.875rem;
   }
   .account {
     position: absolute;
@@ -1268,7 +1401,6 @@ code {
 table,
 th,
 .dispute-row span,
-.sidebar nav button span,
 .panel-toolbar p,
 .map-row,
 .numbers,

@@ -15,10 +15,10 @@ correction. Public signup, password recovery and account deletion are planned
 account features.
 
 Choose your tournament from **Tournament**. You can see only the tournaments
-where your registration or assignment grants access. The console displays the
-submission deadline with the browser timezone. If the expected tournament is
-missing, ask the Organizer to confirm your account and current roster or
-assignment.
+where your registration or assignment grants access. **Dashboard** shows the
+tournament status, registration and submission deadlines in your browser's
+timezone, and recent personal notices. If the expected tournament is missing,
+ask the Organizer to confirm your account and current roster or assignment.
 
 ## 2. Submit and validate a bot
 
@@ -64,17 +64,18 @@ Organizer for help with a permission error. Other teams' source stays private.
   existing operations workflow. Normal ties use one tie-break map. Final ties
   use three, followed by a recorded 50/50 coin flip if the tie persists.
 
-Stored replay files are purged at archive. A browser replay player, a complete
-bracket and a match-history screen are still planned console features.
+Authorized users can download native `.bc26` files before archive through the
+[replay API](API_CONTRACT.md). Archive purges the vault files and keeps match
+history. A browser replay player, a complete bracket and a match-history screen
+are still planned console features.
 
 ## 4. Notifications and account lifecycle
 
-Dashboard notifications are independent of optional email. The current
-[notification API](API_CONTRACT.md)
-supports personal notices, read/unread and email preferences for an explicitly
-linked participant account. Email delivery depends on the event's provider
-configuration. Contact the Organizer for notices in the current event workflow.
-Self-service account requests and deletion are planned.
+Open **Notifications** to read personal notices, filter to unread, mark a notice
+read or unread, or update your email preference. The inbox is available to
+linked participant accounts and includes past notices. Dashboard notices stay
+available when email is disabled. Email delivery depends on the event's provider
+configuration. Self-service account requests and deletion are planned.
 
 ## 5. For Organizers
 
