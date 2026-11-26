@@ -671,3 +671,18 @@ checks, 111 targeted real-engine integration tests (50.654 s), the production
 frontend build and five Playwright cases (10.7 s). Test state and replays were
 temporary. Results publication SRD-028 is PARTIAL. All 91 rows and nine
 backlog categories remain.
+
+## CN-037 continuation evidence
+
+BIO-701 completes the existing web foundation from `d66b95d` on
+`BIO-701-frontend-foundation`. The shared frontend client retains status,
+error code, details and the server request ID. Keyboard skip navigation moves
+focus without changing the route. Direct Operations and inbox links show
+scope-aware refusals and preserve the requested path through sign-in.
+
+The production frontend build and all eight browser cases passed against
+local fixture Django/PostgreSQL in 12.1 s. The three new cases verify the
+participant Operations guard, the Organizer inbox guard and a real failed
+login with its matching server request ID. The mock competition and sessions
+were disposable. Coverage statuses and all nine backlog categories remain.
+Complete usability/accessible-flow acceptance remains BIO-708.
