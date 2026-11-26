@@ -361,3 +361,54 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Checks/results:** project Python 3.15.2, Django 6.1.3/DRF 3.18.3/psycopg 3.3.9; 40 web tests pass (23 PostgreSQL feature cases and 17 boundary cases). Boundary tests also pass independently with database queries forbidden. Covers framework/application errors, malformed input/media, method/retry headers, content negotiation, view/downstream-middleware failures, debug redaction, login and both CSRF paths, hidden-resource equality and fresh IDs on stored `409` replay. Django checks and migration-drift check pass. Full backend unit mode: 779 discovered, 731 passed, 48 integration skips (11.470 s). No new browser, real-engine or four-version matrix was run because execution/frontend code is unchanged. PostgreSQL uses disposable private Unix-socket clusters under `/tmp`, stopped after checks; user data/replays are preserved.
 - **Workflow correction:** Django tests need explicit `backend.webapp.tests backend.webapp.tests_http` labels; directory discovery loses package context in this namespace layout. The standalone boundary suite needs no database. The new production helper is named `api_errors.py` to avoid shadowing Python's `http` package when manage.py is executed by path.
 - **Remaining scope/decisions:** pagination remains undecided; global idempotency/concurrency, full core routes, public accounts/recovery, legacy database migration and production readiness are still open. Existing execution/security/production gates and all nine backlog categories in PROJECT_MEMORY.md remain. Coverage evidence changes for BIO-NFR-10, with statuses unchanged: 17 DONE / 61 PARTIAL / 13 TODO / 0 DEFERRED. These are routine local engineering choices, not new product/provider/hosting approvals.
+
+## CN-030 — Recipient notification HTTP adapter (2026-11-26)
+
+- **Task/scope:** BIO-607 recipient API slice from merged `origin/main` `f551850`
+  (PR #37), branch `BIO-607-notification-api`. Uses the existing notification
+  library/service store; this does not finish BIO-607, migrate the store or
+  select a provider/hosting service.
+- **D1 (implemented engineering choice). Explicit recipient identity.** GET
+  feed, PATCH read/unread and GET/PATCH email preferences use the operator-linked
+  participant roster identity, reread per request. Numeric Django IDs are a
+  different namespace and never substitute for legacy recipient IDs. Client
+  ownership/role fields are refused; staff privileges never grant inbox access.
+  Anonymous requests return `401`, unlinked/staff accounts `403`, and another
+  recipient's notice (including a teammate's) matches missing-ID `404` wording.
+  Staff/global recipient provisioning remains open. Personal historical notices
+  do not require current tournament scope, preserving exclusion/deadline news.
+- **D2 (interim adapter). Feed and setters.** Existing library offset pagination
+  is exposed with limit 1–200/default 50, offset 0–2147483647/default 0, optional
+  tournament and strict boolean unread filter. Unknown/duplicate/malformed query
+  parameters are `400`. Counts precede paging; unread count precedes unread-only
+  filtering. Newest-first ordering uses ID for equal timestamps; concurrent
+  inserts may shift offsets. This does not decide global pagination. JSON/CSRF
+  absolute-state setters need no receipt/idempotency key; repeating read state
+  preserves its timestamp and repeating preference adds no audit. Shared
+  errors/request IDs/no-store behavior applies; notification library refusals
+  map to `400`/`403`/`404`/`409`. Unexpected failures remain redacted `500`.
+- **D3 (implemented choice). Shared outbox, mandatory dashboard.** HTTP uses the
+  same private notification store as service workers. Email-off is rechecked
+  before queued delivery; new dashboard notices are still created. Only safe
+  notification projections are returned, without recipient IDs/event keys or
+  provider/error metadata. Preference plus audit are one legacy-store
+  transaction and capacity refusal rolls back the write. No cross-store SQL/JSON
+  atomicity is claimed.
+- **Verification:** project Python 3.15.2, Django 6.1.3/DRF 3.18.3/psycopg 3.3.9:
+  all **57 web tests pass** (23 existing feature + 17 boundary + 17 notification),
+  5.228 s; Django system and migration-drift checks pass, with no migration.
+  New cases cover real sessions/CSRF/deactivation, recipient and numeric-ID
+  collision privacy, current links, historical notices, projections,
+  filters/paging/order/query refusal, idempotent setters, preference rollback,
+  shared-worker email-off and injected provider outage. Full backend unit mode:
+  **779 discovered, 731 passed / 48 skipped**, 11.576 s. Private disposable
+  PostgreSQL clusters are stopped after checks; state stays under `/tmp`.
+  No new engine/browser/four-version run, real email provider or independent
+  security review. Existing data/replays are preserved.
+- **Remaining:** notification UI and staff recipients; announcements and
+  automatic extension/override/approval/dispute notices; affected-user counts,
+  owner wording/retry/security-email policy; real provider, deployment,
+  outage/backup drill and PostgreSQL migration. All nine backlog categories and
+  execution/production gates remain. Coverage evidence updates for SRD-060/061/
+  064, BIO-REQ-16 and BIO-NFR-07; statuses stay 17 DONE / 61 PARTIAL / 13 TODO /
+  0 DEFERRED. No new product/provider/hosting approval is inferred.

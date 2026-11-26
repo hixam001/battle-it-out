@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import stat
 import time
 from datetime import timedelta
@@ -14,13 +15,15 @@ from django.middleware.csrf import get_token
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.parsers import JSONParser
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from backend.submission_registry import registry as R
 from backend.submission_bundle import bundle as BU
 from backend.work_queue import jobs as J
+from backend.notifications import notifications as N
 from . import domain as D
 from .models import AuditEvent, Dispute, DisputeEvent, LoginAttempt, Receipt
 
@@ -184,6 +187,47 @@ def body_fields(request, allowed, required):
     if not isinstance(request.data, dict) or set(request.data) - set(allowed) or set(required) - set(request.data):
         raise ValidationError('Missing or unsupported fields.')
     return request.data
+
+
+@api_view(['GET'])
+def notifications(request):
+    who = D.notification_recipient(request.user)
+    query = request.query_params
+    allowed = {'limit', 'offset', 'unread_only', 'tournament_id'}
+    if set(query) - allowed or any(len(query.getlist(key)) != 1 for key in query):
+        raise ValidationError('Unsupported or repeated query parameters.')
+
+    def integer(key, default, minimum, maximum):
+        value = query.get(key, str(default))
+        if not re.fullmatch(r'[0-9]{1,10}', value) or not minimum <= int(value) <= maximum:
+            raise ValidationError(f'{key} must be a whole number from {minimum} to {maximum}.')
+        return int(value)
+
+    unread = query.get('unread_only', 'false')
+    if unread not in ('true', 'false'):
+        raise ValidationError('unread_only must be true or false.')
+    return private(N.list_notifications(
+        D.runtime().notifications, who, unread_only=unread == 'true',
+        tournament_id=query.get('tournament_id'),
+        limit=integer('limit', 50, 1, N.MAX_PAGE), offset=integer('offset', 0, 0, 2_147_483_647)))
+
+
+@api_view(['PATCH'])
+@parser_classes([JSONParser])
+def notification_detail(request, nid):
+    who = D.notification_recipient(request.user)
+    body = body_fields(request, {'read'}, {'read'})
+    return private(N.mark_read(D.runtime().notifications, who, nid, read=body['read']))
+
+
+@api_view(['GET', 'PATCH'])
+@parser_classes([JSONParser])
+def notification_preferences(request):
+    who = D.notification_recipient(request.user)
+    center = D.runtime().notifications
+    if request.method == 'GET':
+        return private(N.get_preferences(center, who))
+    return private(N.update_preferences(center, who, request.data))
 
 
 def text(body, key, limit):

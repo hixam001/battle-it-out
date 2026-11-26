@@ -7,7 +7,7 @@ INNOFEST **Battle It Out** is a Battlecode-style programming competition. Partic
 **Execution libraries and an initial web feature platform are implemented.**
 
 - Existing Battlecode engine and sandboxed Python workers, queue, tournament flow, registry, roster, notifications and replay vault.
-- [Django/DRF feature API with PostgreSQL](backend/webapp/README.md): sessions, current roster/Organizer scope, submissions, analytics, disputes and an Admin operations reader.
+- [Django/DRF feature API with PostgreSQL](backend/webapp/README.md): sessions, current roster/Organizer scope, submissions, analytics, disputes, recipient notifications/preferences and an Admin operations reader. Notification state still uses the shared legacy store.
 - [React/TypeScript website](frontend/README.md): public landing page and private feature console, with desktop/mobile browser checks.
 - [Native Python bundles](backend/submission_bundle/README.md) and [private live boards](backend/live_view/README.md), verified with real engine games.
 - Durable continuation notes in [project memory](docs/PROJECT_MEMORY.md) and [handoff](handoff.md).

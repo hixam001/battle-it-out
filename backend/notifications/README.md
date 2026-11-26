@@ -49,6 +49,19 @@ Wiring: `check_submission_handler(..., on_decided=)`, `run_round_handler(..., on
 python3 -m unittest backend.notifications.tests.test_notifications backend.notifications.tests.test_sources -v
 ```
 
-## Not done
+## HTTP adapter and remaining work
 
-The HTTP API; a real email provider and its templates in HTML or other languages; the announcement event (an Organizer writes it; needs the API) and calling `notify_notice` after `extend_deadline`/`emergency_override` (the caller still has to); production deployment of the [configured service processes](../services/README.md) (CN-027 supplies the worker with hooks on, roster-aware maintenance, email delivery and retryable alerts through optional adapters); mandatory security or account emails (open decision); account deletion (SRD-065..067); the database (DEC-11); independent review.
+The [web API](../webapp/README.md#recipient-notifications-bio-607--cn-030)
+now exposes recipient feed, read/unread state and GET/PATCH email preferences
+(BIO-607, CN-030). It requires the explicit participant account/roster link,
+uses this same store and never substitutes a Django account ID for a roster ID.
+Staff privileges do not grant inbox access. Read/preference setters are
+idempotent, and dashboard notifications remain mandatory over HTTP.
+
+Still open: notification screens and staff recipient provisioning; a real email
+provider and HTML/other-language templates; Organizer announcement API and
+automatic `notify_notice` after extension/override; production deployment of the
+[configured services](../services/README.md); mandatory security/account email
+policy; account deletion; PostgreSQL migration of this JSON store; independent
+review. Providers/hosting remain owner decisions; local injected-failure tests
+do not close TC-08's real provider-outage drill.

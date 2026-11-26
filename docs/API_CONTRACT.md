@@ -1,6 +1,6 @@
 # Battle It Out --- API Contract
 
-**Version:** 1.2 (BIO-404 HTTP boundary; CN-029)\
+**Version:** 1.3 (BIO-607 recipient notification API; CN-030)\
 **Status:** Proposed core contract with the implemented feature subset identified below\
 **API style:** REST/JSON, versioned under `/api/v1`\
 **Notation:** Jira issue IDs link endpoint groups to delivery work.
@@ -634,24 +634,71 @@ be Admin-only.
 
 ## 7. Notifications and audit --- BIO-EPIC-04/06
 
+**Implemented recipient subset (BIO-607 / CN-030):** the notification routes
+below use canonical trailing slashes and the existing shared notification store.
+The session account must have the explicit operator-provisioned participant
+roster link described in CN-028. No recipient ID comes from the request or from
+the Django account's numeric ID. Staff privileges do not grant inbox access.
+Unlinked and staff accounts return `403`; their recipient provisioning and
+approval/rejection notices remain follow-up work. Anonymous requests return
+`401`. Link changes take effect on the next request. Personal notices remain
+recipient-owned after tournament scope ends; filtering a nonexistent tournament
+returns an empty feed without disclosing its existence.
+
 ### GET `/notifications`
 
 **Purpose:** List current user's notifications.\
-**Access:** Authenticated.\
-**Success:** dashboard notification feed.
+**Access:** linked authenticated recipient, as above.\
+**Query:** optional `limit` (1–200, default 50), `offset` (0–2147483647,
+default 0), `unread_only` (`true` or `false`, default `false`) and
+`tournament_id` (safe opaque identifier). Unknown/repeated parameters and invalid
+values return `400`.\
+**Success:** `200 {"items":[],"total":0,"unread":0}`. Items contain only `id`,
+`tournament_id`, `event_type`, `title`, `body`, `created_at`, `read`, `read_at`
+and `email_status`. Delivery errors, provider metadata, event keys and recipient
+IDs are excluded. Sort is newest first, then ID for equal timestamps. `total`
+counts the filtered feed before paging; `unread` counts unread items in the
+tournament filter before the `unread_only` filter and paging.
+
+This is the existing library's bounded offset pagination as an interim adapter,
+not a global pagination decision. Pages are independent reads; concurrent new
+notices can shift offsets. Global cursor/snapshot behavior remains BIO-404 work.
 
 ### PATCH `/notifications/{id}`
 
-**Purpose:** Mark notification read.\
-**Access:** recipient only.\
-**Request:** `{"read":true}`.
+**Purpose:** Set read/unread state.\
+**Access:** linked recipient only, including for same-team notices.\
+**Request:** exactly `{"read":true}` or `{"read":false}`, with a JSON boolean.\
+**Success:** `200`, the updated notification in the same item format. Repeating
+the same state preserves `read_at`; setting unread clears it. Missing/foreign
+IDs receive identical generic `404` errors. Mutations require session CSRF and
+JSON (`415` for unsupported media, `400` for malformed/invalid bodies).
+
+### GET `/me/notification-preferences`
+
+**Purpose:** Read current recipient's email preference.\
+**Access:** linked authenticated recipient.\
+**Success:** `200 {"email_enabled":true,"dashboard_enabled":true}` by default.
 
 ### PATCH `/me/notification-preferences`
 
 **Purpose:** Configure email preference.\
-**Access:** Authenticated.\
-**Request:** `{"email_enabled":false}`. Dashboard notifications remain
-mandatory and cannot be disabled.
+**Access:** linked authenticated recipient; session CSRF required.\
+**Request:** exactly `{"email_enabled":false}` or `{"email_enabled":true}`
+as JSON. Extra fields, non-boolean values and dashboard-disable attempts return
+`400`; unsupported media returns `415`.\
+**Success:** `200`, the preference object above. Dashboard notifications remain
+mandatory. The service worker reads the same preference and rechecks queued
+emails before delivery; disabling email does not remove dashboard notices.
+Changes and their preference audit share the notification-store transaction.
+Store/audit capacity conflicts return `409` and roll back the preference.
+
+Both PATCH routes set an absolute state and are naturally idempotent; this
+slice needs no idempotency-key receipt. Every response uses CN-029's fresh
+request ID and `private, no-store`; errors use the shared envelope. No SQL/JSON
+cross-store transaction or full notification database migration is claimed.
+Announcements, automatic extension/override notices, real email providers,
+mandatory security-email policy and notification screens remain open.
 
 ### GET `/tournaments/{id}/audit-logs`
 

@@ -199,6 +199,36 @@ preference. - Email delivery follows preference and retries failures. -
 Backup/restore procedure recovers critical state without corrupting
 match references.
 
+#### Implemented notification HTTP subset (BIO-607 / CN-030)
+
+`backend.webapp.tests_notifications` runs 17 cases with real PostgreSQL accounts
+and temporary legacy notification/registration state:
+
+- Recipient-only feeds and read/unread mutation: another team and a same-team
+  member's notice have the same `404` as a missing ID. Staff privileges do not
+  grant inbox access. Explicit participant links prevent numeric Django/roster
+  ID collisions; removing the link takes effect on the next read/write.
+- Bounded offset pages, equal-time ordering, tournament/unread filters and
+  counts, empty unknown-tournament results, rejection of malformed/duplicate/
+  unknown query parameters, and omission of provider/recipient/internal fields.
+- Absolute-state read/unread and email-preference retries preserve timestamps
+  and avoid duplicate audit; a failed preference audit rolls back the write.
+  Dashboard-disable attempts, non-booleans, identity injection, invalid JSON
+  and unsupported media are refused without changing state.
+- Real login/session CSRF on both PATCH routes, successful token-bearing
+  mutations, anonymous/deactivated denial, method errors and no-store/request-ID
+  envelopes. Historical personal notices remain readable without tournament
+  scope.
+- HTTP-disabled email is seen by a fresh service runtime, which skips queued
+  deliveries; new roster-derived team notices still appear once in the feed.
+  Injected provider failure leaves dashboard notices intact.
+
+This does not close full TC-08: no real provider, notification UI, production
+outage or backup/restore drill is exercised. Staff recipients, announcement and
+automatic deadline/override endpoints, and notification-store migration remain
+open. Web tests require explicit module labels in the webapp README; the backend
+execution runner does not discover these modules.
+
 ## 4. Additional test categories
 
 ### Unit tests

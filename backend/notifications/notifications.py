@@ -22,7 +22,8 @@ deliver them. This module is where they go:
         Removes the notifications of a deleted tournament.
 
 Privacy: the store holds user ids, not email addresses (the address is looked up at send time), and error
-text from a provider is stripped of anything that looks like an address. Not here: the HTTP API, sending a
+text from a provider is stripped of anything that looks like an address. The webapp supplies the HTTP adapter
+(CN-030). Not here: sending a
 real email, templates in other languages, mandatory security emails (open decision), account deletion (SRD-065
 ..067), the database (DEC-11): the state is a JSON file with the lock rules of the other stores. Times are
 epoch seconds. Standard library.

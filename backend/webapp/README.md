@@ -82,6 +82,9 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET/HEAD | `/health/` | Public process liveness only; no database, account, legacy-store or engine access |
 | GET | `/auth/session/` | Current user or null and masked CSRF token; private/no-store |
 | POST | `/auth/login/`, `/auth/logout/` | CSRF-protected session lifecycle |
+| GET | `/notifications/` | Linked recipient's bounded feed, unread/tournament filters and counts |
+| PATCH | `/notifications/{id}/` | Recipient-only read/unread setter; same-team notices remain private |
+| GET/PATCH | `/me/notification-preferences/` | Shared worker email preference; dashboard always enabled |
 | GET | `/tournaments/` | Only current accessible tournaments and own teams |
 | GET | `/dependencies/` | Public curated dependency names, versions and hashes |
 | GET | `/tournaments/{id}/live/` | Authoritative match metadata and allowlisted numeric latest boards; authorization on every poll; archived returns 410 |
@@ -99,6 +102,34 @@ Missing runtime samples remain absent rather than invented zeroes. Attempt p95
 uses the nearest rank; median uses the ordinary sample median. Version IDs are
 match metadata; source bytes, host paths, provider errors and claim tokens are
 not part of analytics, live boards or the operations reader.
+
+## Recipient notifications (BIO-607 / CN-030)
+
+These routes require the explicit operator-created participant roster link.
+Legacy inbox recipients are roster IDs; Django numeric account IDs are never
+used as a fallback. Unlinked accounts and staff return `403`; staff recipient
+provisioning remains open. A staff role never grants another person's inbox.
+The link is read again each request. Personal historical notices do not require
+current tournament access.
+
+The feed accepts only `limit` (1–200, default 50), `offset` (0–2147483647,
+default 0), `unread_only` (`true`/`false`) and `tournament_id`. It returns
+`items`, `total` and `unread`, newest first with ID as the timestamp tie-break.
+Counts precede paging; `unread` precedes the unread-only filter. Invalid,
+unknown or repeated query parameters return `400`. This interim offset adapter
+follows the library; concurrent inserts may shift pages and global pagination
+is still undecided.
+
+PATCH takes exactly `{"read":true|false}` or `{"email_enabled":true|false}`
+on the respective route, with actual JSON booleans and session CSRF. Read-state
+retries preserve the timestamp; preference retries add no duplicate audit.
+Missing/foreign notification IDs receive the same `404`. Preferences and reads
+use the same private `notifications.json` as service workers. Turning email off
+keeps dashboard notices and skips queued email when delivery runs. GET
+preferences returns `email_enabled` and always-true `dashboard_enabled`.
+Delivery errors/provider fields are never returned. Announcements, real
+providers, automatic deadline/override notices and notification UI are separate
+follow-ups; the PostgreSQL migration of notification state remains open.
 
 ## Dispute workflow
 
@@ -159,7 +190,7 @@ idempotency/concurrency and remaining core routes are still BIO-404 work.
 
 ```bash
 backend/.venvs/web/bin/python backend/webapp/manage.py check
-backend/.venvs/web/bin/python backend/webapp/manage.py test backend.webapp.tests backend.webapp.tests_http
+backend/.venvs/web/bin/python backend/webapp/manage.py test backend.webapp.tests backend.webapp.tests_http backend.webapp.tests_notifications
 backend/.venvs/py3.15/bin/python backend/run_tests.py
 backend/.venvs/py3.15/bin/python backend/run_tests.py --integration
 ```
@@ -174,6 +205,11 @@ the package context because `backend` is a namespace directory. The
 database; the feature suite checks real session/CSRF, receipt and privacy behavior
 against PostgreSQL. `backend/run_tests.py` covers the separate execution-library
 suites and does not discover these web modules.
+
+`tests_notifications` adds real-account/session/CSRF, recipient and numeric-ID
+collision privacy, filters/paging, idempotent read/preference, rollback and
+shared-worker outbox tests. Injected provider failures are local test doubles,
+not evidence of a real provider-outage drill.
 
 Pinned web versions are Django 6.1.3, DRF 3.18.3 and psycopg 3.3.9; the separate
 web environment preserves the bot environment pins. Django documents Python 3.15

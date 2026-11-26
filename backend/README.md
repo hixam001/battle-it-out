@@ -15,7 +15,7 @@ Home of the Battle It Out execution foundation and, later, the web backend.
 - `submission_check/` — upload check: static check, then a trial match on both sides; decides whether a `bot.py` may become active
 - `submission_registry/` — versions, validation history, active version, deadline lock and access rules for submissions (library; `docs/CHANGE_NOTICES.md` CN-016)
 - `services/` — interim configured worker, roster-aware maintenance, email and alert processes; systemd template and real-process lifecycle test ([README](services/README.md), CN-027). No production deployment/provider/image is supplied.
-- `webapp/` — Django/DRF/PostgreSQL feature API, current session/roster/assignment scope, analytics, submissions, disputes and Admin operations ([README](webapp/README.md), CN-028).
+- `webapp/` — Django/DRF/PostgreSQL feature API, current session/roster/assignment scope, analytics, submissions, disputes, recipient notification/preferences adapter and Admin operations ([README](webapp/README.md), CN-028/030). Notification state remains in the shared JSON store.
 - `submission_bundle/` — bounded flat Python ZIPs, native module checks, curated source snapshots and complete integrity binding ([README](submission_bundle/README.md), CN-028).
 - `live_view/` — transport-only numeric board adapter for the existing engine; no raw streaming listener ([README](live_view/README.md), CN-028).
 - `work_queue/` — durable job queue and a worker process outside the web process: runs the upload check and tournament rounds, with leases, retry and dead-job incidents (`docs/CHANGE_NOTICES.md` CN-017)
