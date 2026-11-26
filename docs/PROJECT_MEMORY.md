@@ -54,6 +54,9 @@ remaining backlog after every task.
 - CN-032–035 add native replay downloads, the interim operations runbook,
   bracket/game history reads and confirmed archive with retryable vault purge.
   Browser replay playback, full results screens and production recovery remain open.
+- CN-046 completes the BIO-605 match-log API alongside native replay
+  downloads. The HTTP view verifies the recorded attempt's structured log
+  and returns the CN-007 role projection with allowlisted diagnostic fields.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -337,14 +340,15 @@ with current code and the coverage matrix; nothing here is closed by intake.
    current explicit links and the shared service store. CN-031 implements the
    linked-participant inbox and deadline/notice dashboard. Announcement authoring,
    staff inboxes and a final pagination contract remain open.
-7. **Replays/logs/privacy:** role-scoped match-log HTTP delivery, object storage,
+7. **Replays/logs/privacy:** object storage,
    short-lived URLs, full browser replay player (DEC-10), deployed purge schedule,
    backups/restore, indicator-text exposure review, durable log retention and
    complete end-to-end privacy verification. Private live numeric boards now
    omit arbitrary text, check current scope per poll and are denied/purged after
    archive. Full viewer overlays/traps/animations and production reconnect/load
    evidence remain. CN-032 adds current-scope native replay downloads from the
-   private vault. Production retention of worker-side artifacts, raw native
+   private vault. CN-046 exposes verified role-scoped structured attempt logs.
+   Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
    team, tournament creation/approval/deadline/round management, full bracket/

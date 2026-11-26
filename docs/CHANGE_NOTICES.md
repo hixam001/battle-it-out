@@ -509,3 +509,17 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Remaining:** matched worker-output and backup policy, production purge
   supervision, staging restore after real archive and permanent-delete workflow.
   Coverage evidence advances without changing the requirement statuses.
+
+## CN-046 — Scoped structured match logs (2026-11-27)
+
+- **BIO-605:** authorized users can read an official game's structured attempt
+  log. Participants see shared events and their own side. Assigned Organizers
+  see both sides. Admins also see allowlisted platform diagnostic metadata.
+- **Integrity:** the endpoint opens the recorded file under the worker's
+  private attempt directory, refuses symbolic links, verifies size and SHA-256
+  and matches the game, attempt and trace. It returns no host location or
+  raw diagnostics. Archive leaves retained logs readable within current scope.
+- **Checks:** 86 Django cases passed with disposable PostgreSQL and system
+  and migration checks. All 54 targeted structured-log and service tests
+  passed with real engine coverage. Requirement statuses remain unchanged.
+  Browser playback and production retention remain separate.

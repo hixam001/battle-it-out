@@ -686,3 +686,22 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   production build and all five Playwright tests. Tests used disposable
   PostgreSQL, local services and temporary replay paths. No provider or
   production environment was used.
+
+### 2026-11-27 — BIO-605: private structured match logs
+
+- Cut BIO-605-scoped-match-log-api from fetched origin/main at d66b95d.
+  Read project memory, handoff, existing replay/attempt APIs and CN-007
+  visibility policy. Continued BIO-605 after its earlier replay download.
+- Added the scoped log route for official game attempts. It checks current
+  role and exact game-side membership, selects the latest recorded log
+  unless an attempt is requested and verifies normal worker storage, size,
+  SHA-256, event order and identity. Reuses the structured-log role filter
+  and projects known fields. Archive leaves retained log history readable.
+- All 86 Django cases passed with disposable PostgreSQL (8.653 s), including
+  seven new log access and integrity cases. System and migration checks passed.
+  All 54 targeted structured-log and service integration cases passed
+  with real engine coverage (38.965 s). Test replay paths were temporary.
+- Updated the API and web guides, coverage, Jira, test plan, CN-046,
+  changelog and project memory. All 91 statuses and nine backlog categories
+  remain. Browser playback, durable production log retention and object
+  storage decisions remain open.

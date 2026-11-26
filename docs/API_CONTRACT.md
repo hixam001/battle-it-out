@@ -670,13 +670,24 @@ The archive boundary blocks new downloads. A download admitted before the
 archive boundary may already be in progress. Object storage and browser
 playback remain follow-up work.
 
-### GET `/matches/{match_id}/logs`
+### GET `/matches/{match_id}/logs/`
 
-**Purpose:** Read safe match logs.\
-**Access:** scoped participant/staff; sensitive worker/secret data
-excluded.\
-**Success:** redacted execution summary. Detailed staff diagnostics may
-be Admin-only.
+**Implemented (BIO-605 / CN-046):** Returns the official game's redacted
+structured log. The default is the newest recorded attempt with a log.
+Pass `attempt` from 1 to 100 to select an earlier attempt. The response
+contains `match_id`, `tournament_id`, `attempt` and ordered `items`.
+
+Current members of the two playing teams see shared events and only their
+own side's output and usage. An explicitly assigned Organizer sees both
+teams. An Admin also sees allowlisted diagnostic fields. The API checks
+the worker's recorded size, SHA-256, game, attempt and trace identity before
+projecting the log. Host paths, raw worker diagnostics and the storage
+metadata are excluded.
+
+An unavailable log reference, missing game or unauthorized scope returns
+`404`. An indexed log that fails verification returns `503`. Logs retained
+under the existing worker policy remain available after archive to authorized
+readers. Replay purge follows the separate archive rules above.
 
 ## 7. Notifications and audit --- BIO-EPIC-04/06
 

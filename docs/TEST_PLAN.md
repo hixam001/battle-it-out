@@ -214,6 +214,11 @@ file verification, confirms vault file deletion on disk and preserves bracket
 and match history. The real-engine `test_replays` suite separately exercises
 collection and purge for native engine output in a temporary vault.
 
+The match-log HTTP checks (CN-046) verify both team sides, explicit Organizer
+revocation, Admin metadata, attempt selection and archived scope. The endpoint
+refuses changed bytes, symlinks and a log linked to the wrong game. The
+structured-log suite exercises the same writer with real engine games.
+
 #### Implemented archive HTTP subset (BIO-606 / CN-035)
 
 The archive tests exercise exact JSON confirmation, session CSRF, Admin and
