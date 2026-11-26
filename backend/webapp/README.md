@@ -89,7 +89,10 @@ Canonical paths use a trailing slash, except the CSV export.
 | POST | `/tournaments/{id}/archive/` | Admin/assigned Organizer, exact JSON `{"confirm":true}` and CSRF; completed/archived only, purge status in response |
 | GET | `/dependencies/` | Public curated dependency names, versions and hashes |
 | GET | `/tournaments/{id}/live/` | Authoritative match metadata and allowlisted numeric latest boards; authorization on every poll; archived returns 410 |
+| GET | `/matches/{match_id}/replay/` | Current-scope `.bc26` attachment from the private replay vault; hidden/missing 404, archived 410, unavailable 503 |
 | GET | `/tournaments/{id}/analytics/` | Team win rates/byes, series decisions, failures, maps, version results, round progress and median/p95 attempt time |
+| GET | `/tournaments/{id}/bracket/` | Current-scope recorded bracket, with `null` before draw, game IDs and progression |
+| GET | `/matches/{match_id}/` | Current-scope game and enclosing series result, including pinned version IDs and stored coin flip |
 | GET | `/tournaments/{id}/analytics.csv` | Authorized team CSV with formula escaping |
 | GET/POST | `/tournaments/{id}/teams/{team}/submissions/` | Authorized history; captain-only upload using the stored official deadline; queues validation |
 | GET | `/tournaments/{id}/submissions/{version}/download/` | Authorized source/bundle; staff reads audited; private/no-store |
@@ -191,7 +194,9 @@ idempotency/concurrency and remaining core routes are still BIO-404 work.
 
 ```bash
 backend/.venvs/web/bin/python backend/webapp/manage.py check
-backend/.venvs/web/bin/python backend/webapp/manage.py test backend.webapp.tests backend.webapp.tests_http backend.webapp.tests_notifications backend.webapp.tests_archive
+backend/.venvs/web/bin/python backend/webapp/manage.py test \
+  backend.webapp.tests backend.webapp.tests_http backend.webapp.tests_notifications \
+  backend.webapp.tests_replays backend.webapp.tests_results backend.webapp.tests_archive
 backend/.venvs/py3.15/bin/python backend/run_tests.py
 backend/.venvs/py3.15/bin/python backend/run_tests.py --integration
 ```
@@ -211,6 +216,16 @@ suites and does not discover these web modules.
 collision privacy, filters/paging, idempotent read/preference, rollback and
 shared-worker outbox tests. Injected provider failures are local test doubles,
 not evidence of a real provider-outage drill.
+
+`tests_replays` checks streamed bytes, current session scope, archive refusal,
+damage incidents and on-disk vault purge without removing results. Use game
+`match_id` from the scoped live match list for downloads. `.bc26` is a native
+engine attachment. Hosting, browser playback and the match-log route are
+separate work.
+
+`tests_results` checks recorded bracket/game data, archived history, current
+scope and safe tournament/match refusals. No persisted state is changed on a
+read. The bracket exposes individual game IDs as well as series IDs.
 
 `tests_archive` verifies confirmation and session scope, on-disk vault purge,
 retained history, recovery from failed purge and a refusal before vault changes

@@ -5,6 +5,9 @@ This is the stack-neutral slice of BIO-409. Production persistence, deployment,
 the pinned worker image and real provider/channel selection still need DEC-11.
 No daemon is installed or enabled by this change.
 
+The [operations runbook](../../docs/OPERATIONS_RUNBOOK.md) covers triage,
+deadline requests, purge recovery and isolated restore rehearsals.
+
 | Role | Work |
 |---|---|
 | `worker` | Existing queue worker, sandbox enabled, verified bot runtime, notification hooks always on. Trial and tournament games share `host.lock`. |

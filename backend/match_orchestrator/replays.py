@@ -12,12 +12,13 @@ worker's output folder. Everything else here is ours.
   * `collect_bracket`  register the replay of every finished game of a bracket, once each (safe to repeat).
   * `fetch_replay`     the access rule of the API: safe "not found" without access, "gone" after archive,
                        "unavailable" if the file is missing or damaged (and a staff incident is raised).
+  * `open_replay`      return the verified binary stream for private HTTP delivery.
   * `archive_tournament` / `purge_tournament`  mark archived first, then delete the files, verify, record the
                        result. A crash in between is finished by `purge_pending`. A purge never touches the
                        match, series or bracket records.
 
-Not here: the web endpoint, how a user's role and tournament assignment are known (the caller passes a
-`Viewer`), email or dashboard notices, backups of the vault, object storage (DEC-11), a browser player (DEC-10).
+The caller derives the `Viewer` from authenticated scope. Backups, object storage (DEC-11), a browser player
+(DEC-10) and notification delivery live outside this module.
 Standard library only.
 """
 from __future__ import annotations
@@ -37,7 +38,7 @@ import uuid
 import zlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import BinaryIO, Callable
 
 from . import orchestrator as O
 from .store import JsonFileStore
@@ -164,31 +165,45 @@ def _incident(state: dict, kind: str, tournament_id: str, match_id: str | None, 
     return inc["id"]
 
 
-def _sha256_and_check(path: Path, limit: int) -> tuple[str, int]:
-    """Hash the file and prove it is a complete gzip stream, reading in chunks. Opens without following a
-    link and without blocking on a pipe; only a regular file is accepted. Raises Refused."""
+def _open_regular(path: Path | str, *, dir_fd: int | None = None) -> BinaryIO:
     try:
-        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=dir_fd)
     except OSError as e:
         raise Refused(f"cannot read the replay file ({type(e).__name__})") from e
     try:
-        st = os.fstat(fd)
-        if not stat.S_ISREG(st.st_mode):
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
             raise Refused("the replay path is not a regular file")
+        return os.fdopen(fd, "rb")
     except BaseException:
         os.close(fd)
         raise
-    with os.fdopen(fd, "rb") as f:
-        if st.st_size == 0:
-            raise Refused("the replay file is empty")
-        if st.st_size > limit:
+
+
+def _hash_replay(f: BinaryIO, limit: int) -> tuple[str, int]:
+    size = os.fstat(f.fileno()).st_size
+    if size == 0:
+        raise Refused("the replay file is empty")
+    if size > limit:
+        raise Refused(f"the replay file is larger than the safety ceiling ({limit} bytes)")
+    digest = hashlib.sha256()
+    read = 0
+    for chunk in iter(lambda: f.read(1 << 20), b""):
+        read += len(chunk)
+        if read > limit:
             raise Refused(f"the replay file is larger than the safety ceiling ({limit} bytes)")
+        digest.update(chunk)
+    if size != read:
+        raise Refused("the replay file changed size during verification")
+    f.seek(0)
+    return digest.hexdigest(), size
+
+
+def _sha256_and_check(path: Path, limit: int) -> tuple[str, int]:
+    """Hash and verify the complete gzip stream before registration."""
+    with _open_regular(path) as f:
+        digest, size = _hash_replay(f, limit)
         if f.read(2) != GZIP_MAGIC:
             raise Refused("the replay file is not in the engine's gzip format")
-        f.seek(0)
-        h = hashlib.sha256()
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
         f.seek(0)
         try:
             with gzip.GzipFile(fileobj=f, mode="rb") as g:   # reads to the end: a cut-off file raises EOFError
@@ -196,7 +211,7 @@ def _sha256_and_check(path: Path, limit: int) -> tuple[str, int]:
                     pass
         except (EOFError, OSError, gzip.BadGzipFile, zlib.error) as e:
             raise Refused(f"the replay is cut off or damaged ({type(e).__name__})") from e
-    return h.hexdigest(), st.st_size
+    return digest, size
 
 
 def register_replay(vault: Vault, tournament_id: str, match_id: str, source: Path | str, expected_sha256: str | None, *,
@@ -321,39 +336,89 @@ def collect_bracket(vault: Vault, store: JsonFileStore, tournament_id: str, brac
     return {"stored": stored, "already_known": skipped}
 
 
-def fetch_replay(vault: Vault, match_id: str, viewer: Viewer | None, *, now: Callable[[], float] = time.time) -> ReplayHandle:
-    """The rule behind GET /matches/{id}/replay.
-
-    1. Unknown game, or a viewer without access to that tournament: `NotFound` (same answer for both).
-    2. Archived tournament: `Gone` (410) for everyone who may see the tournament, Admin included.
-    3. Missing or damaged file: `Unavailable` and a staff incident; the stored hash is checked every time.
-    """
+def _visible_replay(state: dict, match_id: str, viewer: Viewer | None) -> dict:
     if not isinstance(match_id, str) or not ID_RE.fullmatch(match_id):
         raise NotFound("no such replay")
-    with vault.index.transaction() as state:
-        rep = copy.deepcopy(state["replays"].get(match_id))
-        trn = state["tournaments"].get(rep["tournament_id"]) if rep else None
+    rep = state["replays"].get(match_id)
     if rep is None or not may_view(viewer, rep["tournament_id"]):
         raise NotFound("no such replay")
+    return rep
+
+
+def replay_tournament(vault: Vault, match_id: str, viewer: Viewer | None) -> str:
+    """Resolve a visible replay's owner without opening the file or exposing its status."""
+    with vault.index.transaction() as state:
+        return _visible_replay(state, match_id, viewer)["tournament_id"]
+
+
+def _available_replay(state: dict, match_id: str, viewer: Viewer | None, tournament_id: str | None) -> dict:
+    rep = _visible_replay(state, match_id, viewer)
+    tid = rep["tournament_id"]
+    if tournament_id is not None and tournament_id != tid:
+        raise NotFound("no such replay")
+    trn = state["tournaments"].get(tid)
     if rep["status"] == PURGED or (trn and trn["status"] == ARCHIVED):
         raise Gone("the tournament is archived and its replays were deleted")
     if rep["status"] != AVAILABLE:
         raise Unavailable("the replay is not available")
-    path = vault._path(rep["tournament_id"], match_id)
+    return rep
+
+
+def _open_vault_file(vault: Vault, tid: str, match_id: str) -> BinaryIO:
+    name = vault._path(tid, match_id).name
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    root_fd = os.open(vault.root, flags)
     try:
-        digest, size = _sha256_and_check(path, SAFETY_MAX_BYTES)
-        if digest != rep["sha256"]:
-            raise Refused("stored hash differs")
-    except (Refused, FileNotFoundError, OSError) as e:
+        folder_fd = os.open(tid, flags, dir_fd=root_fd)
+        try:
+            return _open_regular(name, dir_fd=folder_fd)
+        finally:
+            os.close(folder_fd)
+    finally:
+        os.close(root_fd)
+
+
+def open_replay(vault: Vault, match_id: str, viewer: Viewer | None, *, tournament_id: str | None = None,
+                now: Callable[[], float] = time.time) -> tuple[ReplayHandle, BinaryIO]:
+    """Open and verify a visible replay. The caller owns the stream on success.
+
+    A matching digest binds the stream to the gzip validated at registration.
+    Check archive state again before handing the opened descriptor to the caller.
+    """
+    with vault.index.transaction() as state:
+        rep = _available_replay(state, match_id, viewer, tournament_id)
+    tid = rep["tournament_id"]
+    stream = None
+    try:
+        stream = _open_vault_file(vault, tid, match_id)
+        digest, size = _hash_replay(stream, SAFETY_MAX_BYTES)
+        if digest != rep["sha256"] or size != rep["bytes"]:
+            raise Refused("recorded replay digest or size differs")
         with vault.index.transaction() as state:
-            cur = state["replays"].get(match_id)
-            if cur and cur["status"] == AVAILABLE:
+            current = _available_replay(state, match_id, viewer, tid)
+            if current["sha256"] != digest:
+                raise Unavailable("the replay changed while it was being opened")
+        handle = ReplayHandle(match_id, vault._path(tid, match_id), digest, size, rep["format"])
+        opened, stream = stream, None
+        return handle, opened
+    except (Refused, OSError) as e:
+        with vault.index.transaction() as state:
+            cur = _available_replay(state, match_id, viewer, tid)
+            if cur["sha256"] == rep["sha256"]:
                 cur["status"] = UNAVAILABLE
                 cur["deletion_reason"] = f"file problem: {type(e).__name__}"
-                _incident(state, "replay_file_damaged", rep["tournament_id"], match_id,
-                          f"{type(e).__name__}: {e}", now())
+                _incident(state, "replay_file_damaged", tid, match_id, f"{type(e).__name__}: {e}", now())
         raise Unavailable("the replay is not available") from e
-    return ReplayHandle(match_id, path, digest, size, rep["format"])
+    finally:
+        if stream is not None:
+            stream.close()
+
+
+def fetch_replay(vault: Vault, match_id: str, viewer: Viewer | None, *, now: Callable[[], float] = time.time) -> ReplayHandle:
+    """Return the verified replay metadata for existing local callers."""
+    handle, stream = open_replay(vault, match_id, viewer, now=now)
+    stream.close()
+    return handle
 
 
 def _purge_files(vault: Vault, tournament_id: str) -> tuple[int, int, str | None]:
@@ -487,7 +552,5 @@ def replay_status(vault: Vault, match_id: str, viewer: Viewer | None) -> dict:
     """What a results page needs without serving the file: `available`, `unavailable` or `purged`.
     Same safe not-found rule as `fetch_replay`."""
     with vault.index.transaction() as state:
-        rep = state["replays"].get(match_id) if isinstance(match_id, str) else None
-        if rep is None or not may_view(viewer, rep["tournament_id"]):
-            raise NotFound("no such replay")
+        rep = _visible_replay(state, match_id, viewer)
         return {"match_id": match_id, "status": rep["status"], "format": rep["format"], "bytes": rep["bytes"]}

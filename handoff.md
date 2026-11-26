@@ -6,11 +6,11 @@
 ## Current checkpoint (verified 2026-11-26)
 
 Read [docs/PROJECT_MEMORY.md](docs/PROJECT_MEMORY.md) alongside the latest task-log
-entries. It reconciles Claude's memory and session history with code and GitHub:
-PR #37 (CN-029 HTTP errors/liveness) is merged to `main`; fetched base = `f551850`.
-BIO-607 continues from there on `BIO-607-notification-api` (CN-030): recipient
-notification feed/read/preferences using the shared service store, with no stacked
-dependency. The owner
+entries. The 2026-11-26 batch covers BIO-703 dashboard/inbox (#39), BIO-605 replay
+downloads (#40), BIO-805 operator runbook (#41), BIO-603 bracket and game reads
+(#42), and BIO-606 confirmed archive (#43). The owner approved merging the five
+PRs to `main`. The conflict resolutions retain each task, coverage and backlog.
+The owner
 activated the five deferred groups and selected Django/DRF/PostgreSQL + React/TS,
 private live viewing and Python bundles/curated dependencies before later
 languages. CN-028's latest log records the local feature API/site, real engine
@@ -554,6 +554,98 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   byte-for-byte unchanged, with category 6 reconciled to this implementation.
   No generated/runtime/frontend/agent artifacts are included.
 
+### 2026-11-26 — BIO-703: participant dashboard and inbox
+
+- Started `BIO-703-notification-inbox` from fetched `origin/main` at `22ec3dc`
+  after PR #38 merged. Used the Sites local repository workflow and the shared
+  repository memory closeout.
+- Added dashboard and inbox routing in `frontend/src/main.tsx`, the shared
+  session client in `api.ts`, the inbox and scoped notice preview in
+  `notifications.tsx`, and responsive styling. Dashboard deadline times follow
+  the browser timezone. The inbox includes historical notices, unread filtering,
+  20-item pages and confirmed read/unread and email changes. Unauthorized
+  accounts receive a refusal screen. Staff recipient provisioning and final
+  pagination remain separate work.
+- Updated browser tests and added the local fixture seeder. TypeScript and Vite
+  production build passed. All five Playwright tests passed in 10.0 s against
+  disposable Django/PostgreSQL and local JSON state. The preference test uses
+  a click and waits for the saved state because the checkbox reflects server
+  confirmation. Services were stopped after verification. No engine, provider
+  or production deployment was exercised.
+- Updated the design and frontend guides, API/flow/test/Jira/coverage evidence,
+  changelog, CN-031 and project memory. All 91 statuses remain 17 DONE /
+  61 PARTIAL / 13 TODO / 0 DEFERRED. All nine categories remain in the complete
+  project backlog. Next independent candidate is BIO-605 private replay delivery
+  with the current vault. The configured author and explicit PR base `main`
+  workflow apply.
+
+### 2026-11-26 — BIO-605: private replay download
+
+- Cut `BIO-605-private-replay-download` from fetched `origin/main` at
+  `22ec3dc`. BIO-703 PR #39 was open against main when this task started.
+- Added the replay route and game ID discovery in the web app. The vault opens
+  a regular file without following links in its storage tree, verifies its
+  registered digest and size, and rechecks archive state before handing off the
+  stream. Current participant/Organizer/Admin scope applies on every request.
+  Missing, hidden and deleted records return the same `404`. A visible
+  archived record returns `410`; a damaged or missing indexed file returns
+  `503` and records one incident.
+- Django system and migration-drift checks passed. All 66 web tests passed
+  (nine new, 6.314 s), including archive during verification, session scope
+  changes and on-disk purge with history intact. The initial streaming test
+  duplicated Django's response-close hook; consuming the Django test iterator
+  closes the stream once. Backend unit mode ran 779 tests with 731 passed and 48
+  skipped. All 39 targeted replay tests passed (18.735 s) in real-game mode.
+  Test state/replays stayed temporary.
+- Updated replay API and test docs, web README, Jira, coverage, changelog,
+  CN-032 and project memory. All nine backlog categories and all 91 requirement
+  statuses remain. Role-scoped log HTTP, offline playback, indicator-text
+  review, backup/purge of all production copies and object storage are open.
+  An already-admitted stream may finish after archive. Next independent
+  candidate is BIO-805 operator runbooks for the interim services.
+
+### 2026-11-26 — BIO-805: interim operator runbook
+
+- Cut `BIO-805-interim-operator-runbooks` from fetched `origin/main` at
+  `22ec3dc` while PRs #39 and #40 were open against main. Read the merged
+  project memory/handoff and checked the current service, web and policy
+  interfaces. The runbook focuses on the existing single-host setup.
+- Added `docs/OPERATIONS_RUNBOOK.md` for incident status, paused matches,
+  dead jobs, email failures, deadline requests, purge, backup/restore and
+  key rotation. Updated `USER_GUIDE.md` and `ADMIN_GUIDE.md` for current
+  provisioned accounts, console features and unfinished Admin actions.
+- Rehearsed PostgreSQL and filesystem capture/checksum/restore using private
+  disposable fixtures. Verified scoped login, a submission digest, match and
+  dispute references, email preference, readable active replay and absent
+  archived artifact. A local signing-key replacement refused an old session
+  and allowed fresh CSRF login. The rehearsal check uses the registry's
+  `content_hash` field. All 18 real-game service integration tests, 34 queue
+  tests and 53 tournament tests passed. Temporary clusters stopped after
+  verification. No external provider or production state was used.
+- Updated test/Jira evidence, service/root documentation, CN-033 and shared
+  memory. The 91 statuses and nine backlog categories remain. Production
+  restore, approved adapters, runbook sign-off, and operational mutation
+  authority remain. Next independent candidate is BIO-603 bracket HTTP reads.
+
+### 2026-11-26 — BIO-603: scoped bracket and game results
+
+- Cut `BIO-603-bracket-result-api` from fetched `origin/main` at `22ec3dc`,
+  while BIO-703, BIO-605 and BIO-805 PRs were open against main. Read the
+  merged memory/handoff, API contract, requirements and bracket/series rules.
+- Added `backend/webapp/results.py`, routes and seven scoped web cases.
+  Exposes existing draw/bracket/byes, per-game IDs and states, result and
+  pinned bot version IDs, tie-break order and the stored coin flip.
+  Before a draw the bracket is null. Results survive archive. Signed-in
+  scope changes apply on the next request. Worker internals stay private.
+- All 64 Django tests passed in 5.786 s with disposable PostgreSQL. System
+  and migration-drift checks passed. Bracket/series unit mode found 55 cases,
+  51 passed and four integration cases skipped. No new engine run for this
+  read-only change.
+- Updated API/test docs, web README, Jira, coverage, CN-034 and memory.
+  SRD-028 moved to PARTIAL, for 17 DONE / 62 PARTIAL / 12 TODO / 0 DEFERRED
+  across 91 rows. All nine backlog categories remain. Round starts and
+  generation, map-pool selection, score fields and full results UI are open.
+
 ### 2026-11-26 — BIO-606: confirmed tournament archive API
 
 - Cut `BIO-606-tournament-archive-api` from fetched `origin/main` at
@@ -578,3 +670,19 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   Adjusted the archive module import placement so the bracket and archive
   URL additions apply together. Shared documentation overlaps between the
   independent PRs and must be preserved when the branches land.
+
+### 2026-11-26 — Merge reconciliation for PRs #39–43
+
+- The owner authorized direct merges. BIO-703 #39 was already in `main`
+  at `f849dd9`. Reconciled and merged BIO-605 #40, BIO-805 #41 and BIO-603 #42
+  in order. BIO-606 #43 brings the confirmed archive API into that merged set.
+- Preserved all CN-031–035 entries, the five task logs and all nine backlog
+  categories. Consolidated the API and test documentation and refreshed the
+  user guide for the merged dashboard, inbox, replay, results and archive
+  features. Coverage is 17 DONE / 62 PARTIAL / 12 TODO / 0 DEFERRED.
+- Verified the reconciled #43 tree on project Python 3.15.2. All 79 Django
+  tests passed, with system and migration-drift checks. All 111 targeted replay,
+  tournament and service integration tests passed, along with the frontend
+  production build and all five Playwright tests. Tests used disposable
+  PostgreSQL, local services and temporary replay paths. No provider or
+  production environment was used.

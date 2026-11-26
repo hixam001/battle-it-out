@@ -623,6 +623,12 @@ decision.
 **Access:** authenticated tournament participant/staff with access.\
 **Success:** bracket, match statuses, scores, advancement.
 
+**Implemented (BIO-603 / CN-034):** `GET /api/v1/tournaments/{id}/bracket/`
+returns `tournament_id` and a `bracket` object once a draw is stored. The bracket
+contains the recorded draw, registered playoff teams, map-pool ID when recorded,
+rounds, pairings, byes, game IDs/status, advancement and champion. The `bracket`
+field is `null` before a draw. Scores require additional engine result data.
+
 ### GET `/matches/{match_id}`
 
 **Purpose:** Match details/result.\
@@ -630,12 +636,39 @@ decision.
 **Success:** teams, map, status, result, tie-break details, bot version
 identifiers; no source code.
 
+**Implemented (BIO-603 / CN-034):** `GET /api/v1/matches/{match_id}/` takes
+a game ID exposed by the bracket pairing's `series.games`. The response contains
+`tournament_id`, selected `match_id`, `round_number` and the enclosing `series`.
+The series reports the two pinned version IDs, maps, ordered game outcomes,
+winner/result type and recorded coin flip when applicable. A drawn/paused game
+without a decision has a `null` result. Engine scores, raw paths, diagnostics,
+and replay availability are outside this projection.
+
+Both reads use current participant membership, explicit Organizer assignment or
+Admin scope. Archived tournaments retain results. Missing, deleted and hidden
+objects return the same `404`. Responses are private and non-cacheable.
+
 ### GET `/matches/{match_id}/replay`
 
 **Purpose:** Retrieve replay while retained.\
 **Access:** authenticated tournament participant/staff with access.\
-**Success:** replay stream or short-lived authorized URL.\
-**Errors:** `404` if no access; `410` after archive/deletion.
+**Implemented (BIO-605 / CN-032):** `GET /api/v1/matches/{match_id}/replay/`
+streams the current vault artifact as an `application/octet-stream` attachment
+with a `.bc26` filename and `Cache-Control: private, no-store`. Use the game
+`match_id`, distinct from `series_id`; the live match list exposes both IDs.
+A session and current verified roster membership, explicit Organizer assignment,
+or Admin scope are required. The route verifies the opened file against the
+vault digest and rechecks vault archive state before returning the stream.
+
+**Errors:** `401` for no session. A missing vault entry, deleted tournament or
+record outside current scope returns the same `404`. A visible archived replay
+returns `410`, including for Admins. An indexed replay with a missing or damaged
+file returns `503` and records a staff incident. Errors use the shared JSON
+envelope even when the client requests `application/octet-stream`.
+
+The archive boundary blocks new downloads. A download admitted before the
+archive boundary may already be in progress. Object storage and browser
+playback remain follow-up work.
 
 ### GET `/matches/{match_id}/logs`
 
@@ -710,8 +743,9 @@ Both PATCH routes set an absolute state and are naturally idempotent; this
 slice needs no idempotency-key receipt. Every response uses CN-029's fresh
 request ID and `private, no-store`; errors use the shared envelope. No SQL/JSON
 cross-store transaction or full notification database migration is claimed.
-Announcements, automatic extension/override notices, real email providers,
-mandatory security-email policy and notification screens remain open.
+The [participant inbox](../frontend/README.md) uses these endpoints (CN-031).
+Announcements, automatic extension/override notices, real email providers and
+mandatory security-email policy remain open.
 
 ### GET `/tournaments/{id}/audit-logs`
 

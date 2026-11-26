@@ -3,8 +3,9 @@
 React/TypeScript with Vite; the application stack was selected by the owner on
 2026-11-26. The public landing page explains the real competition and clearly
 labels its illustrative arena. The authenticated console supplies private live
-boards, analytics/CSV export, Python and bundle uploads, disputes and an Admin
-operations reader. It uses the real [Django API](../backend/webapp/README.md),
+boards, analytics/CSV export, Python and bundle uploads, disputes, a tournament
+dashboard, a personal inbox and an Admin operations reader. It uses the real
+[Django API](../backend/webapp/README.md),
 not localStorage authentication or fabricated results.
 
 ```bash
@@ -15,7 +16,9 @@ npm run build --prefix frontend
 
 Start Django on `127.0.0.1:8000` and Vite on `127.0.0.1:5173`; Vite proxies `/api`
 on the same origin. All service/data directories must be outside `frontend/`.
-Production static assets are generated into ignored `frontend/dist/`. Hosting,
+Production static assets are generated into ignored `frontend/dist/`. Serve
+`index.html` for `/dashboard` and `/notifications`; retain the same-origin
+`/api` route to Django. Hosting,
 TLS, reverse proxy and public deployment remain operator/deployment work; no
 external Site has been created or published. Native session cookies and masked
 CSRF tokens protect the API; no credential is stored in browser localStorage.
@@ -38,9 +41,24 @@ Dispute comments and status changes use optimistic revisions and idempotency;
 reviews never automatically alter a result. Operations is a read-only Admin
 reader, leaving existing incident/resume authority decisions open.
 
+The dashboard shows the selected tournament's status, both deadlines in your
+browser timezone, and its three latest personal notices. The linked-participant
+inbox at `/notifications` keeps historical notices available and supports unread
+filtering, paging, read/unread actions and email preferences. Turning email off
+keeps dashboard notices active. Refresh returns to the first page of the current
+filter and picks up new notices.
+
 Browser fixtures must target loopback and use disposable seeded accounts/data.
-To run the shipped Playwright flows, provision the labeled fixture described
-in the test source, start both servers, and install a local test browser:
+Use the [Django local environment](../backend/webapp/README.md#install-and-run)
+with `BIO_WEB_DEBUG=1`, a fresh PostgreSQL database named `bio_qa_*`, and a new
+absolute `BIO_DATA_DIR`. Run the fixture commands from the repository root:
+
+```bash
+backend/.venvs/web/bin/python backend/webapp/manage.py migrate
+backend/.venvs/web/bin/python -m frontend.tests.seed_fixture
+```
+
+Start both servers and run the browser suite:
 
 ```bash
 cd frontend
@@ -51,5 +69,5 @@ npm test
 `BIO_WEB_BASE_URL` overrides the loopback test URL. `BIO_BROWSER_PATH` can point
 to an already installed compatible Chromium executable. Screenshots go to
 ignored test-results. Desktop/mobile layout, keyboard navigation, real login,
-analytics, dispute/comment, submissions catalogue, logout and Admin operations
-are exercised. These fixtures are testing data, never production evidence.
+analytics, dispute/comment, submissions catalogue, logout, Admin operations,
+the dashboard and private inbox are exercised using local test data.

@@ -124,6 +124,12 @@ coin flip, visibly recorded and audited. - Qualification draw occurs
 only after scores/slots finalized; displayed and logged. - Winners
 advance exactly once.
 
+Scoped HTTP result checks (BIO-603 / CN-034) exercise pending draws, real
+stored bracket advancement, byes, a paused match without a result and a recorded
+four-game final resolved by coin flip. Repeated reads preserve the result and
+stored draw. Current sessions, access revocation, archived history and generic
+hidden/missing refusals are tested with disposable PostgreSQL accounts.
+
 ### TC-06 --- Registration, invitations, and deadline transitions
 
 **Jira:** BIO-EPIC-05 / BIO-EPIC-06\
@@ -199,6 +205,15 @@ preference. - Email delivery follows preference and retries failures. -
 Backup/restore procedure recovers critical state without corrupting
 match references.
 
+#### Implemented replay download subset (BIO-605 / CN-032)
+
+`backend.webapp.tests_replays` checks byte-identical streamed attachments,
+current roster and explicit Organizer scope, safe errors, revoked access,
+damaged replay incidents and archive refusal. It exercises archive during
+file verification, confirms vault file deletion on disk and preserves bracket
+and match history. The real-engine `test_replays` suite separately exercises
+collection and purge for native engine output in a temporary vault.
+
 #### Implemented archive HTTP subset (BIO-606 / CN-035)
 
 The archive tests exercise exact JSON confirmation, session CSRF, Admin and
@@ -232,8 +247,17 @@ and temporary legacy notification/registration state:
   deliveries; new roster-derived team notices still appear once in the feed.
   Injected provider failure leaves dashboard notices intact.
 
-This does not close full TC-08: no real provider, notification UI, production
-outage or backup/restore drill is exercised. Staff recipients, announcement and
+#### Implemented browser subset (BIO-703 / CN-031)
+
+The Playwright suite uses real Django sessions and disposable PostgreSQL accounts
+with isolated notification data. It verifies direct dashboard/inbox links,
+timezone-labeled deadlines, tournament-scoped previews, historical personal
+notices, inbox pagination, keyboard filtering, read and email preference
+persistence across reload, account isolation on logout, and the unlinked-account
+refusal. Desktop and mobile layout checks are covered in the local browser suite.
+
+Full TC-08 still requires a real provider, production outage and backup/restore
+drill. Staff recipients, announcement and
 automatic deadline/override endpoints, and notification-store migration remain
 open. Web tests require explicit module labels in the webapp README; the backend
 execution runner does not discover these modules.
@@ -318,6 +342,17 @@ execution runner does not discover these modules.
 -   [ ] Archive removes replay files but preserves results.
 -   [ ] Destructive actions require reason and confirmation.
 -   [ ] Audit log is available only within role scope.
+
+### Interim operations rehearsal (BIO-805 / CN-033)
+
+The [operations runbook](OPERATIONS_RUNBOOK.md) records status triage,
+incident escalation and staging restore steps for the current reference setup.
+A disposable PostgreSQL and file-state restore verified fixture scope, source
+digest, match/dispute references, notification preferences and archived vault
+files. A local signing-key change invalidated an old session and accepted a
+fresh CSRF login. The service lifecycle suite exercises real engine games,
+purge recovery and injected send/alert failures. Target-host, provider and
+production restore acceptance remain open.
 
 ## 6. Known limitations / unresolved test inputs
 
