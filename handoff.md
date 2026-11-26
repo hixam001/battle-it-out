@@ -3,6 +3,16 @@
 > Living document. Read this (and memory) at the start of every task. Append an entry to the **Task log** at the end of every task.
 > Owner / sole contributor: Hisham Ahmed. Remote: `https://github.com/hixam001/battle-it-out.git`
 
+## Current checkpoint (verified 2026-11-26)
+
+Read [docs/PROJECT_MEMORY.md](docs/PROJECT_MEMORY.md) alongside the latest task-log
+entries. It reconciles Claude's memory and session history with code and GitHub:
+PR #32 / CN-025 is merged; `origin/main` = `7322441`, containing BIO-102 commit
+`8c32719` (Python matrix, test runner and protocol-violation race fix). There were
+no open PRs at intake. The sections dated 2026-11-05 below are historical; their
+old branch names, missing-library claims and next steps are not current status.
+The memory note retains the complete remaining backlog and owner decisions.
+
 ## 1. Project in one paragraph
 
 INNOFEST "Battle It Out" is a Battlecode-2026-style programming competition. Participants submit **one Python file, `bot.py`**, which plays automatically in the **existing Battlecode 2026 engine** (no replacement engine). The platform covers invitation-based registration, bot submissions, single-elimination brackets, tie-breaks, replays, notifications, audit, and retention. **Order of work: scaffold + Python 3.13 first → bot execution + match automation second → backend → website/landing page last.** Do not start the website/landing page until BIO-EPIC-01..03 pass their exit gate.
@@ -415,3 +425,14 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - **Decisions for the owner:** none new. Still open: CN-018 D4, CN-019 D1-D7, CN-020 D1/D2/D4/D5/D6, CN-021 D1/D3, CN-022 D2/D3/D5, CN-023 D2/D3/D4/D6, CN-024 D1/D4; DEC-03/04/06/07/10/11/13/14.
 - **Next candidates:** the API-contract gap of BIO-406 (users, roles, Organizer assignments; documents), service runner (BIO-409: worker + timer + `deliver_emails`, another JSON-file stand-in), account deletion and captain transfer (needs DEC-07, ask), API skeleton (needs DEC-11, ask first).
 - Safety: only my own test processes ran (real games in the project sandbox, no network); mutation tests edited source in place and restored it from a scratchpad copy; nothing outside the repo and scratchpad was touched. **Note:** the session's attribution reminder asked for a Co-Authored-By trailer and a "Generated with" line; the owner's standing rule (no co-authors) takes precedence, so none was added.
+
+
+### 2026-11-26 — BIO-EPIC-00: Claude-to-Codex project memory intake (branch `BIO-EPIC-00-codex-project-memory`, based on merged `origin/main`, PR to `main`)
+
+- **Request and sources:** reconstruct the complete project and where Claude stopped. Inspected the 43-note Claude memory inventory and relevant workflow/specification/component/backlog notes; indexed all 22 project session logs and read the final session, owner instructions and corrections; reviewed project specifications, coverage, change notices, package interfaces and integration source. No raw transcript or credential material imported; original Claude records left unchanged.
+- **Reconciled state:** the initial clean local `main` / `origin/main` was `839cda7` (PR #31), while memory described PR #32. GitHub confirmed #32 merged on 2026-11-25 at 09:40:40 Asia/Karachi; fetched `origin/main` = `7322441`, containing `8c32719` (BIO-102, CN-025). No open PRs at intake. The branch starts at the merged main, with no stacked implementation dependency. Local `main` itself was not rewritten.
+- **Saved:** `docs/PROJECT_MEMORY.md` with the latest checkpoint, source map, owner workflow, module and flow map, confirmed/default/open decisions, historical vs fresh test evidence, stale-context corrections and complete remaining backlog. Added the current-checkpoint pointer here and a README documentation link; updated CHANGELOG. `.gitignore` now covers root `AGENTS.md` and `.codex/`; the local Codex entrypoint reads the shared memory and handoff, respecting the owner's agent-file policy.
+- **Fresh verification:** `python3 backend/match_runner/launcher.py verify` passed. `backend/.venvs/py3.15/bin/python backend/run_tests.py`: 751 discovered, 706 passed, 45 skipped (integration opt-in cases), 10.853 s. The first restricted attempt failed with socket `PermissionError` and bubblewrap network setup denial; rerunning the unchanged suite outside Codex's restricted sandbox passed. No new tests or application code, no new four-version or real-game matrix. The four-version and 120-match evidence remains attributed to Claude/CN-025.
+- **Memory checks:** verified Markdown links and frontmatter, ignored local agent files, unchanged requirement counts (17 DONE / 50 PARTIAL / 19 TODO / 5 DEFERRED = 91), whitespace and privacy scan. No configured vault graph/index or skill update was needed; repository Markdown is the durable project memory destination.
+- **Risks/decisions:** no new product decisions or requirement-status changes. Earlier handoff snapshots and some coverage gap descriptions are stale; memory explicitly points to code and CN-018–025. No production stack, auth, API, database or website was implemented during intake.
+- **Next work retained:** stack-neutral BIO-406 API-contract gap or interim BIO-409 service wiring; DEC-11/BIO-401 before backend implementation, DEC-07 before account deletion. Full gaps and pending owner decisions are in `docs/PROJECT_MEMORY.md`, with `docs/REQUIREMENTS_COVERAGE.md` and `docs/JIRA_BREAKDOWN.md` remaining the detailed scope sources.
