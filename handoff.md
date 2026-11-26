@@ -7,9 +7,9 @@
 
 Read [docs/PROJECT_MEMORY.md](docs/PROJECT_MEMORY.md) alongside the latest task-log
 entries. It reconciles Claude's memory and session history with code and GitHub:
-PR #36 (CN-028 feature suite) is merged to `main`; fetched base = `7f25963`.
-BIO-404 continues from there on `BIO-404-api-errors-health` (CN-029): shared
-Django/DRF JSON errors/request IDs and process liveness, with no stacked
+PR #37 (CN-029 HTTP errors/liveness) is merged to `main`; fetched base = `f551850`.
+BIO-607 continues from there on `BIO-607-notification-api` (CN-030): recipient
+notification feed/read/preferences using the shared service store, with no stacked
 dependency. The owner
 activated the five deferred groups and selected Django/DRF/PostgreSQL + React/TS,
 private live viewing and Python bundles/curated dependencies before later
@@ -487,3 +487,69 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - **Memory/workflow:** Obsidian memory closeout uses the established repository Markdown. No external vault, raw chat/credentials, public skill or generated graph/index change. Named task files only; preserve configured author and add no co-author/generated-by attribution. Commit/push and PR target `main`; do not merge without owner instruction.
 - **Complete remaining backlog:** all nine detailed categories remain in PROJECT_MEMORY.md: backend/account/global-access/persistence foundation; supervised production services/providers/image; execution gates; roster/registration/submission contracts/caps/later languages; tournament/dispute/deletion operations; notifications; replay/log/privacy; remaining website/accessibility/capacity/deployment/CI/pilot; owner/legal/follow-up decisions. Next independent backend candidates are a bounded core schema/store-migration slice or recipient-only notification API wiring. Public recovery, global roles, deletion/house-bot/qualification policy and production choices still need their documented decisions.
 - **Closeout validation:** 15 task files, six Python sources parsed, 33 local Markdown links, eight fenced API JSON examples, unique numbered API/test sections, whitespace and credential-pattern scan pass. All 91 requirement IDs/statuses and all nine backlog categories retained; backlog categories 2–9 are byte-for-byte unchanged from main. No generated runtime/frontend/agent files are included.
+
+### 2026-11-26 — BIO-607: recipient notification API (branch `BIO-607-notification-api`, from merged `origin/main`, PR to `main`)
+
+- **Start/scope:** read project memory, handoff/latest log, API/SRD/data-model/
+  test/Jira requirements and existing account/notification/service code. Confirmed
+  PR #37 merged; fetched base `f551850`. Chose the prior handoff's recipient
+  notification API candidate under standing delegation; no stacked dependency.
+  This is a bounded BIO-607 slice, not full notification or backend acceptance.
+- **Files/implementation:** `backend/webapp/domain.py`, `views.py`, `urls.py`
+  and `api_errors.py` wire GET feed, PATCH read/unread and GET/PATCH preferences
+  to the existing notification library/store. New `tests_notifications.py`
+  covers the HTTP/account/outbox boundary; the notification module docstring
+  and package/root READMEs describe it. Updated API_CONTRACT, TEST_PLAN,
+  JIRA_BREAKDOWN, REQUIREMENTS_COVERAGE, CHANGE_NOTICES (CN-030), CHANGELOG,
+  project memory and this log. No schema migration or frontend change.
+- **Behavior/decisions:** require the explicit operator-created participant
+  roster link on every request. Numeric Django IDs cannot select a legacy
+  inbox; staff privileges never grant recipient access. Unlinked/staff accounts
+  return `403`; anonymous `401`; another recipient's notice, including within a
+  team, is indistinguishable from missing `404`. Historical personal notices
+  remain readable independently of tournament scope. Feed has bounded interim
+  offset pages, deterministic equal-time order and strict filters/query fields;
+  new notices can shift pages, so no global pagination decision is claimed.
+  JSON/CSRF setters are naturally idempotent. Preference and its audit share
+  the legacy-store transaction; workers see the same email switch and keep
+  mandatory dashboard notices. Shared errors/no-store/request IDs apply;
+  provider/recipient/internal metadata is excluded. These are reversible local
+  adapter choices, with no new product/provider/hosting approval.
+- **Checks/results:** project Python 3.15.2: **57 web tests pass** (23 existing
+  PostgreSQL feature + 17 boundary + 17 notification), 5.228 s; Django system and
+  migration-drift checks pass, no migration. New cases cover real sessions/CSRF,
+  deactivation, recipient/numeric-ID collision privacy, current links,
+  historical notices, safe projections, filters/paging/order/query refusals,
+  repeated setters, preference rollback and fresh service runtime with
+  email-off/queued deliveries/injected provider outage. Full backend unit mode:
+  **779 discovered, 731 passed / 48 skipped**, 11.576 s. No new engine/browser/
+  four-version matrix or real-provider drill. Disposable private PostgreSQL
+  clusters are stopped; test state stays under `/tmp`; existing user data and
+  replays remain untouched.
+- **Risks/remaining:** notifications are still JSON-backed. Staff/unlinked
+  recipient provisioning, notification screens, announcement API, automatic
+  deadline/override/approval/dispute notices, affected-user counts,
+  wording/retry/mandatory-security-email policy, providers/deployment and real
+  outage/backup drills remain. No SQL/JSON cross-store atomicity or concurrent
+  link-revocation commit invariant is claimed. Requirement evidence updated;
+  statuses stay **17 DONE / 61 PARTIAL / 13 TODO / 0 DEFERRED = 91**.
+- **Memory/workflow:** Obsidian memory closeout uses the established repository
+  Markdown, with no external vault, raw chat/credentials, public skill or
+  generated graph/index update. Configured author preserved; no co-author or
+  generated-by attribution. Named task files only; commit/push and PR explicitly
+  target `main`; do not merge without owner instruction.
+- **Complete remaining backlog:** all nine detailed categories remain in
+  PROJECT_MEMORY.md: backend/account/global-access/persistence foundation;
+  supervised production services/providers/image; execution gates;
+  roster/registration/submission contracts/caps/later languages;
+  tournament/dispute/deletion operations; remaining notifications;
+  replay/log/privacy; remaining website/accessibility/capacity/deployment/CI/
+  pilot; owner/legal/follow-up decisions. Next independent candidates are
+  recipient notification UI (BIO-703) or a bounded core schema/store-migration
+  slice; policy/provider/production choices remain open as documented.
+- **Closeout validation:** 18 named task files, six Python sources parsed,
+  64 local Markdown links, eight fenced API JSON examples, unique API sections
+  and method/path pairs, whitespace and credential-pattern scan pass. All 91
+  requirement statuses are unchanged; backlog categories 1–5 and 7–9 are
+  byte-for-byte unchanged, with category 6 reconciled to this implementation.
+  No generated/runtime/frontend/agent artifacts are included.

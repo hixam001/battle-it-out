@@ -2,7 +2,7 @@
 
 **Version:** 1.2 (proposed numbering; CN-028 activated feature scope)\
 **Date:** 2026-11-26\
-**Change notices:** CN-024, CN-026, CN-027, CN-028 in `CHANGE_NOTICES.md`\
+**Change notices:** CN-024, CN-026–030 in `CHANGE_NOTICES.md`\
 **Audience:** the project owner and contributors who must order the remaining work and open the matching Jira issues.
 
 PRD §10 and PROJECT_PLAN §6 define the tasks of BIO-EPIC-00 to BIO-EPIC-03 and leave the later epics "to be broken down". This file does that. It follows the ID scheme of PRD §10: a Jira key is `BIO-NNN` and the hundreds digit is the epic number. **These numbers are proposed.** If the tracker assigns other numbers, change them here and in the references (never give one number two meanings).
@@ -77,7 +77,7 @@ These keep their original keys. They are listed because later epics wait for the
 | BIO-604 | Admin operations on trouble: list and resume a paused match (who may resume is open), revive a dead job, read incidents; an Admin console of what is stuck | SRD-011, BIO-REQ-09, BIO-REQ-15 | Safe read-only operations API/UI implemented (CN-028); paused-match resume/dead-job mutation controls and policy remain open | BIO-409, BIO-406 |
 | BIO-605 | Replay and log endpoints: authorized replay before archive, `404`/`410` rules, role-scoped logs; browser playback decision | BIO-REQ-08, SRD-063; API_CONTRACT §6; DEC-10 | Library done (CN-007, CN-012) | BIO-408, BIO-406; owner: DEC-10 |
 | BIO-606 | Archive and retention jobs: archive endpoint (Admin or assigned Organizer by rule), scheduled `purge_pending`, vault backups | SRD-070; TC-08 | Library done (CN-012, CN-019) | BIO-409 |
-| BIO-607 | Notification endpoints and delivery: feed, read, preferences; announcements written by an Organizer; a real email provider adapter; mandatory security emails (owner decides which); the TC-08 provider-outage drill | SRD-060, SRD-061, BIO-REQ-16, BIO-NFR-07; TC-08; API_CONTRACT §7 | Library done (CN-022, CN-023) | BIO-401, BIO-409; owner: CN-022 D2/D3/D5 |
+| BIO-607 | Notification endpoints and delivery: feed, read, preferences; announcements written by an Organizer; a real email provider adapter; mandatory security emails (owner decides which); the TC-08 provider-outage drill | SRD-060, SRD-061, BIO-REQ-16, BIO-NFR-07; TC-08; API_CONTRACT §7 | Recipient feed/read/preferences HTTP adapter and shared-worker/CSRF/privacy tests implemented (CN-030); staff recipients, announcement/automatic notices, UI, real provider/deployment/outage drill and SQL migration remain | BIO-401, BIO-409; owner: CN-022 D2/D3/D5 |
 | BIO-608 | Account deletion lifecycle: request queued while the team competes, cancel, execute when inactive, remove from rosters with results unchanged, captain transfer (DEC-07 for no successor) | SRD-065 to SRD-067, BIO-REQ-18; TC-07; FLOW-07 | Not started | BIO-406; owner: DEC-07 |
 | BIO-609 | Team deletion after archive and Admin-only restore; permanent tournament deletion (Admin only, audit kept) **including the data other libraries hold** (`purge_tournament` of registration, notifications, registry, flow, bracket) | SRD-068, SRD-069, BIO-REQ-18; TC-07; FLOW-08 | Library done for tournaments and replays; the rest not started | BIO-407, BIO-608 |
 | BIO-610 | Audit log read endpoint for a tournament and for the Admin | SRD-062, SRD-063; API_CONTRACT §7 | Recent feature audit is Admin-readable through operations (CN-028); unified scoped audit endpoint remains open | BIO-407 |

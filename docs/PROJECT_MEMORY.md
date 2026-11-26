@@ -22,9 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
-- Latest continuation on 2026-11-26: PR #36 (CN-028 activated-feature suite)
-  merged into `main`; fetched base is `7f25963`. **BIO-404 HTTP errors and
-  process liveness** starts there on `BIO-404-api-errors-health` (CN-029),
+- Latest continuation on 2026-11-26: PR #37 (CN-029 HTTP errors/liveness)
+  merged into `main`; fetched base is `f551850`. **BIO-607 recipient
+  notification API** starts there on `BIO-607-notification-api` (CN-030),
   with no stacked dependency. The owner
   activated all five deferred groups, selected Django/DRF + PostgreSQL and
   React/TypeScript, chose private tournament live viewing, and chose Python
@@ -40,6 +40,12 @@ remaining backlog after every task.
   no-store API responses and public GET/HEAD process liveness. Framework and
   application refusals share codes/envelopes; hidden-resource and server-error
   wording is redacted. This is a BIO-404 slice, not complete core API acceptance.
+- CN-030 adds the linked participant's notification feed, read/unread and
+  email-preference API using the existing service notification store. Explicit
+  roster links avoid numeric Django/legacy-recipient ID collisions; staff and
+  unlinked recipient provisioning remain open. Offset pagination is interim,
+  setters are idempotent, and dashboard notices survive email-off/outage tests.
+  Notifications remain JSON-backed; UI, providers and full BIO-607 stay open.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -310,11 +316,15 @@ with current code and the coverage matrix; nothing here is closed by intake.
    review/version/idempotency and immutable history; appeals/reopening/outcome
    correction policy and automatic notices remain. The Admin operations reader
    is implemented; additional action controls remain open.
-6. **Notifications:** endpoints/screens, real provider and deployment;
-   announcements, automatic notice calls after extension/override, affected-user
+6. **Notifications:** screens, staff/unlinked recipient provisioning, PostgreSQL
+   store migration, real provider and deployment; announcements, automatic notice
+   calls after extension/override, affected-user
    counts, Organizer approval/rejection and dispute notices; mandatory security
    email policy, owner wording/retry review, expiry alerts and real outage drill.
    Check/round/draw adapters and failed-email alert retry hooks already exist.
+   CN-030 supplies linked-participant feed/read/preferences HTTP endpoints with
+   current explicit links and the shared service store; this does not close the
+   remaining event/delivery/UI work or decide global pagination.
 7. **Replays/logs/privacy:** authorized replay/log HTTP delivery, object storage,
    short-lived URLs, full browser replay player (DEC-10), deployed purge schedule,
    backups/restore, indicator-text exposure review, durable log retention and
@@ -400,7 +410,7 @@ records unresolved role/provisioning decisions; none is an implemented default.
 | Source | Use |
 |---|---|
 | [PRD.md](PRD.md), [SRD.md](SRD.md) | Product rules and numbered requirements; read their change-notice headers |
-| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–029 decisions, corrections, defaults, proposals and test evidence |
+| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–030 decisions, corrections, defaults, proposals and test evidence |
 | [API_CONTRACT.md](API_CONTRACT.md), [DATA_MODEL.md](DATA_MODEL.md) | Proposed API, entities, constraints, state/access/retention matrices |
 | [APP_FLOW.md](APP_FLOW.md), [../PRODUCT.md](../PRODUCT.md) | User journeys, route inventory, product context; planned screens |
 | [ARCHITECTURE.md](ARCHITECTURE.md), [TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md) | Design boundaries, runner/worker mechanics, commands and troubleshooting |
@@ -474,7 +484,8 @@ browser or four-version run is claimed; CN-025/028 remain historical evidence.
 Disposable private PostgreSQL clusters use Unix sockets under `/tmp` and are
 stopped after checks. Existing data/replays are preserved.
 
-Use explicit Django test labels `backend.webapp.tests backend.webapp.tests_http`:
+Use explicit Django test labels `backend.webapp.tests backend.webapp.tests_http
+backend.webapp.tests_notifications` (the last module was added in CN-030):
 directory discovery loses package context in this namespace layout. The separate
 `backend/run_tests.py` runner covers execution-library suites, not web modules.
 An initial broad-label test attempt failed discovery; explicit labels pass.
@@ -487,3 +498,41 @@ readiness. Existing Django exception-log access/retention needs operational
 review. Requirement counts remain 17 DONE / 61 PARTIAL / 13 TODO / 0 DEFERRED;
 all nine complete backlog categories above remain. No new product/provider/
 hosting approval or public skill/derived graph/index change is made.
+
+## CN-030 continuation evidence
+
+BIO-607 exposes GET `/api/v1/notifications/`, PATCH
+`/api/v1/notifications/{id}/` and GET/PATCH
+`/api/v1/me/notification-preferences/`. Only the explicit operator-linked
+participant roster recipient is used; Django numeric IDs, client fields and
+staff scope never select an inbox. Anonymous requests are `401`; unlinked/staff
+accounts are `403`; another recipient's notice and a missing one are identical
+`404`, including within the same team. Links are read on each request. Personal
+historical notices remain readable independently of current tournament scope.
+
+The shared notification library supplies bounded offset pages, counts and
+filters; equal-time ordering uses ID. Unknown/repeated/invalid query fields are
+refused. The offset choice is interim; new notices may shift pages. JSON-only
+PATCH with session CSRF sets absolute read/preference state, preserving read
+timestamps and avoiding duplicate preference audit on retries. Preference
+conflicts roll back state. Workers use the same `notifications.json`; disabling
+email skips queued deliveries without dropping dashboard notices. Provider
+errors, recipient IDs and internal event/delivery metadata stay out of HTTP.
+
+Current project Python 3.15.2 verification: **57 web tests pass** (23 existing
+PostgreSQL feature, 17 HTTP boundary and 17 notification cases), 5.228 seconds.
+System and migration-drift checks pass with no new migration. Full backend unit
+mode: **779 discovered, 731 passed / 48 skipped**, 11.576 seconds. Real sessions,
+CSRF, deactivation, same-team privacy, numeric-ID collision, pagination,
+idempotent setters, rollback and fresh worker runtime/email-off/injected-outage
+are covered. Disposable private PostgreSQL clusters under `/tmp` are stopped
+after checks; no real provider, browser, engine game or four-version matrix was
+run for this adapter slice. Existing data/replays are preserved.
+
+Next independent candidates are the recipient notification UI (BIO-703) or a
+bounded core schema/store-migration slice. Staff recipient/account lifecycle,
+announcements/automatic event calls, real providers/hosting, global pagination,
+full PostgreSQL migration and every retained execution gate remain open. All
+91 statuses stay **17 DONE / 61 PARTIAL / 13 TODO / 0 DEFERRED**; all nine complete
+backlog categories above remain. No public skill or generated graph/index update
+is needed; repository Markdown is the durable memory destination.

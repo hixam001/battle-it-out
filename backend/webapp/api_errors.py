@@ -13,6 +13,7 @@ from rest_framework.views import exception_handler as drf_exception_handler
 
 from backend.submission_bundle import bundle as BU
 from backend.submission_registry import registry as R
+from backend.notifications import notifications as N
 
 
 logger = logging.getLogger(__name__)
@@ -87,14 +88,18 @@ class APIResponseMiddleware:
 
 def exception_handler(exc, context):
     """Map known library refusals; leave unexpected failures to Django's 500 path."""
-    if isinstance(exc, R.NotFound):
+    if isinstance(exc, (R.NotFound, N.NotFound)):
         exc = NotFound()
-    elif isinstance(exc, R.Forbidden):
+    elif isinstance(exc, (R.Forbidden, N.Forbidden)):
         exc = PermissionDenied()
     elif isinstance(exc, DjangoPermissionDenied):
         exc = PermissionDenied()
-    elif isinstance(exc, BU.Invalid):
+    elif isinstance(exc, (BU.Invalid, N.Invalid)):
         exc = ValidationError(str(exc)[:1000])
+    elif isinstance(exc, N.Conflict):
+        error = APIException(ERRORS[409][1])
+        error.status_code = 409
+        exc = error
     elif isinstance(exc, R.RegistryError):
         status = 503 if isinstance(exc, R.Unavailable) else 413 if isinstance(exc, R.TooLarge) else 409
         error = APIException(ERRORS[status][1])

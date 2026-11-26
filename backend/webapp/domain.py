@@ -25,6 +25,20 @@ def actor(user):
         return R.Actor(str(user.pk), 'organizer', tournament_ids=tids)
     return G.actor_for(runtime().registration, identity.roster_user_id) if identity.roster_user_id else R.Actor(str(user.pk), 'participant')
 
+def notification_recipient(user):
+    """Legacy inbox IDs are roster IDs, never Django account primary keys.
+
+    Staff/global account inbox provisioning is not implemented. Require the
+    explicit operator-created participant link instead of guessing an ID.
+    Personal notices remain readable independently of current tournament scope.
+    """
+    if not user.is_authenticated or not user.is_active:
+        raise PermissionDenied('Sign in to continue.')
+    identity = Identity.objects.filter(user=user, role='participant').first()
+    if not identity or not identity.roster_user_id or user.is_superuser:
+        raise PermissionDenied('A linked participant account is required for notifications.')
+    return R.Actor(identity.roster_user_id, 'participant')
+
 def tournament(user, tid, *, staff=False):
     who = actor(user)
     record = runtime().tournaments.store.snapshot()['tournaments'].get(tid)
