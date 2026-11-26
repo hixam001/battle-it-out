@@ -47,9 +47,13 @@ Tournament states: `draft -> pending_approval -> approved -> registration_open -
 
 ## 3. Deadlines and emergency overrides
 
+The [Admin API](API_CONTRACT.md#post-tournamentsidextend-deadline) records each
+confirmed change, reports the affected count and publishes the participant
+notices. The console controls are planned.
+
 | Situation | What to do | What happens |
 |---|---|---|
-| Registration or submission needs more time | **Extend** the relevant deadline (reason and confirmation required) | Affected participants get email and dashboard notifications. Unused invitation codes stay valid until the new registration deadline. Extending the submission deadline **reopens** submissions |
+| Registration or submission needs more time | **Extend** the relevant deadline (reason and confirmation required) | Affected accounts get dashboard notices and eligible email enters the delivery queue. Unused invitation codes follow the registration deadline. Extension reopens submissions before entry versions are pinned |
 | A setting must change after a deadline | Normally: extend the deadline first, then change the setting | The Organizer can then edit permitted settings |
 | An urgent change cannot wait for a deadline extension | **Emergency override** (reason and confirmation required) | The change applies without extending the deadline. Participants are notified with the changed setting, the reason, the time, and who authorized it. Fully audited |
 

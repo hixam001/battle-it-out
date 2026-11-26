@@ -424,10 +424,10 @@ override is separate endpoint.\
 **Request:** `{"reason":"Please correct the tournament schedule."}`\
 **Success:** `{"status":"rejected","reason":"..."}`.
 
-### POST `/tournaments/{id}/extend-deadline`
+### POST `/tournaments/{id}/extend-deadline/`
 
 **Purpose:** Extend registration or submission deadline.\
-**Access:** Admin only.\
+**Access:** Current Admin session, session CSRF, and `Idempotency-Key`.\
 **Request:**
 
 ``` json
@@ -439,21 +439,34 @@ override is separate endpoint.\
 }
 ```
 
-**Success:** updated deadline, affected participant count, notification
-event ID. Unused invitation codes remain valid until the new
-registration deadline. Submission extension reopens submissions.\
-**Errors:** `400`, `403`, `409`, `422`.
+The new time must include a timezone and be later than both the current
+deadline and the present time. Registration may not extend past submission.
+Unused codes follow the registration deadline. Extending submission reopens
+uploads while the tournament is open and its entry versions are unpinned.
 
-### POST `/tournaments/{id}/emergency-override`
+### POST `/tournaments/{id}/emergency-override/`
 
 **Purpose:** Admin emergency change after lock without extending
 deadline.\
-**Access:** Admin only.\
+**Access:** Current Admin session, session CSRF, and `Idempotency-Key`.\
 **Request:**
 `{"setting":"...","value":"...","reason":"...","confirm":true}`\
-**Success:** updated setting and audit event. Must notify affected
-participants with setting, reason, time, and authorizer.\
-**Errors:** `400`, `403`, `409`.
+The supported settings are `name`, `description`, and `map_pool_id`.
+A supplied pool ID must exist. The map pool is fixed once entries are
+pinned or the draw is recorded. The notice records the setting, reason,
+time and authorizer. An override leaves the deadlines in place.
+
+**Implemented (BIO-602 / CN-041):** Both actions return `200` with the
+updated `tournament`, `audit_event_id`, `notification_event_id`,
+`affected_participants` and `notification_status`. The audience contains
+accounts holding an official roster place, including pending verification.
+`published` means the dashboard notices exist and eligible email delivery is
+queued. `pending` means the change and its notice are durably committed and
+service maintenance will retry publication. Repeating the same key and
+normalized action as the same Admin reuses the recorded result and can finish
+pending publication. A different deadline action under that key returns
+`409`. Invalid input is `400`, hidden resources are `404`, and forbidden
+or conflicting lifecycle actions return `403` or `409`.
 
 ### POST `/tournaments/{id}/archive`
 

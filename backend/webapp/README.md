@@ -87,6 +87,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET/PATCH | `/me/notification-preferences/` | Shared worker email preference; dashboard always enabled |
 | GET | `/tournaments/` | Only current accessible tournaments and own teams |
 | POST | `/tournaments/{id}/archive/` | Admin/assigned Organizer, exact JSON `{"confirm":true}` and CSRF; completed/archived only, purge status in response |
+| POST | `/tournaments/{id}/extend-deadline/`, `/tournaments/{id}/emergency-override/` | Current Admin only, CSRF, confirmation, reason and idempotency key; returns affected account count and notice status |
 | GET | `/dependencies/` | Public curated dependency names, versions and hashes |
 | GET | `/tournaments/{id}/live/` | Authoritative match metadata and allowlisted numeric latest boards; authorization on every poll; archived returns 410 |
 | GET | `/matches/{match_id}/replay/` | Current-scope `.bc26` attachment from the private replay vault; hidden/missing 404, archived 410, unavailable 503 |
@@ -106,6 +107,18 @@ Missing runtime samples remain absent rather than invented zeroes. Attempt p95
 uses the nearest rank; median uses the ordinary sample median. Version IDs are
 match metadata; source bytes, host paths, provider errors and claim tokens are
 not part of analytics, live boards or the operations reader.
+
+## Admin deadline changes (BIO-602 / CN-041)
+
+Extension takes an ISO 8601 timestamp with timezone and the deadline type
+`registration` or `submission`. Emergency override changes a locked name,
+description or map pool on a published tournament and records the reason.
+Both require `confirm:true`, session CSRF, a reason and an `Idempotency-Key`.
+They store audit, participant count and a pending notice alongside the change.
+The Admin response reports `published` or `pending`. Maintenance retries the
+same notice if the notification store or receipt write was interrupted.
+Published dashboard notices follow the shared recipient and email rules.
+See the [API contract](../../docs/API_CONTRACT.md#post-tournamentsidextend-deadline).
 
 ## Recipient notifications (BIO-607 / CN-030)
 

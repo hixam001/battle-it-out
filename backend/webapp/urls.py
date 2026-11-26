@@ -3,6 +3,7 @@ from django.urls import path
 from . import results
 from . import views as V
 from . import tournament_archive
+from . import deadlines
 urlpatterns = [
     path('api/v1/health/', V.health),
     path('api/v1/auth/session/', V.session), path('api/v1/auth/login/', V.login_view),
@@ -18,6 +19,8 @@ urlpatterns = [
     path('api/v1/tournaments/<str:tid>/teams/<str:team>/submissions/', V.submissions),
     path('api/v1/tournaments/<str:tid>/submissions/<str:sid>/download/', V.download),
     path('api/v1/tournaments/<str:tid>/archive/', tournament_archive.archive),
+    path('api/v1/tournaments/<str:tid>/extend-deadline/', deadlines.extend_deadline),
+    path('api/v1/tournaments/<str:tid>/emergency-override/', deadlines.emergency_override),
     path('api/v1/tournaments/<str:tid>/disputes/', V.disputes),
     path('api/v1/tournaments/<str:tid>/disputes/<uuid:did>/', V.dispute_detail),
     path('api/v1/tournaments/<str:tid>/bracket/', results.bracket),
