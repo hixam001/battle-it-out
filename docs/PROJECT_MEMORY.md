@@ -22,9 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
-- Latest continuation on 2026-11-26: PR #38 (CN-030 recipient notification API)
-  merged into `main`. **BIO-703 participant dashboard and inbox** (CN-031)
-  starts from `22ec3dc` on `BIO-703-notification-inbox`. The owner
+- Latest continuation on 2026-11-26: PRs #39–43 integrate the participant
+  dashboard and inbox, scoped replay downloads, operator runbook, bracket and
+  game reads, and confirmed tournament archive. The owner approved merging all
+  five to `main`. See CN-031–035 and the handoff for implementation and checks.
+  The owner
   activated all five deferred groups, selected Django/DRF + PostgreSQL and
   React/TypeScript, chose private tournament live viewing, and chose Python
   bundles/curated dependencies before other language compatibility work.
@@ -49,6 +51,9 @@ remaining backlog after every task.
   recent notices) and `/notifications` (linked participant feed, offset pages,
   read/unread and email preference). Browser coverage uses real sessions and a
   reproducible disposable database/data fixture.
+- CN-032–035 add native replay downloads, the interim operations runbook,
+  bracket/game history reads and confirmed archive with retryable vault purge.
+  Browser replay playback, full results screens and production recovery remain open.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -310,7 +315,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    additional languages follow compatibility work, and arbitrary participant
    installs/custom runtimes remain unapproved.
 5. **Tournament operations and deletion:** remaining tournament/deadline/
-   bracket-generate/round-start/archive HTTP actions and permission tests;
+   bracket-generate/round-start HTTP actions and permission tests;
    explicit map-pool selection; full results UI, engine score display and
    paused-job mutation controls; queued/
    cancelable account deletion, historical-roster removal without changed
@@ -320,7 +325,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    review/version/idempotency and immutable history; appeals/reopening/outcome
    correction policy and automatic notices remain. The Admin operations reader
    is implemented; additional action controls remain open. CN-034 delivers
-   current-scope bracket and game result reads, including archived history.
+   current-scope bracket and game result reads, including archived history. CN-035 adds confirmed archive for current
+   Admins and assigned Organizers.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; announcements, automatic notice
    calls after extension/override, affected-user
@@ -420,7 +426,7 @@ records unresolved role/provisioning decisions; none is an implemented default.
 | Source | Use |
 |---|---|
 | [PRD.md](PRD.md), [SRD.md](SRD.md) | Product rules and numbered requirements; read their change-notice headers |
-| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–034 decisions, corrections, defaults, proposals and test evidence |
+| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–035 decisions, corrections, defaults, proposals and test evidence |
 | [API_CONTRACT.md](API_CONTRACT.md), [DATA_MODEL.md](DATA_MODEL.md) | Proposed API, entities, constraints, state/access/retention matrices |
 | [APP_FLOW.md](APP_FLOW.md), [../PRODUCT.md](../PRODUCT.md) | User journeys, route inventory, product context; planned screens |
 | [ARCHITECTURE.md](ARCHITECTURE.md), [TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md) | Design boundaries, runner/worker mechanics, commands and troubleshooting |
@@ -630,3 +636,38 @@ checks passed. Selected bracket/series unit mode found 55 cases, with 51
 passes and four real-game skips. SRD-028 advances to PARTIAL. Coverage remains
 91 rows and nine backlog categories. Bracket/round mutations, map-pool
 selection, score fields and complete results UI remain open.
+
+## CN-035 continuation evidence
+
+BIO-606 `BIO-606-tournament-archive-api` starts from `22ec3dc` while earlier
+task PRs are open against main. The session-CSRF archive endpoint admits Admin
+and current explicit Organizer assignments, validates exact confirmation and
+only archives completed/already archived tournaments. It uses the shared
+vault. The transition is recorded once and failing deletion returns
+`replays_deleted: false` while access stays blocked. Maintenance retries the
+purge. Per-tournament purge locking protects the shared filesystem. The
+legacy tournament store is locked through purge to preserve the audit slot;
+archive is a low-frequency blocking operation on that store.
+
+63 Django tests passed (six new, 6.143 s) with disposable PostgreSQL, plus
+system and migration-drift checks. All 111 selected replay, tournament and
+service integration cases passed in 48.461 s with real engine runs. Current
+verification used temporary paths. Full production purge of worker outputs,
+backup/restore after live archive, permanent-delete workflow and other
+remaining backlog categories still apply. All 91 requirement rows remain.
+
+The code from PRs #39–43 was first exercised together in a disposable checkout.
+The production frontend build and all 79 Django tests passed, including
+replay downloads, result visibility and archive/retention together. The merge
+resolutions preserve all five change notices and task-log entries, the updated
+coverage and the nine-category backlog.
+
+## Merge-batch verification
+
+PR #39 was already on main. Reconciled #40–43 in order, retaining the
+individual task histories, shared API/test evidence and current user guide.
+The combined branch passed 79 Django tests (8.847 s) plus system and migration
+checks, 111 targeted real-engine integration tests (50.654 s), the production
+frontend build and five Playwright cases (10.7 s). Test state and replays were
+temporary. Results publication SRD-028 is PARTIAL. All 91 rows and nine
+backlog categories remain.

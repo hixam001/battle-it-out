@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import contextlib
 import copy
+import fcntl
 import gzip
 import hashlib
 import os
@@ -423,6 +424,8 @@ def fetch_replay(vault: Vault, match_id: str, viewer: Viewer | None, *, now: Cal
 def _purge_files(vault: Vault, tournament_id: str) -> tuple[int, int, str | None]:
     """Delete every file under the tournament's folder, then check. Returns (recorded files deleted,
     unrecorded files swept, error)."""
+    if vault.root.is_symlink():
+        return 0, 0, "the replay vault root is a link; not touching it"
     folder = vault._dir(tournament_id)
     deleted = swept = 0
     if not folder.exists() and not folder.is_symlink():
@@ -432,8 +435,14 @@ def _purge_files(vault: Vault, tournament_id: str) -> tuple[int, int, str | None
     with vault.index.transaction() as state:
         known = {Path(r["storage_key"]).name for r in state["replays"].values()
                  if r["tournament_id"] == tournament_id and r["storage_key"]}
+    try:
+        entries = sorted(folder.iterdir())
+    except FileNotFoundError:
+        return 0, 0, None
+    except OSError as exc:
+        return 0, 0, f"list folder: {type(exc).__name__}"
     errors = []
-    for entry in sorted(folder.iterdir()):
+    for entry in entries:
         try:
             if entry.is_dir() and not entry.is_symlink():
                 shutil.rmtree(entry)
@@ -463,6 +472,16 @@ def purge_tournament(vault: Vault, tournament_id: str, *, now: Callable[[], floa
     repeat: it always sweeps the folder again, so files that came back (a restored backup, a stray copy) go too.
     Raises ReplayError if the tournament is not archived."""
     _check_id("tournament", tournament_id)
+    # An archive request and scheduled maintenance can purge the same folder.
+    # Serialize only that folder, keeping the index and other tournaments usable.
+    lock_path = vault.index.path.with_name(f".{vault.index.path.name}.{tournament_id}.purge.lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        return _purge_archived_tournament(vault, tournament_id, now)
+
+
+def _purge_archived_tournament(vault: Vault, tournament_id: str, now: Callable[[], float]) -> dict:
     with vault.index.transaction() as state:
         rec = state["tournaments"].get(tournament_id)
         if rec is None or rec["status"] != ARCHIVED:

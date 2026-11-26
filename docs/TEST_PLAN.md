@@ -214,6 +214,15 @@ file verification, confirms vault file deletion on disk and preserves bracket
 and match history. The real-engine `test_replays` suite separately exercises
 collection and purge for native engine output in a temporary vault.
 
+#### Implemented archive HTTP subset (BIO-606 / CN-035)
+
+The archive tests exercise exact JSON confirmation, session CSRF, Admin and
+explicit Organizer access, audit capacity, repeated requests and generic
+hidden/deleted responses. Replays are checked on disk and the fixture bracket
+and results survive. An injected failed purge leaves the tournament archived;
+scheduled retry can finish the vault purge. The targeted replay, tournament
+and services suites also run native engine workflows in temporary directories.
+
 #### Implemented notification HTTP subset (BIO-607 / CN-030)
 
 `backend.webapp.tests_notifications` runs 17 cases with real PostgreSQL accounts

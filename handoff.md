@@ -6,10 +6,11 @@
 ## Current checkpoint (verified 2026-11-26)
 
 Read [docs/PROJECT_MEMORY.md](docs/PROJECT_MEMORY.md) alongside the latest task-log
-entries. It reconciles Claude's memory and session history with code and GitHub:
-PR #38 (CN-030 recipient notification API) merged to `main` at `22ec3dc`.
-BIO-703 (CN-031) adds the linked-participant inbox and tournament dashboard from
-that base. The owner
+entries. The 2026-11-26 batch covers BIO-703 dashboard/inbox (#39), BIO-605 replay
+downloads (#40), BIO-805 operator runbook (#41), BIO-603 bracket and game reads
+(#42), and BIO-606 confirmed archive (#43). The owner approved merging the five
+PRs to `main`. The conflict resolutions retain each task, coverage and backlog.
+The owner
 activated the five deferred groups and selected Django/DRF/PostgreSQL + React/TS,
 private live viewing and Python bundles/curated dependencies before later
 languages. CN-028's latest log records the local feature API/site, real engine
@@ -644,3 +645,44 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   SRD-028 moved to PARTIAL, for 17 DONE / 62 PARTIAL / 12 TODO / 0 DEFERRED
   across 91 rows. All nine backlog categories remain. Round starts and
   generation, map-pool selection, score fields and full results UI are open.
+
+### 2026-11-26 — BIO-606: confirmed tournament archive API
+
+- Cut `BIO-606-tournament-archive-api` from fetched `origin/main` at
+  `22ec3dc` while earlier task PRs were open against main. Read the merged
+  memory/handoff and archive, role, vault and recovery requirements.
+- Added the CSRF-protected archive route for Admins and explicitly assigned
+  Organizers. It requires `{"confirm":true}` and checks the lifecycle, current
+  grant and audit capacity before touching the shared vault. The tournament
+  store lock protects the audit slot through the transition. A per-tournament
+  purge lock serializes archive and maintenance for the same vault folder.
+- Added six archive HTTP cases and a vault lock regression. 63 PostgreSQL web
+  cases passed in 6.143 s, including denial, malformed requests, one history
+  event, on-disk purge and no replay access after a failed purge. System and
+  migration checks passed. All 111 targeted replay/tournament/service tests
+  passed in real-engine mode in 48.461 s. Temporary outputs only.
+- Updated API/web/test/Jira/coverage docs, CN-035 and shared memory. The
+  requirement statuses and nine backlog categories remain. The endpoint
+  reports the shared vault purge state. Retention of worker output and
+  production backups, supervision and permanent deletion remain open.
+- Follow-up batch check combined the code from PRs #39–43 in a disposable
+  checkout. All 79 Django tests and the frontend production build passed.
+  Adjusted the archive module import placement so the bracket and archive
+  URL additions apply together. Shared documentation overlaps between the
+  independent PRs and must be preserved when the branches land.
+
+### 2026-11-26 — Merge reconciliation for PRs #39–43
+
+- The owner authorized direct merges. BIO-703 #39 was already in `main`
+  at `f849dd9`. Reconciled and merged BIO-605 #40, BIO-805 #41 and BIO-603 #42
+  in order. BIO-606 #43 brings the confirmed archive API into that merged set.
+- Preserved all CN-031–035 entries, the five task logs and all nine backlog
+  categories. Consolidated the API and test documentation and refreshed the
+  user guide for the merged dashboard, inbox, replay, results and archive
+  features. Coverage is 17 DONE / 62 PARTIAL / 12 TODO / 0 DEFERRED.
+- Verified the reconciled #43 tree on project Python 3.15.2. All 79 Django
+  tests passed, with system and migration-drift checks. All 111 targeted replay,
+  tournament and service integration tests passed, along with the frontend
+  production build and all five Playwright tests. Tests used disposable
+  PostgreSQL, local services and temporary replay paths. No provider or
+  production environment was used.

@@ -464,6 +464,19 @@ policy.\
 **Success:** `{"status":"archived","replays_deleted":true}`. Results,
 brackets, standings, and match history remain.
 
+**Implemented (BIO-606 / CN-035):** `POST /api/v1/tournaments/{id}/archive/`
+requires a current Admin session or explicit Organizer assignment, session CSRF
+and exactly the JSON confirmation above. A visible participant receives `403`.
+Missing, deleted and out-of-scope tournaments share `404`. An invalid lifecycle
+state or exhausted audit capacity returns `409` before vault changes.
+
+The archive transition is recorded once. `200` with `replays_deleted:false`
+means archive succeeded and the on-disk purge needs retry. The archive blocks
+vault access in either case. Maintenance retries interrupted/failed purges;
+another confirmed request verifies the folder again without duplicating the
+archive event. This response describes the shared replay vault. Worker output,
+backups and production storage follow their retention workflows.
+
 ### DELETE `/tournaments/{id}`
 
 **Purpose:** Permanently delete tournament operational data.\

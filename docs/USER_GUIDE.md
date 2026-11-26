@@ -66,7 +66,8 @@ Organizer for help with a permission error. Other teams' source stays private.
 
 Authorized users can download native `.bc26` files before archive through the
 [replay API](API_CONTRACT.md). Archive purges the vault files and keeps match
-history. A browser replay player, a complete bracket and a match-history screen
+history. The same API contract describes authorized bracket and game result
+reads. A browser replay player, a complete bracket and a match-history screen
 are still planned console features.
 
 ## 4. Notifications and account lifecycle
@@ -86,8 +87,9 @@ activate through validation. Organizer source access is read-only.
 
 Use **Match disputes** to review comments and record resolutions for assigned
 tournaments. An Admin handles approvals, deadline extensions and emergency
-overrides. Roster import and corrections, invitation issuance, round starts
-and archive are available through the underlying tournament workflow. Dedicated
+overrides. Roster import and corrections, invitation issuance and round starts
+are available through the underlying tournament workflow. Assigned Organizers
+can archive a completed event through the confirmed archive API. Dedicated
 Organizer screens for these operations are planned. Follow the event's
 authorized operator process for actions outside the current console.
 

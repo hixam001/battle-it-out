@@ -6,6 +6,7 @@ Unit tests write small real gzip files as stand-in replays. The last class plays
 
     python3 -m unittest backend.match_orchestrator.tests.test_replays -v
 """
+import fcntl
 import gzip
 import hashlib
 import os
@@ -16,6 +17,7 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from backend.match_orchestrator import bracket as B
 from backend.match_orchestrator import orchestrator as O
@@ -290,6 +292,21 @@ class Archive(Base):
     def test_other_tournaments_are_untouched(self):
         R.archive_tournament(self.vault, "t1", "admin-1")
         self.assertEqual(R.fetch_replay(self.vault, "h1", R.Viewer("participant", frozenset({"t2"}))).match_id, "h1")
+        self.assertEqual(self.files("t2"), ["h1.bc26"])
+
+    def test_archive_holds_the_tournament_purge_lock_during_file_removal(self):
+        real_purge = R._purge_files
+
+        def purge(vault, tid):
+            lock_path = vault.index.path.with_name(f".{vault.index.path.name}.{tid}.purge.lock")
+            with lock_path.open("a+") as competing_lock:
+                with self.assertRaises(BlockingIOError):
+                    fcntl.flock(competing_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return real_purge(vault, tid)
+
+        with patch.object(R, "_purge_files", side_effect=purge):
+            self.assertTrue(R.archive_tournament(self.vault, "t1", "admin-1")["replays_deleted"])
+        self.assertEqual(R.purge_pending(self.vault), [])
         self.assertEqual(self.files("t2"), ["h1.bc26"])
 
     def test_archive_twice_is_harmless_and_sweeps_again(self):
