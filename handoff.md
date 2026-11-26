@@ -577,3 +577,28 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   project backlog. Next independent candidate is BIO-605 private replay delivery
   with the current vault. The configured author and explicit PR base `main`
   workflow apply.
+
+### 2026-11-26 — BIO-605: private replay download
+
+- Cut `BIO-605-private-replay-download` from fetched `origin/main` at
+  `22ec3dc`. BIO-703 PR #39 was open against main when this task started.
+- Added the replay route and game ID discovery in the web app. The vault opens
+  a regular file without following links in its storage tree, verifies its
+  registered digest and size, and rechecks archive state before handing off the
+  stream. Current participant/Organizer/Admin scope applies on every request.
+  Missing, hidden and deleted records return the same `404`. A visible
+  archived record returns `410`; a damaged or missing indexed file returns
+  `503` and records one incident.
+- Django system and migration-drift checks passed. All 66 web tests passed
+  (nine new, 6.314 s), including archive during verification, session scope
+  changes and on-disk purge with history intact. The initial streaming test
+  duplicated Django's response-close hook; consuming the Django test iterator
+  closes the stream once. Backend unit mode ran 779 tests with 731 passed and 48
+  skipped. All 39 targeted replay tests passed (18.735 s) in real-game mode.
+  Test state/replays stayed temporary.
+- Updated replay API and test docs, web README, Jira, coverage, changelog,
+  CN-032 and project memory. All nine backlog categories and all 91 requirement
+  statuses remain. Role-scoped log HTTP, offline playback, indicator-text
+  review, backup/purge of all production copies and object storage are open.
+  An already-admitted stream may finish after archive. Next independent
+  candidate is BIO-805 operator runbooks for the interim services.

@@ -199,6 +199,15 @@ preference. - Email delivery follows preference and retries failures. -
 Backup/restore procedure recovers critical state without corrupting
 match references.
 
+#### Implemented replay download subset (BIO-605 / CN-032)
+
+`backend.webapp.tests_replays` checks byte-identical streamed attachments,
+current roster and explicit Organizer scope, safe errors, revoked access,
+damaged replay incidents and archive refusal. It exercises archive during
+file verification, confirms vault file deletion on disk and preserves bracket
+and match history. The real-engine `test_replays` suite separately exercises
+collection and purge for native engine output in a temporary vault.
+
 #### Implemented notification HTTP subset (BIO-607 / CN-030)
 
 `backend.webapp.tests_notifications` runs 17 cases with real PostgreSQL accounts

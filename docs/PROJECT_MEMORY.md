@@ -329,13 +329,15 @@ with current code and the coverage matrix; nothing here is closed by intake.
    current explicit links and the shared service store. CN-031 implements the
    linked-participant inbox and deadline/notice dashboard. Announcement authoring,
    staff inboxes and a final pagination contract remain open.
-7. **Replays/logs/privacy:** authorized replay/log HTTP delivery, object storage,
+7. **Replays/logs/privacy:** role-scoped match-log HTTP delivery, object storage,
    short-lived URLs, full browser replay player (DEC-10), deployed purge schedule,
    backups/restore, indicator-text exposure review, durable log retention and
    complete end-to-end privacy verification. Private live numeric boards now
    omit arbitrary text, check current scope per poll and are denied/purged after
    archive. Full viewer overlays/traps/animations and production reconnect/load
-   evidence remain; live viewing is not the offline replay player.
+   evidence remain. CN-032 adds current-scope native replay downloads from the
+   private vault. Production retention of worker-side artifacts, raw native
+   indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
    team, tournament creation/approval/deadline/round management, full bracket/
    replay/coin-flip and Admin mutation screens. Public landing and the private
@@ -414,7 +416,7 @@ records unresolved role/provisioning decisions; none is an implemented default.
 | Source | Use |
 |---|---|
 | [PRD.md](PRD.md), [SRD.md](SRD.md) | Product rules and numbered requirements; read their change-notice headers |
-| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–031 decisions, corrections, defaults, proposals and test evidence |
+| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–032 decisions, corrections, defaults, proposals and test evidence |
 | [API_CONTRACT.md](API_CONTRACT.md), [DATA_MODEL.md](DATA_MODEL.md) | Proposed API, entities, constraints, state/access/retention matrices |
 | [APP_FLOW.md](APP_FLOW.md), [../PRODUCT.md](../PRODUCT.md) | User journeys, route inventory, product context; planned screens |
 | [ARCHITECTURE.md](ARCHITECTURE.md), [TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md) | Design boundaries, runner/worker mechanics, commands and troubleshooting |
@@ -560,3 +562,29 @@ provider or formal accessibility test ran. All nine backlog categories and the
 91 requirement statuses remain. An independent candidate is private replay
 download against the existing vault (BIO-605), with browser playback still
 dependent on DEC-10.
+
+## CN-032 continuation evidence
+
+BIO-605 private native replay delivery was started from merged `origin/main` at
+`22ec3dc` on `BIO-605-private-replay-download` while BIO-703 was open to main.
+It uses server-derived membership/Organizer scope for a vault lookup, current
+tournament lifecycle checks and a verified file descriptor. Existing callers of
+`fetch_replay` still get a verified handle. The live list adds the latest game
+match ID alongside the series ID. Binary responses are private attachments;
+hidden/deleted/missing replays share `404`, visible archived replays return
+`410`, and a missing or damaged indexed file returns `503` and records an
+incident. The vault rechecks archive status after verifying the file.
+
+All 66 Django tests passed in 6.314 s with disposable PostgreSQL, including
+nine new replay cases. System and migration-drift checks passed. Backend unit
+mode found 779 tests, 731 passed and 48 skipped. All 39 targeted replay
+integration cases passed in 18.735 s, including collection, verified fetch,
+on-disk purge and retained history for an engine-native replay. Temporary test
+outputs preserved existing user replays.
+
+Post-archive requests receive no replay. An already-admitted stream may finish,
+and production cleanup of worker output copies remains open. Native file
+contents include whatever the engine records; indicator-text policy, the
+browser player, log delivery, object storage and recovery remain open. All 91
+requirement statuses and nine backlog categories remain. Independent follow-up:
+BIO-805 operator runbooks for the interim services.
