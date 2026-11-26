@@ -686,3 +686,27 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   production build and all five Playwright tests. Tests used disposable
   PostgreSQL, local services and temporary replay paths. No provider or
   production environment was used.
+
+### 2026-11-27 — BIO-602: deadline actions and participant notices
+
+- Started BIO-602-deadline-notices from fetched origin/main at d66b95d with
+  PRs #44–48 open against main. Read the project memory, latest handoff and
+  tournament, notification, API, requirements and acceptance specifications.
+- Added confirmed Admin deadline extension and emergency override routes.
+  Current authorization is checked for each request and again under the
+  account lock before committing. The tournament change, audit record,
+  same-key receipt and notice audience share one store transaction.
+  Notification publication is idempotent, respects the existing email
+  preference and recovers through maintenance. The service reports pending
+  events. Pinned entry versions block reopening and map overrides.
+- Reused the fresh-deadline draw lock from the parallel BIO-603 work in the
+  scheduler so this branch can land independently. A regression extends
+  the deadline after the scheduler reads its initial snapshot and verifies
+  the timer does not pin or draw early.
+- All 87 Django cases and system/migration checks passed with disposable
+  PostgreSQL (8.639 s). All 200 targeted tournament/notification/service
+  integration tests passed, including the stale-deadline case and real
+  engine service lifecycle. Test state and replays stayed temporary.
+- Updated the API and service guides, runbook, Jira, test plan, changelog,
+  CN-041, coverage and memory. All 91 statuses and nine backlog categories
+  remain. Email production delivery, Admin screens and DEC-08 remain open.
