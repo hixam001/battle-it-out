@@ -7,10 +7,9 @@
 
 Read [docs/PROJECT_MEMORY.md](docs/PROJECT_MEMORY.md) alongside the latest task-log
 entries. It reconciles Claude's memory and session history with code and GitHub:
-PR #37 (CN-029 HTTP errors/liveness) is merged to `main`; fetched base = `f551850`.
-BIO-607 continues from there on `BIO-607-notification-api` (CN-030): recipient
-notification feed/read/preferences using the shared service store, with no stacked
-dependency. The owner
+PR #38 (CN-030 recipient notification API) merged to `main` at `22ec3dc`.
+BIO-703 (CN-031) adds the linked-participant inbox and tournament dashboard from
+that base. The owner
 activated the five deferred groups and selected Django/DRF/PostgreSQL + React/TS,
 private live viewing and Python bundles/curated dependencies before later
 languages. CN-028's latest log records the local feature API/site, real engine
@@ -553,6 +552,31 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   requirement statuses are unchanged; backlog categories 1–5 and 7–9 are
   byte-for-byte unchanged, with category 6 reconciled to this implementation.
   No generated/runtime/frontend/agent artifacts are included.
+
+### 2026-11-26 — BIO-703: participant dashboard and inbox
+
+- Started `BIO-703-notification-inbox` from fetched `origin/main` at `22ec3dc`
+  after PR #38 merged. Used the Sites local repository workflow and the shared
+  repository memory closeout.
+- Added dashboard and inbox routing in `frontend/src/main.tsx`, the shared
+  session client in `api.ts`, the inbox and scoped notice preview in
+  `notifications.tsx`, and responsive styling. Dashboard deadline times follow
+  the browser timezone. The inbox includes historical notices, unread filtering,
+  20-item pages and confirmed read/unread and email changes. Unauthorized
+  accounts receive a refusal screen. Staff recipient provisioning and final
+  pagination remain separate work.
+- Updated browser tests and added the local fixture seeder. TypeScript and Vite
+  production build passed. All five Playwright tests passed in 10.0 s against
+  disposable Django/PostgreSQL and local JSON state. The preference test uses
+  a click and waits for the saved state because the checkbox reflects server
+  confirmation. Services were stopped after verification. No engine, provider
+  or production deployment was exercised.
+- Updated the design and frontend guides, API/flow/test/Jira/coverage evidence,
+  changelog, CN-031 and project memory. All 91 statuses remain 17 DONE /
+  61 PARTIAL / 13 TODO / 0 DEFERRED. All nine categories remain in the complete
+  project backlog. Next independent candidate is BIO-605 private replay delivery
+  with the current vault. The configured author and explicit PR base `main`
+  workflow apply.
 
 ### 2026-11-26 — BIO-605: private replay download
 

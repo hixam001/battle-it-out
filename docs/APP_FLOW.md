@@ -413,8 +413,8 @@ Authenticated Web App (later phase)
   `/matches/{id}/replay`                    Authorized user Replay                 Player/download     Available, processing,
                                             before archive  playback/download                          archived/unavailable
 
-  `/notifications`                          Authenticated   Dashboard notification Read/unread         Empty, unread,
-                                                            feed                                       delivery issue
+  `/notifications`                          Linked          Dashboard notification Read/unread,        Empty, unread,
+                                             participant     feed                   email preference   delivery issue
 
   `/account/settings`                       Authenticated   Preferences/deletion   Email toggle,       Active, queued,
                                                                                    deletion request    cancelled

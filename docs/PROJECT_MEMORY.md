@@ -22,10 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
-- Latest continuation on 2026-11-26: PR #37 (CN-029 HTTP errors/liveness)
-  merged into `main`; fetched base is `f551850`. **BIO-607 recipient
-  notification API** starts there on `BIO-607-notification-api` (CN-030),
-  with no stacked dependency. The owner
+- Latest continuation on 2026-11-26: PR #38 (CN-030 recipient notification API)
+  merged into `main`. **BIO-703 participant dashboard and inbox** (CN-031)
+  starts from `22ec3dc` on `BIO-703-notification-inbox`. The owner
   activated all five deferred groups, selected Django/DRF + PostgreSQL and
   React/TypeScript, chose private tournament live viewing, and chose Python
   bundles/curated dependencies before other language compatibility work.
@@ -45,7 +44,11 @@ remaining backlog after every task.
   roster links avoid numeric Django/legacy-recipient ID collisions; staff and
   unlinked recipient provisioning remain open. Offset pagination is interim,
   setters are idempotent, and dashboard notices survive email-off/outage tests.
-  Notifications remain JSON-backed; UI, providers and full BIO-607 stay open.
+  Notifications remain JSON-backed. Providers and full BIO-607 stay open.
+- CN-031 adds the React `/dashboard` (tournament status, both deadlines and
+  recent notices) and `/notifications` (linked participant feed, offset pages,
+  read/unread and email preference). Browser coverage uses real sessions and a
+  reproducible disposable database/data fixture.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -316,15 +319,16 @@ with current code and the coverage matrix; nothing here is closed by intake.
    review/version/idempotency and immutable history; appeals/reopening/outcome
    correction policy and automatic notices remain. The Admin operations reader
    is implemented; additional action controls remain open.
-6. **Notifications:** screens, staff/unlinked recipient provisioning, PostgreSQL
+6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; announcements, automatic notice
    calls after extension/override, affected-user
    counts, Organizer approval/rejection and dispute notices; mandatory security
    email policy, owner wording/retry review, expiry alerts and real outage drill.
    Check/round/draw adapters and failed-email alert retry hooks already exist.
    CN-030 supplies linked-participant feed/read/preferences HTTP endpoints with
-   current explicit links and the shared service store; this does not close the
-   remaining event/delivery/UI work or decide global pagination.
+   current explicit links and the shared service store. CN-031 implements the
+   linked-participant inbox and deadline/notice dashboard. Announcement authoring,
+   staff inboxes and a final pagination contract remain open.
 7. **Replays/logs/privacy:** role-scoped match-log HTTP delivery, object storage,
    short-lived URLs, full browser replay player (DEC-10), deployed purge schedule,
    backups/restore, indicator-text exposure review, durable log retention and
@@ -334,7 +338,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    evidence remain. CN-032 adds current-scope native replay downloads from the
    private vault. Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
-8. **Website and launch:** remaining registration/account settings/notification,
+8. **Website and launch:** remaining registration/account lifecycle,
    team, tournament creation/approval/deadline/round management, full bracket/
    replay/coin-flip and Admin mutation screens. Public landing and the private
    live/analytics/submission/dispute/operations console now exist. Branding,
@@ -538,6 +542,26 @@ full PostgreSQL migration and every retained execution gate remain open. All
 91 statuses stay **17 DONE / 61 PARTIAL / 13 TODO / 0 DEFERRED**; all nine complete
 backlog categories above remain. No public skill or generated graph/index update
 is needed; repository Markdown is the durable memory destination.
+
+## CN-031 continuation evidence
+
+BIO-703 adds direct dashboard/inbox links and addressable existing console
+sections. The dashboard shows the selected tournament's status, registration and
+submission deadlines with local timezone and three scoped personal notices.
+The inbox is independent of current tournament membership, uses 20-item offset
+pages with an unread filter and refresh, and updates read state and email through
+the existing CSRF/session client. Email remains optional and dashboard notices
+stay enabled. Servers serving the built React app need a fallback for the two
+new paths and same-origin forwarding for the API. No hosted deployment occurred.
+
+TypeScript and Vite production build passed. All five Playwright tests passed
+in 10 seconds with real Django sessions and disposable PostgreSQL and legacy
+state. The seed script reuses the existing fixture and requires a new local
+`bio_qa_*` database and state path. No new engine/backend matrix, production
+provider or formal accessibility test ran. All nine backlog categories and the
+91 requirement statuses remain. An independent candidate is private replay
+download against the existing vault (BIO-605), with browser playback still
+dependent on DEC-10.
 
 ## CN-032 continuation evidence
 
