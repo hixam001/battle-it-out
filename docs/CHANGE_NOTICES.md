@@ -413,6 +413,66 @@ Decisions from the owner that change or narrow what the requirement documents (P
   064, BIO-REQ-16 and BIO-NFR-07; statuses stay 17 DONE / 61 PARTIAL / 13 TODO /
   0 DEFERRED. No new product/provider/hosting approval is inferred.
 
+## CN-031 — Participant dashboard and inbox (2026-11-26)
+
+- **BIO-703:** implemented `/dashboard` and `/notifications` in the existing React
+  console. The tournament dashboard shows status, both deadlines in the
+  browser's timezone, and the latest three personal notices for the selection.
+  The inbox includes historical notices, an unread filter, 20-item pages,
+  refresh, read/unread actions and optional email. The dashboard channel stays on.
+- **Behavior:** CN-030 endpoints authorize each request. The browser keeps the
+  email control at its confirmed value until the API saves it. Private feed
+  state is cleared on access refusal or sign-out. The unread filter reloads
+  after a notice is marked read. Offset pages can shift as new notices arrive.
+- **Verification:** TypeScript and Vite production build passed. All five
+  Playwright tests passed in 10 seconds with disposable PostgreSQL, Django and
+  local fixture state. The two new flows cover desktop deadlines and preview,
+  mobile private inbox/paging, keyboard filtering, persisted read and email
+  changes, another account's empty feed and unlinked-account refusal.
+- **Remaining:** staff recipient provisioning, event/announcement authoring,
+  final pagination, real providers/deployment and formal accessibility checks.
+  Requirement evidence advances for SRD-060, BIO-REQ-16/17 and BIO-NFR-07/12.
+  Status counts remain 17 DONE / 61 PARTIAL / 13 TODO / 0 DEFERRED.
+
+## CN-032 — Private native replay download (2026-11-26)
+
+- **BIO-605:** `GET /api/v1/matches/{match_id}/replay/` streams the registered
+  engine-native `.bc26` as a private attachment from the existing replay vault.
+  Current verified roster scope, explicit Organizer assignments or Admin scope
+  authorize the request. The live list supplies the game match ID.
+- **Behavior:** the opened descriptor is verified against the stored replay
+  digest and size. Files and vault directories must be regular files and real
+  directories respectively. Archive is rechecked before handing off the stream.
+  Missing/out-of-scope/deleted entries return the same `404`. Visible archived
+  entries return `410` to all roles. A missing/damaged indexed file returns
+  `503` and records one incident.
+- **Verification:** 66 Django tests passed with disposable PostgreSQL, including
+  nine new replay cases. Django checks and migration-drift checks passed. Full
+  backend unit mode found 779 tests, with 731 passing and 48 expected skips.
+  All 39 targeted replay cases passed in integration mode, including a real
+  native engine replay stored and purged in a temporary vault.
+- **Remaining:** new requests are refused after archive. Transfers that already
+  received an open stream may be in progress. Archive of worker-side copies,
+  retention/restore, native indicator-text review, match-log HTTP delivery,
+  browser playback and object storage remain open.
+
+## CN-033 — Interim operator runbook and console guides (2026-11-26)
+
+- **BIO-805:** document incident triage, paused matches, dead jobs, email
+  failures, deadline requests, replay purge, backup/restore and key rotation
+  against the existing console and service commands. Update Admin and User
+  guides for provisioned accounts, Python bundles, submissions, private live
+  boards, analytics and dispute review.
+- **Rehearsal:** backed up and restored disposable PostgreSQL and shared service
+  state, checked both backup digests and validated restored session scope,
+  submission digest, match/dispute references, notification preferences and
+  vault/archive state. Rotated a test signing key, confirmed an old session
+  receives `401` and verified a fresh CSRF login.
+- **Checks:** 18 service integration cases passed, including sandboxed real
+  games and archive, 34 queue tests passed and 53 tournament tests passed.
+  No production services, real provider, target-host recovery objectives or
+  operational action authority was selected.
+
 ## CN-034 — Scoped bracket and game results (2026-11-26)
 
 - **BIO-603:** added current-scope, read-only tournament bracket and

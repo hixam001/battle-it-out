@@ -53,7 +53,7 @@ test("participant signs in, sees recorded analytics and opens a match dispute", 
   await expect(
     page.getByRole("option", { name: "QA FIXTURE — not a real competition" }),
   ).toBeAttached();
-  await page.getByRole("button", { name: "Analytics", exact: false }).click();
+  await page.getByRole("link", { name: "Analytics", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Beyond the scoreboard" }),
   ).toBeVisible();
@@ -67,7 +67,7 @@ test("participant signs in, sees recorded analytics and opens a match dispute", 
     fullPage: true,
   });
   await page
-    .getByRole("button", { name: "Match disputes", exact: false })
+    .getByRole("link", { name: "Match disputes", exact: true })
     .click();
   await page
     .getByLabel("Title", { exact: true })
@@ -95,7 +95,7 @@ test("participant signs in, sees recorded analytics and opens a match dispute", 
     fullPage: true,
   });
   await page
-    .getByRole("button", { name: "Bot submissions", exact: false })
+    .getByRole("link", { name: "Bot submissions", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Your next contender" }),
@@ -119,7 +119,7 @@ test("Admin sees operational health and participants cannot call it", async ({
     .getByLabel("Password", { exact: true })
     .fill("test-fixture-passphrase");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await page.getByRole("button", { name: "Operations", exact: false }).click();
+  await page.getByRole("link", { name: "Operations", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Eyes on the operation." }),
   ).toBeVisible();
@@ -130,4 +130,79 @@ test("Admin sees operational health and participants cannot call it", async ({
     path: test.info().outputPath("operations-desktop.png"),
     fullPage: true,
   });
+});
+
+test("participant sees tournament notices and manages a private inbox on mobile", async ({ page, browser }) => {
+  await page.goto("/dashboard");
+  await page.getByLabel("Username", { exact: true }).fill("captain-a");
+  await page.getByLabel("Password", { exact: true }).fill("test-fixture-passphrase");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByText("Registration deadline", { exact: true })).toBeVisible();
+  await expect(page.getByText("Submission deadline", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^Timezone /)).toBeVisible();
+  const preview = page.getByRole("region", { name: "Tournament notices" });
+  await expect(preview.getByRole("heading", { name: "Fixture notice 22" })).toBeVisible();
+  await expect(preview.getByText("Historical fixture notice")).toHaveCount(0);
+  await preview.getByRole("link", { name: "Open inbox" }).click();
+  await expect(page).toHaveURL(/\/notifications$/);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const inbox = page.getByRole("region", { name: "Inbox" });
+  await expect(inbox.getByRole("heading", { name: "Historical fixture notice" })).toBeVisible();
+  await expect(inbox.getByText("23 unread")).toBeVisible();
+  const prefs = page.getByRole("checkbox", { name: "Email notifications" });
+  await expect(prefs).toBeChecked();
+  await prefs.click();
+  await expect(page.getByText("Email notifications disabled.")).toBeVisible();
+  await expect(prefs).not.toBeChecked();
+  await expect(page.getByText("Dashboard notifications are always on.")).toBeVisible();
+
+  await inbox.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(inbox.getByText("21–23 of 23")).toBeVisible();
+  await expect(inbox.getByRole("heading", { name: "Fixture notice 01" })).toBeVisible();
+  await inbox.getByRole("button", { name: "Previous", exact: true }).click();
+  const row = inbox.getByRole("listitem").filter({ hasText: "Fixture notice 22" });
+  await row.getByRole("button", { name: "Mark read", exact: true }).click();
+  await expect(row.getByRole("button", { name: "Mark unread", exact: true })).toBeVisible();
+
+  await page.reload();
+  await expect(prefs).not.toBeChecked();
+  await expect(row.getByRole("button", { name: "Mark unread", exact: true })).toBeVisible();
+  const unread = inbox.getByRole("button", { name: "Unread", exact: true });
+  await unread.focus();
+  await page.keyboard.press("Enter");
+  await expect(unread).toHaveAttribute("aria-pressed", "true");
+  await expect(inbox.getByText("22 unread")).toBeVisible();
+  await expect(row).toHaveCount(0);
+
+  await inbox.getByRole("button", { name: "All", exact: true }).click();
+  await row.getByRole("button", { name: "Mark unread", exact: true }).click();
+  await expect(inbox.getByText("23 unread")).toBeVisible();
+  await prefs.click();
+  await expect(page.getByText("Email notifications enabled.")).toBeVisible();
+  await expect(prefs).toBeChecked();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("inbox-mobile.png"), fullPage: true });
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(row).toHaveCount(0);
+
+  const other = await browser.newPage();
+  await other.goto(new URL("/notifications", page.url()).href);
+  await other.getByLabel("Username", { exact: true }).fill("captain-b");
+  await other.getByLabel("Password", { exact: true }).fill("test-fixture-passphrase");
+  await other.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(other.getByText("No notifications yet.")).toBeVisible();
+  await expect(other.getByText("Fixture notice 22")).toHaveCount(0);
+  await other.close();
+});
+
+test("notifications deep link keeps unlinked accounts out of the personal feed", async ({ page }) => {
+  await page.goto("/notifications");
+  await page.getByLabel("Username", { exact: true }).fill("outsider");
+  await page.getByLabel("Password", { exact: true }).fill("test-fixture-passphrase");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "Notifications are available to signed-in participants with a linked tournament account.",
+  );
+  await expect(page.getByRole("checkbox", { name: "Email notifications" })).toHaveCount(0);
 });

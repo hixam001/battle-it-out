@@ -12,7 +12,9 @@ invented. Battlecode attribution does not imply endorsement.
 
 The private console uses the same color system in a light workspace and dark
 navigation rail. Match room, analytics, submissions, disputes and Admin
-operations are separate tasks. Navigation and forms remain usable on mobile;
+operations are separate tasks. The dashboard brings deadline and tournament
+notices together. The inbox uses text and color to distinguish read state and
+places email controls in a separate panel. Navigation and forms remain usable on mobile;
 wide data tables scroll within their panels rather than overflowing the page.
 Canvas boards have a descriptive accessible label and score counters remain
 available as text. Full nonvisual play-by-play is still accessibility work.

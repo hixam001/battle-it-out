@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { api, setCsrfToken } from "./api";
+import { Inbox, TournamentNotices } from "./notifications";
 import "./style.css";
 
 type User = { id: number; username: string; admin: boolean };
@@ -61,30 +63,6 @@ type Dispute = {
   resolution: string;
   events?: { kind: string; body: string; created_at: string }[];
 };
-let csrf = "";
-async function api<T = any>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch("/api/v1" + path, {
-    ...init,
-    credentials: "same-origin",
-    headers: {
-      ...(init.body && !(init.body instanceof FormData)
-        ? { "Content-Type": "application/json" }
-        : {}),
-      "X-CSRFToken": csrf,
-      ...init.headers,
-    },
-  });
-  const type = response.headers.get("content-type") || "";
-  const body = type.includes("json") ? await response.json() : null;
-  if (!response.ok)
-    throw new Error(
-      body?.error?.message ||
-        (response.status === 403
-          ? "This action needs current access. Sign in again if your session expired."
-          : `Request failed (${response.status}).`),
-    );
-  return body;
-}
 const key = () => ({ "Idempotency-Key": crypto.randomUUID() });
 const label = (value: string) => value.replaceAll("_", " ");
 const date = (stamp: number) =>
@@ -402,15 +380,36 @@ function Landing({ open }: { open: () => void }) {
     </>
   );
 }
+const consoleLinks = [
+  { page: "dashboard", href: "/dashboard", label: "Dashboard", icon: "⌂" },
+  { page: "notifications", href: "/notifications", label: "Notifications", icon: "◈" },
+  { page: "live", href: "/#console", label: "Match room", icon: "◉" },
+  { page: "analytics", href: "/#analytics", label: "Analytics", icon: "▥" },
+  { page: "submissions", href: "/#submissions", label: "Bot submissions", icon: "⌘" },
+  { page: "disputes", href: "/#disputes", label: "Match disputes", icon: "☷" },
+  { page: "operations", href: "/#operations", label: "Operations", icon: "⚙" },
+] as const;
+type ConsolePage = (typeof consoleLinks)[number]["page"];
+
+function currentPage() {
+  const address = location.pathname === "/" ? `/${location.hash}` : location.pathname.replace(/\/$/, "");
+  return consoleLinks.find(({ href }) => href === address)?.page ?? null;
+}
+
 function App() {
   const [user, setUser] = useState<User | null>(null),
     [checking, setChecking] = useState(true),
-    [enter, setEnter] = useState(location.hash === "#console");
+    [page, setPage] = useState(currentPage);
   const [error, setError] = useState("");
+  useEffect(() => {
+    const onLocation = () => setPage(currentPage());
+    window.addEventListener("hashchange", onLocation);
+    return () => window.removeEventListener("hashchange", onLocation);
+  }, []);
   useEffect(() => {
     api("/auth/session/")
       .then((data) => {
-        csrf = data.csrf;
+        setCsrfToken(data.csrf);
         setUser(data.user);
       })
       .catch(() =>
@@ -421,11 +420,10 @@ function App() {
       .finally(() => setChecking(false));
   }, []);
   const open = () => {
-    setEnter(true);
     location.hash = "console";
     window.scrollTo(0, 0);
   };
-  if (!enter)
+  if (!page)
     return (
       <>
         <a className="skip" href="#main-content">
@@ -449,10 +447,7 @@ function App() {
     return (
       <Login
         done={setUser}
-        back={() => {
-          setEnter(false);
-          location.hash = "";
-        }}
+        back={() => { location.href = "/"; }}
       />
     );
   return (
@@ -464,6 +459,7 @@ function App() {
       )}
       <Console
         user={user}
+        page={page === "operations" && !user.admin ? "live" : page}
         logout={async () => {
           try {
             await api("/auth/logout/", { method: "POST" });
@@ -502,12 +498,12 @@ function Login({ done, back }: { done: (u: User) => void; back: () => void }) {
             setError("");
             try {
               const session = await api("/auth/session/");
-              csrf = session.csrf;
+              setCsrfToken(session.csrf);
               const data = await api("/auth/login/", {
                 method: "POST",
                 body: JSON.stringify({ username: name, password }),
               });
-              csrf = data.csrf;
+              setCsrfToken(data.csrf);
               done(data.user);
             } catch (e) {
               setError((e as Error).message);
@@ -551,11 +547,11 @@ function Login({ done, back }: { done: (u: User) => void; back: () => void }) {
     </main>
   );
 }
-function Console({ user, logout }: { user: User; logout: () => void }) {
+function Console({ user, page, logout }: { user: User; page: ConsolePage; logout: () => void }) {
   const [cups, setCups] = useState<Cup[]>([]),
     [selected, setSelected] = useState(""),
-    [role, setRole] = useState("participant"),
-    [tab, setTab] = useState("live"),
+    [role, setRole] = useState(""),
+    [loading, setLoading] = useState(true),
     [error, setError] = useState("");
   useEffect(() => {
     api("/tournaments/")
@@ -564,9 +560,11 @@ function Console({ user, logout }: { user: User; logout: () => void }) {
         setRole(data.role);
         setSelected(data.items[0]?.id || "");
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
   }, []);
   const cup = cups.find((c) => c.id === selected);
+  const showTournament = page !== "notifications" && page !== "operations";
   return (
     <div className="console">
       <aside className="sidebar">
@@ -578,38 +576,14 @@ function Console({ user, logout }: { user: User; logout: () => void }) {
         </a>
         <p className="eyebrow">COMPETITION CONSOLE</p>
         <nav aria-label="Console">
-          <button
-            className={tab === "live" ? "active" : ""}
-            onClick={() => setTab("live")}
-          >
-            ◉ <span>Match room</span>
-          </button>
-          <button
-            className={tab === "analytics" ? "active" : ""}
-            onClick={() => setTab("analytics")}
-          >
-            ▥ <span>Analytics</span>
-          </button>
-          <button
-            className={tab === "submissions" ? "active" : ""}
-            onClick={() => setTab("submissions")}
-          >
-            ⌘ <span>Bot submissions</span>
-          </button>
-          <button
-            className={tab === "disputes" ? "active" : ""}
-            onClick={() => setTab("disputes")}
-          >
-            ☷ <span>Match disputes</span>
-          </button>
-          {user.admin && (
-            <button
-              className={tab === "operations" ? "active" : ""}
-              onClick={() => setTab("operations")}
-            >
-              ⚙ <span>Operations</span>
-            </button>
-          )}
+          {consoleLinks.filter((link) => (
+            (link.page !== "operations" || user.admin) &&
+            (link.page !== "notifications" || (!user.admin && role !== "organizer"))
+          )).map((link) => (
+            <a key={link.page} href={link.href} aria-current={page === link.page ? "page" : undefined}>
+              <span className="nav-icon" aria-hidden="true">{link.icon}</span> {link.label}
+            </a>
+          ))}
         </nav>
         <div className="account">
           <strong>{user.username}</strong>
@@ -620,7 +594,7 @@ function Console({ user, logout }: { user: User; logout: () => void }) {
       <main className="workspace" id="main-content">
         <header className="workspace-top">
           <span className="eyebrow">INNOFEST / COMPETITION</span>
-          <label className="cup-picker">
+          {showTournament && cups.length > 0 && <label className="cup-picker">
             Tournament
             <select
               aria-label="Tournament"
@@ -633,15 +607,21 @@ function Console({ user, logout }: { user: User; logout: () => void }) {
                 </option>
               ))}
             </select>
-          </label>
+          </label>}
         </header>
-        {error && (
+        {error && showTournament && (
           <p className="error" role="alert">
             {error}
           </p>
         )}
-        {tab === "operations" && user.admin ? (
+        {page === "notifications" ? (
+          <Inbox tournaments={new Map(cups.map((item) => [item.id, item.name]))} />
+        ) : page === "operations" ? (
           <Operations />
+        ) : loading ? (
+          <p role="status">Loading tournaments…</p>
+        ) : page === "dashboard" ? (
+          <Dashboard cup={cup} role={role} unavailable={Boolean(error)} />
         ) : cup ? (
           <>
             <div className="workspace-heading">
@@ -656,7 +636,7 @@ function Console({ user, logout }: { user: User; logout: () => void }) {
                       analytics: "Beyond the scoreboard",
                       submissions: "Your next contender",
                       disputes: "A fair hearing",
-                    }[tab]
+                    }[page]
                   }
                 </h1>
               </div>
@@ -668,19 +648,19 @@ function Console({ user, logout }: { user: User; logout: () => void }) {
                 {Intl.DateTimeFormat().resolvedOptions().timeZone}
               </p>
             </div>
-            <div key={cup.id + tab}>
-              {tab === "live" ? (
+            <div key={`${cup.id}/${page}`}>
+              {page === "live" ? (
                 <Live cup={cup} />
-              ) : tab === "analytics" ? (
+              ) : page === "analytics" ? (
                 <Analytics cup={cup} />
-              ) : tab === "submissions" ? (
+              ) : page === "submissions" ? (
                 <Submissions cup={cup} role={role} />
               ) : (
                 <Disputes cup={cup} role={role} />
               )}
             </div>
           </>
-        ) : (
+        ) : !error && (
           <section className="empty">
             <h1>No tournaments yet.</h1>
             <p>
@@ -691,6 +671,33 @@ function Console({ user, logout }: { user: User; logout: () => void }) {
         )}
       </main>
     </div>
+  );
+}
+function Dashboard({ cup, role, unavailable }: { cup?: Cup; role: string; unavailable: boolean }) {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return (
+    <>
+      <div className="workspace-heading"><h1>Dashboard</h1></div>
+      {cup ? (
+        <>
+          <section className="panel tournament-overview" aria-labelledby="overview-heading">
+            <h2 id="overview-heading">{cup.name}</h2>
+            {cup.description && <p>{cup.description}</p>}
+            <dl>
+              <div><dt>Status</dt><dd className="tournament-status">{label(cup.status)}</dd></div>
+              <div><dt>Registration deadline</dt><dd>
+                <time dateTime={new Date(cup.deadlines.registration * 1000).toISOString()}>{date(cup.deadlines.registration)}</time>
+              </dd></div>
+              <div><dt>Submission deadline</dt><dd>
+                <time dateTime={new Date(cup.deadlines.submission * 1000).toISOString()}>{date(cup.deadlines.submission)}</time>
+              </dd></div>
+            </dl>
+            <p className="muted">Timezone {timeZone}</p>
+          </section>
+          {role === "participant" && <TournamentNotices key={cup.id} tournamentId={cup.id} />}
+        </>
+      ) : !unavailable && <p>No tournaments yet. Contact your Organizer if you expected access.</p>}
+    </>
   );
 }
 function Live({ cup }: { cup: Cup }) {

@@ -8,7 +8,7 @@ INNOFEST **Battle It Out** is a Battlecode-style programming competition. Partic
 
 - Existing Battlecode engine and sandboxed Python workers, queue, tournament flow, registry, roster, notifications and replay vault.
 - [Django/DRF feature API with PostgreSQL](backend/webapp/README.md): sessions, current roster/Organizer scope, submissions, analytics, disputes, recipient notifications/preferences and an Admin operations reader. Notification state still uses the shared legacy store.
-- [React/TypeScript website](frontend/README.md): public landing page and private feature console, with desktop/mobile browser checks.
+- [React/TypeScript website](frontend/README.md): public landing page and private feature console, including the tournament dashboard and participant inbox, with desktop/mobile browser checks.
 - [Native Python bundles](backend/submission_bundle/README.md) and [private live boards](backend/live_view/README.md), verified with real engine games.
 - Durable continuation notes in [project memory](docs/PROJECT_MEMORY.md) and [handoff](handoff.md).
 
@@ -71,8 +71,9 @@ All backend tests: `python3 backend/run_tests.py` (this Python), `--matrix` (eve
 | [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md) | Know how the work will be verified |
 | [`docs/JIRA_BREAKDOWN.md`](docs/JIRA_BREAKDOWN.md) | The proposed Jira tasks of BIO-EPIC-04 to BIO-EPIC-08 with requirements covered, state today and dependencies |
 | [`docs/REQUIREMENTS_COVERAGE.md`](docs/REQUIREMENTS_COVERAGE.md) | See, requirement by requirement, what Battlecode provides, what is built and what we still must develop |
-| [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | Learn the participant and organizer experience (planned platform) |
-| [`docs/ADMIN_GUIDE.md`](docs/ADMIN_GUIDE.md) | Learn the platform Admin's responsibilities (planned platform) |
+| [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | Use the current participant and Organizer console |
+| [`docs/ADMIN_GUIDE.md`](docs/ADMIN_GUIDE.md) | Use the Admin console and understand planned workflows |
+| [`docs/OPERATIONS_RUNBOOK.md`](docs/OPERATIONS_RUNBOOK.md) | Triage service incidents and rehearse local backup, recovery and signing-key rotation |
 
 Documents label what is confirmed, proposed (needs approval), and unresolved (`[DECIDE]`). Do not turn a proposal into a requirement silently.
 
