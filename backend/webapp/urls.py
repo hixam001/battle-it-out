@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 from django.urls import path
-from . import tournament_archive
 from . import views as V
+from . import tournament_archive
 urlpatterns = [
     path('api/v1/health/', V.health),
     path('api/v1/auth/session/', V.session), path('api/v1/auth/login/', V.login_view),

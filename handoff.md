@@ -573,3 +573,8 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   requirement statuses and nine backlog categories remain. The endpoint
   reports the shared vault purge state. Retention of worker output and
   production backups, supervision and permanent deletion remain open.
+- Follow-up batch check combined the code from PRs #39–43 in a disposable
+  checkout. All 79 Django tests and the frontend production build passed.
+  Adjusted the archive module import placement so the bracket and archive
+  URL additions apply together. Shared documentation overlaps between the
+  independent PRs and must be preserved when the branches land.

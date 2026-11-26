@@ -556,3 +556,9 @@ service integration cases passed in 48.461 s with real engine runs. Current
 verification used temporary paths. Full production purge of worker outputs,
 backup/restore after live archive, permanent-delete workflow and other
 remaining backlog categories still apply. All 91 requirement rows remain.
+
+The code from PRs #39–43 was exercised together in a disposable checkout.
+The production frontend build and all 79 Django tests passed, including
+replay downloads, result visibility and archive/retention together. The PRs
+are independently cut from main. Shared documentation will need reconciliation
+as these branches land.
