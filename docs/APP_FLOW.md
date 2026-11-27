@@ -138,9 +138,10 @@ participant; apply abuse protection without blocking ordinary retries.
 1.  Participant opens own team submission page.
 2.  UI displays submission deadline, current active version, validation
     state, and history.
-3.  Participant selects one file named exactly `bot.py`.
+3.  The team's captain selects one file named exactly `bot.py` or a bounded
+    flat Python ZIP bundle.
 4.  Server checks authorization, deadline, file name/type/size, and
-    single-file policy.
+    Python submission policy.
 5.  Validator runs syntax/import/entrypoint/runtime checks in a
     controlled environment.
 6.  If valid, version is saved immutably and becomes active.
@@ -155,7 +156,7 @@ participant; apply abuse protection without blocking ordinary retries.
 **Success state:** latest valid submission is active and can be selected
 for future matches.
 
-**Error states:** - Wrong filename/ZIP/multiple files → reject. -
+**Error states:** - Wrong filename, invalid ZIP or multiple uploads → reject. -
 Syntax/import/entrypoint failure → show safe validation report. - Upload
 after deadline → reject with deadline details. - Unauthorized team
 upload → deny. - Worker/validator outage → mark as infrastructure
@@ -396,7 +397,7 @@ Authenticated Web App (later phase)
   `/participant/team`                       Participant     Team overview          Roster, team info   Active, eliminated,
                                                                                                        archived
 
-  `/participant/submissions`                Participant     Bot upload/history     Upload `bot.py`,    No submission,
+  `/participant/submissions`                Participant     Bot upload/history     Upload Python,      No submission,
                                                                                    view versions       validating, valid,
                                                                                                        invalid, locked
 

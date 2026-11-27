@@ -1040,3 +1040,23 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   coverage evidence and project memory. All nine backlog categories and
   all 91 requirement statuses remain. Staff authoring UI, staff recipients,
   other notice sources and production delivery stay open.
+
+### 2026-11-27 — BIO-704 participant team and submissions
+
+- PR #60 merged into main at `9255e2a`. Started
+  `BIO-704-participant-team-submissions` from that commit. Updated the React
+  console, participant components and scoped tournament response. My team
+  shows verified slots and bracket standing. Bot submissions shows current
+  lock state, the active version, validation findings and private downloads.
+- The captain upload affordance uses the server's current captain teams.
+  Refresh reloads deadline and history. Direct routes and the existing hash
+  route resolve through the console. In-console navigation retains the
+  tournament selection.
+- The production build passed. All 10 Playwright tests passed in 15.8 s,
+  including member-only access, deadline lock and invalid/queued uploads
+  against disposable Django and PostgreSQL. All 145 Django tests passed in
+  16.980 s. System and migration-drift checks passed. No real matches ran.
+- Updated the API and user guides, flow, test plan, Jira, CN-053, coverage,
+  changelog and project memory. All 91 statuses and nine backlog categories
+  remain, with 43 Jira items open. Full accessibility and flow acceptance
+  remain BIO-708.

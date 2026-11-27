@@ -86,7 +86,7 @@ def list_tournaments(user):
             continue
         teams = who.team_ids & set(G.registered_teams(rt.registration, tid)) if who.team_ids else ()
         items.append({**{key: record[key] for key in ('id', 'name', 'description', 'status', 'deadlines')},
-                      'teams': sorted(teams)})
+                      'teams': sorted(teams), 'captain_teams': sorted(who.captain_of.intersection(teams))})
     return private({'items': items, 'role': who.role})
 
 

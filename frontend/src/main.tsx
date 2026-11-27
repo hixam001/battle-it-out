@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { api, setCsrfToken } from "./api";
 import { Inbox, TournamentNotices } from "./notifications";
+import { Submissions, Team } from "./participant";
 import "./style.css";
 
 type User = { id: number; username: string; admin: boolean };
@@ -12,6 +13,7 @@ type Cup = {
   status: string;
   deadlines: { registration: number; submission: number };
   teams?: string[];
+  captain_teams?: string[];
 };
 type Bot = {
   id: number;
@@ -385,13 +387,15 @@ const consoleLinks = [
   { page: "notifications", href: "/notifications", label: "Notifications", icon: "◈" },
   { page: "live", href: "/#console", label: "Match room", icon: "◉" },
   { page: "analytics", href: "/#analytics", label: "Analytics", icon: "▥" },
-  { page: "submissions", href: "/#submissions", label: "Bot submissions", icon: "⌘" },
+  { page: "team", href: "/participant/team", label: "My team", icon: "◇" },
+  { page: "submissions", href: "/participant/submissions", label: "Bot submissions", icon: "⌘" },
   { page: "disputes", href: "/#disputes", label: "Match disputes", icon: "☷" },
   { page: "operations", href: "/#operations", label: "Operations", icon: "⚙" },
 ] as const;
 type ConsolePage = (typeof consoleLinks)[number]["page"];
 
 function currentPage() {
+  if (location.pathname === "/" && location.hash === "#submissions") return "submissions";
   const address = location.pathname === "/" ? `/${location.hash}` : location.pathname.replace(/\/$/, "");
   return consoleLinks.find(({ href }) => href === address)?.page ?? null;
 }
@@ -418,7 +422,11 @@ function App() {
   useEffect(() => {
     const onLocation = () => setPage(currentPage());
     window.addEventListener("hashchange", onLocation);
-    return () => window.removeEventListener("hashchange", onLocation);
+    window.addEventListener("popstate", onLocation);
+    return () => {
+      window.removeEventListener("hashchange", onLocation);
+      window.removeEventListener("popstate", onLocation);
+    };
   }, []);
   useEffect(() => {
     api("/auth/session/")
@@ -472,6 +480,11 @@ function App() {
       <Console
         user={user}
         page={page}
+        navigate={(href) => {
+          if (location.pathname + location.hash !== href) history.pushState(null, "", href);
+          setPage(currentPage());
+          window.scrollTo(0, 0);
+        }}
         logout={async () => {
           try {
             await api("/auth/logout/", { method: "POST" });
@@ -559,27 +572,29 @@ function Login({ done, back }: { done: (u: User) => void; back: () => void }) {
     </main>
   );
 }
-function Console({ user, page, logout }: { user: User; page: ConsolePage; logout: () => void }) {
+function Console({ user, page, navigate, logout }: {
+  user: User; page: ConsolePage; navigate: (href: string) => void; logout: () => void;
+}) {
   const [cups, setCups] = useState<Cup[]>([]),
     [selected, setSelected] = useState(""),
     [role, setRole] = useState(""),
     [loading, setLoading] = useState(true),
     [error, setError] = useState("");
-  useEffect(() => {
-    api("/tournaments/")
-      .then((data) => {
-        setCups(data.items);
-        setRole(data.role);
-        setSelected(data.items[0]?.id || "");
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+  const refreshTournament = useCallback(async () => {
+    const data = await api<{ items: Cup[]; role: string }>("/tournaments/");
+    setCups(data.items);
+    setRole(data.role);
+    setSelected((id) => data.items.some((item) => item.id === id) ? id : data.items[0]?.id || "");
   }, []);
+  useEffect(() => {
+    refreshTournament().catch((e) => setError(e.message)).finally(() => setLoading(false));
+  }, [refreshTournament]);
   const cup = cups.find((c) => c.id === selected);
   const showTournament = page !== "notifications" && page !== "operations";
   const canOpen = (target: ConsolePage) => {
     if (target === "operations") return user.admin;
     if (target === "notifications") return !user.admin && role !== "organizer";
+    if (target === "team") return role === "participant" || (loading && !user.admin);
     return true;
   };
   return (
@@ -594,8 +609,14 @@ function Console({ user, page, logout }: { user: User; page: ConsolePage; logout
         </a>
         <p className="eyebrow">COMPETITION CONSOLE</p>
         <nav aria-label="Console">
-          {consoleLinks.filter((link) => canOpen(link.page) && (link.page !== "notifications" || !loading)).map((link) => (
-            <a key={link.page} href={link.href} aria-current={page === link.page ? "page" : undefined}>
+          {consoleLinks.filter((link) => canOpen(link.page) && (!loading || !["notifications", "team"].includes(link.page))).map((link) => (
+            <a key={link.page} href={link.href} aria-current={page === link.page ? "page" : undefined}
+              onClick={(event) => {
+                if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                event.preventDefault();
+                navigate(link.href);
+                document.getElementById("main-content")?.focus();
+              }}>
               <span className="nav-icon" aria-hidden="true">{link.icon}</span> {link.label}
             </a>
           ))}
@@ -634,6 +655,7 @@ function Console({ user, page, logout }: { user: User; page: ConsolePage; logout
             <h1>Access required</h1>
             <p role="alert">{page === "operations"
               ? "Admin access is required to open Operations."
+              : page === "team" ? "My team is available to participant accounts."
               : "Notifications are available to linked participant accounts."}</p>
             <a href="/dashboard">Open Dashboard</a>
           </section>
@@ -658,6 +680,7 @@ function Console({ user, page, logout }: { user: User; page: ConsolePage; logout
                     {
                       live: "The match room",
                       analytics: "Beyond the scoreboard",
+                      team: "My team",
                       submissions: "Your next contender",
                       disputes: "A fair hearing",
                     }[page]
@@ -678,7 +701,9 @@ function Console({ user, page, logout }: { user: User; page: ConsolePage; logout
               ) : page === "analytics" ? (
                 <Analytics cup={cup} />
               ) : page === "submissions" ? (
-                <Submissions cup={cup} role={role} />
+                <Submissions cup={cup} role={role} refreshTournament={refreshTournament} />
+              ) : page === "team" ? (
+                <Team cup={cup} />
               ) : (
                 <Disputes cup={cup} role={role} />
               )}
@@ -1065,173 +1090,6 @@ function Analytics({ cup }: { cup: Cup }) {
           )}
         </section>
       </div>
-    </>
-  );
-}
-function Submissions({ cup, role }: { cup: Cup; role: string }) {
-  const [team, setTeam] = useState(cup.teams?.[0] || ""),
-    [versions, setVersions] = useState<any[]>([]),
-    [catalogue, setCatalogue] = useState<any[]>([]),
-    [file, setFile] = useState<File | null>(null),
-    [message, setMessage] = useState(""),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
-  const load = () =>
-    team &&
-    api(`/tournaments/${cup.id}/teams/${encodeURIComponent(team)}/submissions/`)
-      .then((d) => setVersions(d.items))
-      .catch((e) => setError(e.message));
-  useEffect(() => {
-    api("/dependencies/")
-      .then((d) => setCatalogue(d.items))
-      .catch((e) => setError(e.message));
-  }, []);
-  useEffect(() => {
-    load();
-  }, [team]);
-  return (
-    <>
-      <div className="two-col">
-        <section className="panel">
-          <h2>Upload your strategy</h2>
-          <p>
-            A single <code>bot.py</code> or ZIP with flat Python modules. The
-            entry point stays <code>turn()</code>.
-          </p>
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (!file) return;
-              setBusy(true);
-              setError("");
-              setMessage("");
-              try {
-                const body = new FormData();
-                body.append("file", file);
-                const data = await api(
-                  `/tournaments/${cup.id}/teams/${encodeURIComponent(team)}/submissions/`,
-                  { method: "POST", body, headers: key() },
-                );
-                setMessage(
-                  `Version ${data.version}: ${label(data.validation_status)}.`,
-                );
-                load();
-              } catch (e) {
-                setError((e as Error).message);
-                load();
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            <label>
-              Team ID
-              <input
-                value={team}
-                onChange={(e) => setTeam(e.target.value)}
-                required
-                placeholder="Your registered team"
-              />
-            </label>
-            <label className="file-label">
-              Python bot or bundle
-              <input
-                type="file"
-                accept=".py,.zip"
-                required
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-              />
-            </label>
-            <p className="muted">
-              Interim limit: 256 KiB expanded, up to 32 input files. Only the
-              captain can upload before the deadline.
-            </p>
-            <button
-              className="primary"
-              disabled={
-                busy ||
-                role !== "participant" ||
-                Date.now() / 1000 >= cup.deadlines.submission
-              }
-            >
-              {busy ? "Uploading…" : "Upload for validation"}
-            </button>
-          </form>
-          {message && (
-            <p className="success" role="status">
-              {message}
-            </p>
-          )}
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
-          )}
-        </section>
-        <section className="panel">
-          <p className="eyebrow">SAME ENVIRONMENT FOR EVERY TEAM</p>
-          <h2>Curated dependencies</h2>
-          <p>
-            Add an exact-version map in <code>requirements.json</code>. The
-            platform snapshots the pinned source into your bundle.
-          </p>
-          {catalogue.map((d) => (
-            <div key={`${d.name}@${d.version}`} className="dependency">
-              <code>
-                {d.name} / {d.version}
-              </code>
-              <p>{d.description}</p>
-            </div>
-          ))}
-          <pre>{'{\n  "biohelpers": "1.0.0"\n}'}</pre>
-          <p className="muted">
-            Flat imports only, such as <code>from strategy import move</code>.
-            Nested packages, circular imports and participant package
-            installation are unavailable.
-          </p>
-        </section>
-      </div>
-      <section className="panel">
-        <div className="panel-toolbar">
-          <h2>Submission history</h2>
-          <button className="text-button" onClick={() => load()}>
-            Refresh verdicts
-          </button>
-        </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Version</th>
-                <th>Format</th>
-                <th>Validation</th>
-                <th>Active</th>
-                <th>Download</th>
-              </tr>
-            </thead>
-            <tbody>
-              {versions.map((v) => (
-                <tr key={v.id}>
-                  <td>v{v.version}</td>
-                  <td>{v.format || "Python"}</td>
-                  <td>{label(v.validation_status)}</td>
-                  <td>{v.is_active ? "Active" : "—"}</td>
-                  <td>
-                    <a
-                      href={`/api/v1/tournaments/${cup.id}/submissions/${v.id}/download/`}
-                    >
-                      Download
-                    </a>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {!versions.length && (
-          <p className="muted">No stored versions for the selected team.</p>
-        )}
-      </section>
     </>
   );
 }

@@ -613,6 +613,11 @@ The existing CN-020 rules admit corrections only before a claim locks the
 affected entries. Account-deletion cleanup and final DEC-12 policy remain
 separate work.
 
+The participant console takes its team selection and upload affordance from
+the scoped tournament list. Each console row includes `teams` and
+`captain_teams`, the subset the current participant captains. The upload
+endpoint still checks current authorization and the stored deadline.
+
 ### DELETE `/teams/{team_id}`
 
 **Purpose:** Delete archived tournament team operational profile.\

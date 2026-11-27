@@ -121,7 +121,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | BIO-NFR-09 | Backups and tested recovery | None | **TODO** | BIO-EPIC-08 | - |
 | BIO-NFR-10 | Logs avoid secrets and minimise personal data | None | **PARTIAL** | `match_log.py` redaction and the API error envelope exclude private server details, including PostgreSQL readiness failures. Request completion logs contain only request ID and status (CN-029/051) | Broader log exposure/access/retention review, including Django exception logs; no end-to-end production privacy proof |
 | BIO-NFR-11 | Concurrent match capacity from load tests | None | **TODO** | BIO-EPIC-08 | One match per host today (fixed engine port) |
-| BIO-NFR-12 | UI communicates deadlines, validation, match state, errors | None | **PARTIAL** | React deadline/validation/match states (CN-028), responsive dashboard/inbox (CN-031), direct role guards, keyboard navigation and correlated API errors (CN-037) | Remaining core screens, comprehensive usability and accessibility acceptance |
+| BIO-NFR-12 | UI communicates deadlines, validation, match state, errors | None | **PARTIAL** | React match states (CN-028), responsive dashboard/inbox (CN-031), direct role guards, keyboard navigation and correlated API errors (CN-037), participant team standing and explicit upload locks and validation findings (CN-053) | Remaining core screens, comprehensive usability and accessibility acceptance |
 
 ## Development backlog derived from this table
 

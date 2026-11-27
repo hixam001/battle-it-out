@@ -258,3 +258,56 @@ test("a failed API request shows its server request ID with the message", async 
   expect(requestId).toMatch(/^req_[0-9a-f]{32}$/);
   await expect(page.getByRole("alert")).toHaveText(`Invalid username or password. Request ID ${requestId}.`);
 });
+
+test("team and submission deep links show the selected roster and current deadline", async ({ page }) => {
+  await page.goto("/participant/team");
+  await page.getByLabel("Username", { exact: true }).fill("captain-b");
+  await page.getByLabel("Password", { exact: true }).fill("test-fixture-passphrase");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "My team", exact: true })).toBeVisible();
+  await expect(page.getByText("Eliminated", { exact: true })).toBeVisible();
+  const members = page.getByRole("table", { name: "Verified team members" });
+  await expect(members.getByRole("cell", { name: "Captain" })).toBeVisible();
+  await expect(page.getByText("a@uni.edu")).toHaveCount(0);
+
+  await page.getByRole("link", { name: "Bot submissions" }).click();
+  await expect(page).toHaveURL(/\/participant\/submissions$/);
+  await expect(page.getByText("Submissions are locked. The deadline has passed.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Download v1" })).toBeVisible();
+  await page.getByLabel("Tournament", { exact: true }).selectOption("upload-fixture");
+  await expect(page.getByText("Only the team captain can upload a bot.")).toBeVisible();
+  await expect(page.getByLabel("Python bot or bundle")).toHaveCount(0);
+  await page.getByRole("link", { name: "My team" }).click();
+  await expect(page.getByRole("heading", { name: "Fixture Upload Team" })).toBeVisible();
+  await expect(members.getByRole("cell", { name: "member", exact: true })).toBeVisible();
+  await expect(page.getByText("Awaiting bracket draw", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("captain sees an invalid upload and queued validation without losing the active bot", async ({ page }) => {
+  await page.goto("/participant/submissions");
+  await page.getByLabel("Username", { exact: true }).fill("captain-a");
+  await page.getByLabel("Password", { exact: true }).fill("test-fixture-passphrase");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByLabel("Tournament", { exact: true }).selectOption("upload-fixture");
+  const history = page.getByRole("region", { name: "Submission history" });
+  await expect(history.getByText("Active version: v1")).toBeVisible();
+  const file = page.getByLabel("Python bot or bundle");
+  const upload = page.getByRole("button", { name: "Upload for validation" });
+  await file.setInputFiles({ name: "bot.py", mimeType: "text/x-python", buffer: Buffer.from("def broken(") });
+  await upload.click();
+  const rejected = history.getByRole("row").filter({ has: page.getByRole("rowheader", { name: "v2" }) });
+  await rejected.locator("summary").click();
+  await expect(rejected.getByText(/Line 1:/)).toBeVisible();
+  await expect(history.getByText("Active version: v1")).toBeVisible();
+
+  await file.setInputFiles({
+    name: "bot.py", mimeType: "text/x-python", buffer: Buffer.from("def turn():\n    return None\n"),
+  });
+  await upload.click();
+  await expect(page.getByText("Version 3 queued for validation.")).toBeVisible();
+  await expect(history.getByText("Queued for validation", { exact: true })).toBeVisible();
+  await history.getByRole("button", { name: "Refresh submissions" }).click();
+  await expect(history.getByText("Active version: v1")).toBeVisible();
+});
