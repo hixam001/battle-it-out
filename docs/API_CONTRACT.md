@@ -580,6 +580,12 @@ Invalid upload must not replace current active version.
 **Success:** version, timestamp, validation status/reason, active flag,
 match usage references. Source access remains private.
 
+The implemented route is `GET /tournaments/{id}/teams/{team_id}/submissions/`.
+It returns `items` ordered by version, with `match_ids` for official games in
+the requested tournament that reference each version. A visible roster team
+with no uploads has an empty history. Staff history reads record a
+`submission_history_read` audit event.
+
 ### GET `/submissions/{submission_id}/download`
 
 **Purpose:** Download source file.\
@@ -591,6 +597,15 @@ match usage references. Source access remains private.
 **Purpose:** Read validation outcome.\
 **Access:** owning team, assigned Organizer, Admin.\
 **Success:** structured checks and safe error messages.
+
+The implemented route is `GET /tournaments/{id}/submissions/{submission_id}/validation/`.
+It returns `id`, `tournament_id`, `team_id`, `version`, `is_active`,
+`validation_status`, `check_in_progress` and ordered `validations`. Each check
+has its stage, outcome, findings and recorded timestamps. Trial summaries can
+include side, judgment, outcome, classification, round and runtime. Staff
+reads record a `submission_validation_read` audit event. Source bytes and
+worker claims are excluded. Both reads use current session scope and the
+requested tournament. Unknown, foreign and hidden IDs share `404` errors.
 
 ### POST `/submissions/{submission_id}/activate`
 

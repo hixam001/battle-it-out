@@ -94,7 +94,8 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET | `/tournaments/{id}/bracket/` | Current-scope recorded bracket, with `null` before draw, game IDs and progression |
 | GET | `/matches/{match_id}/` | Current-scope game and enclosing series result, including pinned version IDs and stored coin flip |
 | GET | `/tournaments/{id}/analytics.csv` | Authorized team CSV with formula escaping |
-| GET/POST | `/tournaments/{id}/teams/{team}/submissions/` | Authorized history; captain-only upload using the stored official deadline; queues validation |
+| GET/POST | `/tournaments/{id}/teams/{team}/submissions/` | Team-private history with game references; captain-only upload using the stored official deadline; queues validation |
+| GET | `/tournaments/{id}/submissions/{version}/validation/` | Current validation status and ordered check details for a visible version |
 | GET | `/tournaments/{id}/submissions/{version}/download/` | Authorized source/bundle; staff reads audited; private/no-store |
 | GET/POST | `/tournaments/{id}/disputes/` | Team-private dispute list/create tied to a real match |
 | GET/POST | `/tournaments/{id}/disputes/{uuid}/` | Team/staff comments and review transitions with optimistic revision |
@@ -196,7 +197,8 @@ idempotency/concurrency and remaining core routes are still BIO-404 work.
 backend/.venvs/web/bin/python backend/webapp/manage.py check
 backend/.venvs/web/bin/python backend/webapp/manage.py test \
   backend.webapp.tests backend.webapp.tests_http backend.webapp.tests_notifications \
-  backend.webapp.tests_replays backend.webapp.tests_results backend.webapp.tests_archive
+  backend.webapp.tests_replays backend.webapp.tests_results backend.webapp.tests_archive \
+  backend.webapp.tests_submission_reads
 backend/.venvs/py3.15/bin/python backend/run_tests.py
 backend/.venvs/py3.15/bin/python backend/run_tests.py --integration
 ```
@@ -232,6 +234,11 @@ retained history, recovery from failed purge and a refusal before vault changes
 when the audit is full. An archived response can have `replays_deleted:false`.
 The archive already blocks replay access; the next maintenance pass retries
 the pending vault purge.
+
+`tests_submission_reads` checks the validation detail and history routes,
+official game references, empty histories and current permissions. Staff
+history and validation reads are audited in PostgreSQL. Staff source/bundle
+downloads retain the registry's existing audit and integrity checks.
 
 Pinned web versions are Django 6.1.3, DRF 3.18.3 and psycopg 3.3.9; the separate
 web environment preserves the bot environment pins. Django documents Python 3.15
