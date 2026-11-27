@@ -22,6 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-706 / CN-056 adds the assigned Organizer tournament lifecycle screens.
+  The production build and all 16 Playwright cases passed. PR #63 merged
+  into main at `88594e1`.
 - BIO-707 / CN-055 adds the Admin approval queue. All 14 Playwright
   tests and the production build passed. PR #62 merged into main at
   `84c6e13`.
@@ -397,7 +400,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    recorded tie resolution in the console. CN-038 delivers staff map-pool selection,
    bracket draw and sequential round-start actions. CN-047 adds draft creation,
    detail, edit, submit, approve, reject and open registration over HTTP.
-   CN-055 adds the Admin screen for approving or rejecting submitted drafts.
+   CN-055 adds the Admin approval queue. CN-056 adds the Organizer list,
+   draft creation/edit, approval workflow and manual registration opening.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; Organizer approval/rejection
    and dispute notices; mandatory security
@@ -421,7 +425,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
-   tournament creation/deadline/round management, browser replay
+   Admin tournament creation and deadline controls, Organizer roster and
+   round management, browser replay
    playback and Admin mutation screens. Public landing and the private
    live/analytics/submission/dispute/operations console now exist. CN-053 adds
    direct team and submission routes, bracket standing and validation details.
@@ -874,3 +879,20 @@ a stale decision and participant route refusal. All 91 requirement
 statuses, nine backlog categories and 43 open Jira items remain. Deadline,
 invitation and incident controls, dedicated audit and formal acceptance
 remain open.
+
+## CN-056 continuation evidence
+
+BIO-706 starts from merged main at `88594e1` on
+`BIO-706-organizer-tournament-management`. The Organizer console lists
+assigned tournaments and supports draft creation, edits, review submission
+and resubmission, with rejection reasons and manual registration opening.
+The form converts browser-local deadlines to UTC and sends only edited
+fields. Lifecycle actions reuse current assignment and version checks.
+
+The production build and all 16 Playwright tests passed (23.5 s) on
+disposable state. The browser exercises both sides of the approval flow
+and participant and unassigned-Organizer refusals. The initial edit test
+selector stopped on the populated textarea and was corrected to use its
+accessible textbox name. All 91 statuses, nine backlog categories and 43
+open Jira items remain. Roster, round and dedicated team screens remain
+under BIO-706.

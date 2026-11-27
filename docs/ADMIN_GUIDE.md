@@ -44,7 +44,10 @@ The Admin has **global** access and is the only role that can:
 4. If the record changed during review, reload the details before deciding.
 5. An approval leaves the tournament in `approved`. Opening registration is a separate action.
 
-Tournament states: `draft -> pending_approval -> approved -> registration_open -> running -> completed -> archived -> deleted`, with `rejected` looping back to `pending_approval`. Whether registration opens by a manual action or by schedule is `[DECIDE]`.
+Tournament states move from draft through review and approval to registration,
+running, completed and archived. Rejected drafts can be revised and
+resubmitted through **Manage tournaments**. The assigned Organizer can open
+registration manually from the approved tournament.
 
 ## 3. Deadlines and emergency overrides
 
