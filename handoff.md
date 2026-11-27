@@ -986,3 +986,7 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   requirement evidence and project memory. All 91 requirement statuses and
   nine backlog categories remain. Worker/engine readiness and production
   monitoring remain open. Existing replays were preserved.
+- All 140 Django tests passed in 15.287 s with the Python changes from #58
+  and #59 applied together to `4413b90`, including system and migration
+  checks. The two independently based PRs overlap in the handoff and change
+  notice entries.
