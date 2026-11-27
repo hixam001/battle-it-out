@@ -510,6 +510,20 @@ Decisions from the owner that change or narrow what the requirement documents (P
   supervision, staging restore after real archive and permanent-delete workflow.
   Coverage evidence advances without changing the requirement statuses.
 
+## CN-036 — Complete submission read endpoints (2026-11-26)
+
+- **BIO-505:** added per-version validation details, official game IDs on team
+  history, and auditable staff history and validation reads. Existing
+  single-file and bundle downloads retain their audit and integrity checks.
+  Requested tournament scope and current team/Organizer access apply on
+  every read. A visible roster team can have an empty history.
+- **Decisions:** use the existing tournament-scoped route and current
+  automatic latest-valid activation. Staff metadata reads record ID-only
+  PostgreSQL audit events. Production retention remains BIO-408/609 work.
+- **Verification:** 85 Django tests passed with disposable PostgreSQL,
+  including six new submission-read cases. System and migration-drift checks
+  passed. Registry and bundle unit mode ran 70 tests, with 67 passed and three
+  real-game skips. SRD-057 advances to DONE.
 ## CN-037 — Frontend routing and error foundation (2026-11-26)
 
 - **BIO-701:** completed the current console foundation. The shared API client

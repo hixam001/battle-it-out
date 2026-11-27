@@ -687,6 +687,25 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   PostgreSQL, local services and temporary replay paths. No provider or
   production environment was used.
 
+### 2026-11-26 — BIO-505: submission read endpoints
+
+- Started from merged `origin/main` `d66b95d` on
+  `BIO-505-submission-read-api`. The approved current upload paths were
+  available for this task.
+- Added validation details for one version and game IDs on history. Scope
+  checks bind history and validation to the requested tournament. Official
+  roster teams can read empty history before the first upload. Staff history
+  and validation reads create PostgreSQL audit records. Existing source and
+  bundle downloads retain integrity checks and legacy audit.
+- All 85 Django tests passed in 9.713 s with disposable PostgreSQL, including
+  six new cases. System and migration-drift checks passed. Registry and bundle
+  units ran 70 cases, 67 passed and three real-engine cases skipped. Test state
+  stayed temporary. No new engine or browser tests were needed for the reads.
+- Updated API/test docs, coverage, CN-036, Jira and project memory. BIO-505
+  closes under the current automatic activation rule. Production storage and
+  retention remain in the backlog. SRD-057 moves to DONE for 18 DONE /
+  61 PARTIAL / 12 TODO across 91 requirements. Continued on independent
+  frontend foundation work (BIO-701) from merged main.
 ### 2026-11-26 — BIO-701: frontend foundation
 
 - Started from merged `origin/main` `d66b95d` on
