@@ -138,6 +138,9 @@ consume code or permanently block a legitimate retry.
 **Success:** Session/token representation `[DECIDE]`.\
 **Errors:** `401`, `429`.
 
+The implemented session form at `/login` uses the current JSON
+`username` and `password` contract described above (CN-028/070).
+
 ### POST `/auth/logout`
 
 **Purpose:** End session.\

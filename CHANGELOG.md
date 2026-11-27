@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Dedicated sign-in (BIO-702, CN-070)** provides `/login` for provisioned
+  accounts and opens the dashboard after authentication.
+
 - **Participant account settings (BIO-702, CN-069)** provides the shared
   email preference directly at `/account/settings`.
 

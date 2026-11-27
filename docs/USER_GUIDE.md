@@ -7,8 +7,9 @@ for administrative procedures.
 
 ## 1. Sign in and find your tournament
 
-Open **Competition console** from the landing page. Sign in with the username
-and password provided through your Organizer. The current console uses
+Open **Sign in** from the landing page and enter the username and password
+provided through your Organizer. The dashboard opens after you sign in.
+The current console uses
 operator-provisioned accounts linked to verified roster entries or assigned
 Organizer accounts. Ask your Organizer for access, password help or a roster
 correction. Public signup, password recovery and account deletion are planned

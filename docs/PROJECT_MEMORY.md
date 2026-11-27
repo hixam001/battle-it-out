@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-702 / CN-070 adds `/login` for provisioned accounts and opens the
+  dashboard after authentication. The build and 28 browser tests passed.
 - BIO-702 / CN-069 adds the linked participant account settings page
   with the shared inbox email preference. The build and all 28 browser tests passed.
+  PR #77 merged into `main` at `dcd6278`.
 - BIO-604 / CN-068 adds Admin Operations triage at `/admin`, with attempt
   and alert state, dead jobs and refresh. The build and 27 browser tests passed.
   PR #76 merged into `main` at `449fa64`.
@@ -482,6 +485,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    live/analytics/submission/dispute/operations console now exist. CN-053 adds
    direct team and submission routes, bracket standing and validation details.
    CN-063 adds the equivalent assigned Organizer team and source view.
+   CN-070 adds the public sign-in address for provisioned accounts.
    Branding,
    usability, formal accessibility/nonvisual play-by-play and full FLOW-01–08
    acceptance remain; production capacity/outage/concurrency/multi-host tests,
@@ -1140,3 +1144,18 @@ asynchronous checkbox assertion and the existing ten-attempt source limit.
 Fixture sessions were reused for the successful run. All 91 statuses,
 nine backlog categories and 42 tracked Jira items remain. Public signup,
 verification and account deletion remain open.
+
+## CN-070 continuation evidence
+
+BIO-702 starts from merged main at `dcd6278` on
+`BIO-702-dedicated-sign-in`. The landing guide links to the dedicated
+session form at `/login`. Successful direct sign-in and existing sessions
+at that address open the dashboard. Protected addresses keep their own
+post-login destination. The existing username/password and CSRF contract
+still applies.
+
+The production build and all 28 Playwright tests passed (48.5 s). The
+browser checks the public link, existing sessions, bad credentials and
+the matching HTTP request ID, plus protected deep links. All 91 statuses,
+nine backlog categories and 42 Jira items remain. The next ready results
+slice can show existing scoped match logs in the console.

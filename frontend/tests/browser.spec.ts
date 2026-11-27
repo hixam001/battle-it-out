@@ -171,10 +171,22 @@ test("Admin sees paused-match incidents, dead jobs and recent audit", async ({
 });
 
 test("participant sees tournament notices and manages a private inbox on mobile", async ({ page, browser }) => {
-  await page.goto("/dashboard");
+  await page.goto("/");
+  await page.getByRole("link", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL("/login");
+  await page.getByRole("textbox", { name: "Username", exact: true }).waitFor();
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await page.screenshot({ path: test.info().outputPath("sign-in-desktop.png"), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("sign-in-mobile.png"), fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 720 });
   await page.getByLabel("Username", { exact: true }).fill("captain-a");
   await page.getByLabel("Password", { exact: true }).fill("test-fixture-passphrase");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL("/dashboard");
+  await page.goto("/login");
+  await expect(page).toHaveURL("/dashboard");
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   await expect(page.getByText("Registration deadline", { exact: true })).toBeVisible();
   await expect(page.getByText("Submission deadline", { exact: true })).toBeVisible();
@@ -321,7 +333,7 @@ test("staff notification route is guarded before fetching a participant inbox", 
 });
 
 test("a failed API request shows its server request ID with the message", async ({ page }) => {
-  await page.goto("/#console");
+  await page.goto("/login");
   await page.getByLabel("Username", { exact: true }).fill("captain-a");
   await page.getByLabel("Password", { exact: true }).fill("incorrect-test-password");
   const failedLogin = page.waitForResponse((response) => new URL(response.url()).pathname === "/api/v1/auth/login/");
@@ -331,6 +343,7 @@ test("a failed API request shows its server request ID with the message", async 
   const requestId = response.headers()["x-request-id"];
   expect(requestId).toMatch(/^req_[0-9a-f]{32}$/);
   await expect(page.getByRole("alert")).toHaveText(`Invalid username or password. Request ID ${requestId}.`);
+  await expect(page).toHaveURL("/login");
 });
 
 test("team and submission deep links show the selected roster and current deadline", async ({ page }) => {
