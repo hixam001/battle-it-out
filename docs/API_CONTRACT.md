@@ -360,7 +360,12 @@ enforce creator revocation. No current library behavior changes here.
 
 ## 3. Tournament administration --- BIO-EPIC-06
 
-### POST `/tournaments`
+The draft, detail, edit, approval and opening routes below are implemented for
+the scoped Django API (BIO-601 / CN-047). Mutations use JSON and session CSRF.
+Detail and mutation responses include a `version` and ISO 8601 UTC deadline
+fields. A hidden or missing tournament returns `404`.
+
+### POST `/tournaments/`
 
 **Purpose:** Create tournament draft.\
 **Access:** Admin or Organizer.\
@@ -375,54 +380,73 @@ enforce creator revocation. No current library behavior changes here.
 }
 ```
 
-**Success `201`:** tournament object with `status:"draft"` for Admin;
-Organizer-created draft enters `pending_approval` when submitted.\
-**Errors:** `400`, `403`, `422`.
+**Success `201`:** tournament object with a server-generated ID and
+`status:"draft"`. An Organizer receives an explicit assignment to their draft.
+The required `Idempotency-Key` binds the normalized request to this account.
+An identical retry returns the current tournament, a changed request using the
+same key conflicts, and revocation blocks a retry from recreating access.\
+**Errors:** `400`, `403`, `404`, `409`.
 
 ### GET `/tournaments`
 
 **Purpose:** List tournaments visible to caller.\
 **Access:** Authenticated; Admin global, Organizer assigned, Participant
 registered/eligible visibility.\
-**Success:** paginated tournament summaries. Anonymous visibility is not
-assumed.
+**Success:** `items` and caller `role`, using the existing list response for
+the console. A summary keeps `deadlines` in epoch seconds and `teams` limited
+to the caller's verified teams. Global pagination remains part of BIO-404.
 
 ### GET `/tournaments/{tournament_id}`
 
 **Purpose:** Tournament detail.\
 **Access:** scoped authenticated user.\
-**Success:** settings and lifecycle fields allowed for role.
+**Success:** settings, status and version. Staff also see approval and
+rejection metadata. Participant detail is limited to the tournaments they
+have joined once registration opens, including archived tournaments.
 
 ### PATCH `/tournaments/{tournament_id}`
 
 **Purpose:** Edit permitted settings.\
 **Access:** Admin or assigned Organizer.\
-**Request:** partial allowed fields, with `expected_version` recommended
-for optimistic concurrency.\
+**Request:** `expected_version` as a positive integer and at least one of
+`name`, `description`, `registration_deadline` or `submission_deadline`.
+The dedicated map-pool endpoint validates a pool before selecting it.\
 **Rules:** Organizer cannot edit unassigned tournament. After deadline,
 ordinary change requires Admin deadline extension first. Emergency
 override is separate endpoint.\
-**Errors:** `403`, `404`, `409`, `422`.
+**Errors:** `400`, `403`, `404`, `409`.
 
 ### POST `/tournaments/{id}/submit-for-approval`
 
 **Purpose:** Submit Organizer-created draft for Admin approval.\
 **Access:** Creating Organizer with a current assignment (see §2.3).\
-**Success:** `{"status":"pending_approval"}`.
+**Request:** `{"expected_version":1}`. The same route accepts a rejected
+draft at its current version.\
+**Success:** updated tournament with `status:"pending_approval"`.
 
 ### POST `/tournaments/{id}/approve`
 
 **Purpose:** Approve tournament.\
 **Access:** Admin only.\
-**Request:** `{"confirm":true}`\
-**Success:** `{"status":"approved"}`.
+**Request:** `{"confirm":true,"expected_version":2}`. Admin-created
+drafts can be approved directly.\
+**Success:** updated tournament with `status:"approved"`.
 
 ### POST `/tournaments/{id}/reject`
 
 **Purpose:** Reject tournament with reason.\
 **Access:** Admin only.\
-**Request:** `{"reason":"Please correct the tournament schedule."}`\
-**Success:** `{"status":"rejected","reason":"..."}`.
+**Request:** `{"reason":"Please correct the tournament schedule.","expected_version":2}`.\
+**Success:** updated tournament with `status:"rejected"` and
+`rejection_reason`. The rejection keeps its audit entry after resubmission.
+
+### POST `/tournaments/{id}/open-registration/`
+
+**Access:** Current Admin or assigned Organizer.\
+**Request:** `{"expected_version":3}`.\
+**Success:** updated tournament with `status:"registration_open"`.
+Only an approved tournament can open, and its registration deadline must be
+in the future. A stale version or a conflicting state returns `409`.
 
 ### POST `/tournaments/{id}/extend-deadline/`
 
