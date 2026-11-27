@@ -299,11 +299,18 @@ notices, inbox pagination, keyboard filtering, read and email preference
 persistence across reload, account isolation on logout, and the unlinked-account
 refusal. Desktop and mobile layout checks are covered in the local browser suite.
 
+#### Implemented announcement subset (BIO-607 / CN-052)
+
+The Django suite tests publishing through an assigned Organizer session with
+CSRF, current scope on retries, verified-roster audience selection, and
+email opt-out. It asserts one audit event, receipt and inbox entry per
+recipient, rollback on audit capacity failure, archived-state refusal and
+deletion of announcement content with retained audit metadata.
+
 Full TC-08 still requires a real provider, production outage and backup/restore
-drill. Staff recipients, announcement and
-automatic deadline/override endpoints, and notification-store migration remain
-open. Web tests require explicit module labels in the webapp README; the backend
-execution runner does not discover these modules.
+drill. Staff recipients, approval/dispute notices, announcement UI and
+notification-store migration remain open. Web tests require explicit module
+labels in the webapp README.
 
 ## 4. Additional test categories
 

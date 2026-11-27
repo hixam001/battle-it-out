@@ -29,7 +29,7 @@ DETAIL_TOKENS = {
     'tournament': ('from', 'to', 'status', 'deadline_type', 'setting'),
     'registration': ('team',),
     'submissions': ('submission_id', 'team_id', 'status', 'role'),
-    'notifications': ('event_type',),
+    'notifications': ('event_type', 'announcement_id'),
     'web': ('status', 'team_id', 'submission_id', 'user_id', 'dispute_id'),
     'series': ('series_id', 'stage', 'coin_flip_id', 'result_type', 'winner_side', 'winner_team'),
     'incident': ('incident_id', 'incident_type', 'incident_source', 'match_id', 'job_id', 'job_kind'),
@@ -37,7 +37,7 @@ DETAIL_TOKENS = {
 DETAIL_NUMBERS = {
     'registration': ('created', 'updated', 'rejected', 'count'),
     'submissions': ('teams',),
-    'notifications': ('created', 'attempts'),
+    'notifications': ('created', 'attempts', 'email_queued'),
     'web': ('version',),
     'incident': ('attempt_count',),
 }

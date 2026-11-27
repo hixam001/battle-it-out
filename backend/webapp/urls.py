@@ -10,6 +10,7 @@ from . import deadlines
 from . import audit
 from . import roster
 from . import match_logs
+from . import announcements
 urlpatterns = [
     path('api/v1/health/', V.health),
     path('api/v1/ready/', V.readiness),
@@ -28,6 +29,7 @@ urlpatterns = [
     path('api/v1/notifications/', V.notifications),
     path('api/v1/notifications/<str:nid>/', V.notification_detail),
     path('api/v1/me/notification-preferences/', V.notification_preferences),
+    path('api/v1/tournaments/<str:tid>/announcements/', announcements.publish),
     path('api/v1/tournaments/<str:tid>/analytics/', V.analytics),
     path('api/v1/tournaments/<str:tid>/analytics.csv', V.analytics_csv),
     path('api/v1/tournaments/<str:tid>/live/', V.live),

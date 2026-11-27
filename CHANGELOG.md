@@ -6,6 +6,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Tournament announcements (BIO-607; CN-052)** let assigned Organizers
+  and Admins publish to verified participants' inboxes. Email queues respect
+  recipient preferences. Retries reuse the original counts and audit record.
+
 - **Console foundation (BIO-701; CN-037):** keyboard skip navigation, access screens for restricted direct links, and server request IDs on API errors.
 - **Exact dependency release pins (BIO-510; CN-039)** verify published source
   against a recorded SHA-256. Adding a new version preserves older snapshots

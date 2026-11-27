@@ -1018,3 +1018,25 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - The reconciled candidate passed all 140 Django tests on disposable
   PostgreSQL in 16.070 s, plus system and migration-drift checks. Existing
   replay files were preserved.
+
+### 2026-11-27 — BIO-607 tournament announcement publishing
+
+- Started `BIO-607-tournament-announcements` from fetched main at
+  `eda8358`. Added the scoped endpoint in `backend/webapp/announcements.py`,
+  wired its staff audit projection and reused `backend/notifications` for
+  dashboard and email delivery. The author must be an Admin or currently
+  assigned Organizer. The audience is the verified roster of a published,
+  unarchived tournament. Email remains optional.
+- The shared notification transaction commits the audit, retry receipt,
+  dashboard entries and email queue together. An unchanged request with the
+  same author/tournament key returns the original counts. The existing
+  deletion helper removes announcement receipts and content and keeps the
+  safe audit metadata.
+- All 145 Django tests passed on disposable PostgreSQL in 15.761 s,
+  including five new API cases. Django system and migration checks and all
+  101 notification library tests passed. Tests used temporary state and
+  did not run any matches.
+- Updated the API and web guides, test plan, Jira, CN-052, changelog,
+  coverage evidence and project memory. All nine backlog categories and
+  all 91 requirement statuses remain. Staff authoring UI, staff recipients,
+  other notice sources and production delivery stay open.

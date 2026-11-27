@@ -885,8 +885,31 @@ slice needs no idempotency-key receipt. Every response uses CN-029's fresh
 request ID and `private, no-store`; errors use the shared envelope. No SQL/JSON
 cross-store transaction or full notification database migration is claimed.
 The [participant inbox](../frontend/README.md) uses these endpoints (CN-031).
-Deadline changes publish participant notices (CN-041). Announcement authoring,
-real email providers and mandatory security-email policy remain open.
+Deadline changes publish participant notices (CN-041). Real email providers
+and mandatory security-email policy remain open.
+
+### POST `/tournaments/{id}/announcements/`
+
+**Implemented (BIO-607 / CN-052).** Current Admin or assigned Organizer,
+with session CSRF and a safe `Idempotency-Key` of 1–128 characters. Send an
+exact JSON object with `headline` (up to 120 characters) and `message`
+(up to 2,000 characters). Both are nonempty plain text without control
+characters. The server trims surrounding whitespace.
+
+**Success:** `201` with `id`, `recipients` and `email_queued`. The server
+selects verified roster accounts for that tournament. Each gets one dashboard
+notice, and accounts with email enabled get one queued email. An empty
+audience returns zero counts. The author, event ID and counts are recorded
+in staff audit alongside the inbox entries, delivery queue and retry receipt
+in one notification-store transaction. The audit omits announcement text.
+
+The key is scoped to the author and tournament. Retrying the same text
+returns the original counts without adding recipients or queuing again.
+Changing the text with that key returns `409`. The tournament must be
+approved, registration open, running or completed on every attempt.
+Unavailable lifecycle states and capacity conflicts return `409`.
+Hidden, deleted and missing tournaments share `404`. The authoring screen
+and real email delivery remain follow-up work.
 
 ### GET `/tournaments/{id}/audit-logs/` and GET `/admin/audit-logs/`
 
