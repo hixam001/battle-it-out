@@ -6,6 +6,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Staff announcement screen (BIO-607; CN-057)** lets Admins and assigned
+  Organizers publish to the selected tournament's verified roster and see
+  the dashboard and email-queue counts.
+
 - **Organizer tournament management (BIO-706; CN-056)** shows assigned
   tournaments and supports draft creation, version-checked edits, approval
   submission and resubmission, and opening registration after approval.

@@ -1121,3 +1121,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   changelog, coverage and memory. All 91 statuses, nine backlog categories
   and 43 open Jira items remain. Roster, round and dedicated team screens
   remain under BIO-706.
+
+### 2026-11-27 — BIO-607 staff announcement screen
+
+- PR #64 merged into main at `300b9d7`. Started
+  `BIO-607-announcement-composer` from that commit. Added the React staff
+  route and form for a selected published, unarchived tournament. It
+  shows inbox and queued-email counts and uses the existing scoped API.
+- The same payload retries with the same key after an interrupted
+  response. The server chooses the verified roster and respects each
+  email preference. The browser suite drops an already-committed response,
+  checks the retry counts and verifies one copy in a participant inbox.
+- The production build and all 17 Playwright tests (55.3 s) passed using
+  disposable PostgreSQL and Django. No real announcement or email was
+  sent. No API or schema change was needed.
+- Updated the guides, API, test plan, Jira, CN-057, changelog, coverage
+  and project memory. All 91 statuses, nine backlog categories and 43
+  open Jira items remain. Additional notice sources, recipient provisioning
+  and production delivery still need work.

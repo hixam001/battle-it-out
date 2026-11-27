@@ -923,8 +923,9 @@ returns the original counts without adding recipients or queuing again.
 Changing the text with that key returns `409`. The tournament must be
 approved, registration open, running or completed on every attempt.
 Unavailable lifecycle states and capacity conflicts return `409`.
-Hidden, deleted and missing tournaments share `404`. The authoring screen
-and real email delivery remain follow-up work.
+Hidden, deleted and missing tournaments share `404`. The staff console
+uses this route from `/announcements/new` (CN-057). Real email delivery
+remains follow-up work.
 
 ### GET `/tournaments/{id}/audit-logs/` and GET `/admin/audit-logs/`
 

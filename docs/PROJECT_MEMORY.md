@@ -22,6 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-607 / CN-057 adds the staff announcement screen. The production
+  build and all 17 Playwright tests passed. PR #64 merged into main at
+  `300b9d7`.
 - BIO-706 / CN-056 adds the assigned Organizer tournament lifecycle screens.
   The production build and all 16 Playwright cases passed. PR #63 merged
   into main at `88594e1`.
@@ -36,8 +39,9 @@ remaining backlog after every task.
   The announcement API in PR #60 merged into main at `9255e2a`.
 - BIO-607 / CN-052 adds staff announcement publishing to the verified roster.
   The dashboard entries, optional email queue, author audit and retry receipt
-  commit together. Staff authoring UI, other notice sources and production
-  delivery remain open. All 145 Django tests and 101 notification tests passed.
+   commit together. The staff screen followed in CN-057. Other notice
+   sources and production delivery remain open. All 145 Django tests and
+   101 notification tests passed for CN-052.
 - The owner approved PRs #58 and #59. The reconciled branch preserves
   CN-050 and CN-051 and the full 91-row coverage matrix. Queue and replay
   incidents join the Admin audit feed, and `/api/v1/ready/` probes PostgreSQL.
@@ -411,8 +415,9 @@ with current code and the coverage matrix; nothing here is closed by intake.
    current explicit links and the shared service store. CN-031 implements the
    linked-participant inbox and deadline/notice dashboard. CN-041 delivers
    extension and override notices with affected accounts counted. CN-052 adds
-   scoped announcement publishing to the verified roster. Announcement
-   authoring UI, staff inboxes and a final pagination contract remain open.
+   scoped announcement publishing to the verified roster. CN-057 adds
+   staff authoring and receipt counts in the console. Staff inboxes and a
+   final pagination contract remain open.
 7. **Replays/logs/privacy:** object storage,
    short-lived URLs, full browser replay player (DEC-10), deployed purge schedule,
    backups/restore, indicator-text exposure review, durable log retention and
@@ -896,3 +901,17 @@ selector stopped on the populated textarea and was corrected to use its
 accessible textbox name. All 91 statuses, nine backlog categories and 43
 open Jira items remain. Roster, round and dedicated team screens remain
 under BIO-706.
+
+## CN-057 continuation evidence
+
+BIO-607 starts from merged main at `300b9d7` on
+`BIO-607-announcement-composer`. Admins and assigned Organizers use the
+staff console to select a tournament, publish plain text and see inbox/email
+counts. Eligibility follows the API. Retries of the same form payload use
+the original key.
+
+The production build and all 17 Playwright tests passed (55.3 s) against
+disposable state. The browser dropped a successful response, retried and
+verified one copy in the recipient's inbox. All 91 statuses, nine backlog
+categories and 43 open Jira items remain. Staff recipients, automatic
+approval and dispute notices, production delivery and SQL migration remain.
