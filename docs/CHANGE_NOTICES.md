@@ -728,6 +728,18 @@ Decisions from the owner that change or narrow what the requirement documents (P
   checks. Public claims, verification and code delivery remain open. Requirement
   status counts are unchanged.
 
+## CN-050 — Queue and replay incident audit (2026-11-27)
+
+- **BIO-407:** Admin audit includes openings and resolutions from the queue
+  and replay vault, alongside match incidents. Queue events use the stored
+  job's version or bracket for tournament scope. Replay events use the vault
+  index. Unassigned incidents stay in the unfiltered global feed.
+- The projection exposes source and stable incident and job/game references.
+  Internal worker notes, provider errors and file paths remain private.
+  Permanent migration, deletion retention and restore remain open.
+- All 138 Django tests passed on disposable PostgreSQL, with system and
+  migration checks. Requirement status counts are unchanged.
+
 ## CN-051 — PostgreSQL readiness probe (2026-11-27)
 
 - **BIO-404:** public `GET`/`HEAD /api/v1/ready/` uses the web application's

@@ -970,6 +970,24 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   coverage evidence, Jira, CN-049 and project memory. All 91 requirement
   statuses and nine backlog categories remain. User replay files were preserved.
 
+### 2026-11-27 — BIO-407 queue and replay incident audit
+
+- The owner requested merging the prior batch. PRs #55–57 merged into main
+  with the documentation reconciled, ending at `4413b90`. All 91 coverage
+  rows and CN-047–049 are present. The earlier combined checkout passed 137
+  Django tests. This task started from the merged commit on
+  `BIO-407-queue-replay-audit`.
+- `backend/webapp/audit.py` now includes queue and replay incident openings
+  and resolutions for Admin. Queue scope comes from a stored submission or
+  bracket; replay scope is recorded in the vault. Unassigned incidents appear
+  only in the unfiltered Admin feed. Worker notes and paths are omitted.
+- All 138 Django cases passed on disposable PostgreSQL in 15.619 s, including
+  both job kinds, job revival, replay-unavailable, cross-tournament and role
+  scope. System and migration checks passed. Existing replays were preserved.
+- Updated Jira, API, coverage evidence, CN-050 and memory. Requirement counts
+  remain 26 DONE / 54 PARTIAL / 11 TODO; permanent audit persistence and its
+  retention/restore verification remain in the full backlog.
+
 ### 2026-11-27 — BIO-404 PostgreSQL readiness
 
 - Started `BIO-404-postgres-readiness` from merged main at `4413b90` while
@@ -990,3 +1008,13 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   and #59 applied together to `4413b90`, including system and migration
   checks. The two independently based PRs overlap in the handoff and change
   notice entries.
+
+### 2026-11-27 — Merge reconciliation for PRs #58 and #59
+
+- The owner approved merging both PRs. BIO-407 #58 landed at `45eafc4`.
+  Reconciled the two shared documentation files in BIO-404 #59 and kept both
+  task records and CN-050–051. Requirement counts stay at 26 DONE,
+  54 PARTIAL and 11 TODO across 91 rows. The full backlog remains in memory.
+- The reconciled candidate passed all 140 Django tests on disposable
+  PostgreSQL in 16.070 s, plus system and migration-drift checks. Existing
+  replay files were preserved.

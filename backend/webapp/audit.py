@@ -12,6 +12,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 
 from backend.submission_registry import registry as R
 from backend.tournaments import tournaments as T
+from backend.work_queue import jobs as J
 from . import domain as D
 from .models import AuditEvent, Dispute
 from .views import private
@@ -31,7 +32,7 @@ DETAIL_TOKENS = {
     'notifications': ('event_type',),
     'web': ('status', 'team_id', 'submission_id', 'user_id', 'dispute_id'),
     'series': ('series_id', 'stage', 'coin_flip_id', 'result_type', 'winner_side', 'winner_team'),
-    'incident': ('incident_id', 'incident_type', 'match_id'),
+    'incident': ('incident_id', 'incident_type', 'incident_source', 'match_id', 'job_id', 'job_kind'),
 }
 DETAIL_NUMBERS = {
     'registration': ('created', 'updated', 'rejected', 'count'),
@@ -139,15 +140,14 @@ def _series_rows(series, tid):
         yield _item('series', f'{sid}-{sequence:06d}', parse_datetime(event['at']), tid, action, None, detail)
 
 
-def _incident_rows(incidents, match_tournaments, tid):
+def _incident_rows(incidents, source, resolve_tournament, tid):
     for incident in incidents:
-        match_id = incident.get('match_id')
-        event_tid = match_tournaments.get(match_id) if match_id else incident.get('tournament_id')
+        event_tid = resolve_tournament(incident)
         if tid is not None and event_tid != tid:
             continue
         incident_id = incident['id']
-        detail = {'incident_id': incident_id, 'match_id': match_id, 'incident_type': incident['incident_type'],
-                  'attempt_count': incident.get('attempt_count')}
+        detail = {key: incident.get(key) for key in ('incident_type', 'match_id', 'job_id', 'job_kind', 'attempt_count')}
+        detail.update(incident_id=incident_id, incident_source=source)
         yield _item('incident', f'{incident_id}-0', parse_datetime(incident['created_at']), event_tid,
                     'incident_opened', None, detail)
         if incident.get('resolved_at'):
@@ -155,7 +155,33 @@ def _incident_rows(incidents, match_tournaments, tid):
                         'incident_resolved', incident.get('resolved_by'), detail)
 
 
-def _match_rows(state, who, tid):
+def _worker_incidents(rt, state, submissions, match_tournaments, tid):
+    def match_tournament(incident):
+        match_id = incident.get('match_id')
+        return match_tournaments.get(match_id) if match_id else incident.get('tournament_id')
+
+    yield from _incident_rows(state['incidents'], 'match', match_tournament, tid)
+    queue = rt.flow.queue.store.snapshot()
+
+    def job_tournament(incident):
+        job = queue['jobs'].get(incident['job_id'])
+        if job is None:
+            return None
+        if job['kind'] == J.CHECK_SUBMISSION:
+            record = submissions['submissions'].get(job['payload']['submission_id'], {})
+            return record.get('tournament_id')
+        if job['kind'] == J.RUN_ROUND:
+            bracket = state.get('brackets', {}).get(job['payload']['bracket_id'], {})
+            return bracket.get('tournament_id')
+        return None
+
+    yield from _incident_rows(queue['incidents'], 'queue', job_tournament, tid)
+    vault = rt.vault.index.snapshot()
+    yield from _incident_rows(vault['incidents'], 'replay', lambda incident: incident['tournament_id'], tid)
+
+
+def _match_rows(rt, who, tid, submissions):
+    state = rt.flow.store.snapshot()
     match_tournaments = {}
     for event_tid, series in _official_series(state, tid):
         if who.role == 'participant' and who.team_ids.isdisjoint((series['team_a'], series['team_b'])):
@@ -164,7 +190,7 @@ def _match_rows(state, who, tid):
         if who.role == 'admin':
             match_tournaments.update((game['match_id'], event_tid) for game in series['games'])
     if who.role == 'admin':
-        yield from _incident_rows(state['incidents'], match_tournaments, tid)
+        yield from _worker_incidents(rt, state, submissions, match_tournaments, tid)
 
 
 def _rows(rt, who, tid, tournament_state, window):
@@ -177,7 +203,7 @@ def _rows(rt, who, tid, tournament_state, window):
         return rec.get('tournament_id'), {'team_id': rec.get('team_id')}
 
     yield from _legacy_rows(submissions['audit'], 'submissions', who, tid, submission_reference)
-    yield from _match_rows(rt.flow.store.snapshot(), who, tid)
+    yield from _match_rows(rt, who, tid, submissions)
     if who.role != 'participant':
         registration = rt.registration.store.snapshot()
         yield from _legacy_rows(registration['audit'], 'registration', who, tid)

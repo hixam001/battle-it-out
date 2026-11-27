@@ -892,8 +892,9 @@ real email providers and mandatory security-email policy remain open.
 
 **Implemented (BIO-610 / CN-042):** Read-only audit across PostgreSQL feature
 actions and existing tournament, registration, submission and notification
-audit stores. BIO-407 / CN-048 adds official series history and match-worker
-incident events. Both routes return `items` and a nullable `next_offset`.
+audit stores. BIO-407 / CN-048 and CN-050 add official series history and
+match, queue and replay incident events. Both routes return `items` and a
+nullable `next_offset`.
 The optional parameters are `limit` (1–200, default 50) and `offset`
 (0–2147483647). Records are ordered newest first with a deterministic
 source and sequence tie-break. Appends can shift offset pages.
@@ -910,9 +911,11 @@ for currently authorized roles.
 Records contain `id`, `source`, `action`, `created_at`, `tournament_id`,
 an explicit `detail` projection and a role-appropriate `actor_id` for staff.
 Series records include the series ID and stage, with a stored coin-flip ID
-and winning side and team for a flip. Incidents include their ID, type,
-game ID and attempt count when recorded. Match incidents are associated to a
-tournament through its stored bracket and game. Unassigned match incidents
+and winning side and team for a flip. Incidents include their ID, type and
+`incident_source` (`match`, `queue` or `replay`), plus game ID, job ID and
+kind, or attempt count when recorded. Match and round-job events use the
+stored bracket, and submission-check jobs use the stored version's tournament.
+Replay incidents use the vault index's tournament ID. Unassigned events
 appear only in the unfiltered Admin feed.
 Free-form reasons, invitation/provider credentials, source and host paths are
 excluded. Private/no-store and the shared error envelope apply.
