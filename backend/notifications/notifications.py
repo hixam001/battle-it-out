@@ -337,11 +337,15 @@ def notify_audience(center: Notifications, reg: G.Registration, event_type: str,
 
 
 def notify_notice(center: Notifications, reg: G.Registration, notice: dict, *,
+                  recipients: list[str] | None = None,
                   now: Callable[[], float] = time.time) -> dict:
     """Deliver the notice an Admin action returned (`extend_deadline`, `emergency_override`) to everybody who holds
-    a place in that tournament (SRD-035, SRD-037, SRD-061)."""
+    a place in that tournament (SRD-035, SRD-037, SRD-061).
+    A durable delivery can supply the audience recorded with the action."""
     event_type, tid, params, key = from_notice(notice)
-    return notify_audience(center, reg, event_type, tid, params, event_key=key, now=now)
+    if recipients is None:
+        recipients = G.account_ids(reg, tid)
+    return notify(center, event_type, tid, recipients, params, event_key=key, now=now)
 
 
 # ------------------------------------------------------------------------------------------------ reading

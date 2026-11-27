@@ -26,6 +26,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 USE_TZ = True
 TIME_ZONE = 'UTC'
 BIO_DATA_DIR = Path(os.environ.get('BIO_DATA_DIR', ROOT / 'backend/webapp/.state'))
+BIO_ENGINE_JAR = Path(os.environ['BIO_ENGINE_JAR']) if os.environ.get('BIO_ENGINE_JAR') else None
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SECURE = not DEBUG

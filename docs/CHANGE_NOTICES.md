@@ -510,6 +510,103 @@ Decisions from the owner that change or narrow what the requirement documents (P
   supervision, staging restore after real archive and permanent-delete workflow.
   Coverage evidence advances without changing the requirement statuses.
 
+## CN-036 — Complete submission read endpoints (2026-11-26)
+
+- **BIO-505:** added per-version validation details, official game IDs on team
+  history, and auditable staff history and validation reads. Existing
+  single-file and bundle downloads retain their audit and integrity checks.
+  Requested tournament scope and current team/Organizer access apply on
+  every read. A visible roster team can have an empty history.
+- **Decisions:** use the existing tournament-scoped route and current
+  automatic latest-valid activation. Staff metadata reads record ID-only
+  PostgreSQL audit events. Production retention remains BIO-408/609 work.
+- **Verification:** 85 Django tests passed with disposable PostgreSQL,
+  including six new submission-read cases. System and migration-drift checks
+  passed. Registry and bundle unit mode ran 70 tests, with 67 passed and three
+  real-game skips. SRD-057 advances to DONE.
+## CN-037 — Frontend routing and error foundation (2026-11-26)
+
+- **BIO-701:** completed the current console foundation. The shared API client
+  preserves the HTTP status, error code, details and server request ID. A valid
+  request ID appears with the actionable error message. JSON/CSRF and multipart
+  uploads share the same request path.
+- Direct Operations and inbox links respect the current Admin/participant
+  guard, retain their address during sign-in and provide a way back to Dashboard
+  when refused. The API checks authorization on its own requests. Public and
+  private pages offer a keyboard skip link and retain visible active navigation.
+- TypeScript/Vite production build and eight Playwright tests passed against
+  disposable PostgreSQL with real Django sessions. Three new browser cases
+  exercise direct-link refusal, keyboard focus and the exact request ID in a
+  failed login. Product-wide usability and accessibility acceptance remain
+  BIO-708. Coverage statuses stay 17 DONE / 62 PARTIAL / 12 TODO on this base.
+## CN-038 — Complete bracket and round APIs (2026-11-26)
+
+- **BIO-603:** adds staff map-pool selection, confirmed single-tournament
+  draw, and idempotent sequential round start. Bracket and match read
+  projections include wins by side from recorded outcomes. Raw engine point
+  totals and complete results UI remain separate.
+- Manual draw shares the scheduler's deadline, verified roster, map catalogue,
+  pinning and exclusion-notice workflow. The tournament lock keeps deadline
+  changes out of the draw and reserves the lifecycle audit entry. Invalid map
+  hashes are checked before pinning. Only an explicit start queues a round.
+- The API uses the existing current Admin/explicit Organizer scope and CSRF.
+  Paused rounds require their operator workflow, and repeat starts share one
+  queue job. The web process reads maps from the configured engine JAR;
+  execution stays with the existing worker.
+- All 85 Django tests and system/migration-drift checks passed. The 164 selected
+  scheduler, flow, map and service integration cases passed with temporary
+  output and real engine games. SRD-023 advances to DONE.
+## CN-039 — Exact curated dependency releases (2026-11-27)
+
+- **BIO-510:** the catalogue records the reviewed SHA-256 for each approved
+  exact release. A source mismatch stops publication and new uploads of the
+  affected release. Snapshot validation checks the declared release's digest
+  against stored bytes. The existing biohelpers 1.0.0 pin, manifest and
+  aggregate bundle hash remain compatible with CN-028.
+- **Verification:** all 73 selected bundle/registry tests passed in real-engine
+  mode, including adding a test release alongside an old pin, same-version
+  source drift, duplicate requirements and version syntax. All 80 Django
+  tests passed with disposable PostgreSQL, alongside system and migration
+  checks. The React production build passed.
+- **Scope:** biohelpers 1.0.0 is the only approved release. Catalogue additions
+  need source review and a module collision check. BIO-REQ-21 remains PARTIAL
+  for later languages and wider dependencies.
+## CN-040 — Submission upload contract (2026-11-27)
+
+- **BIO-504:** the tournament upload route checks current captain and team
+  scope, takes exactly one multipart bot.py or bounded Python bundle, and
+  uses the current official deadline. It calls the shared immutable
+  store-and-queue flow. Success keeps the existing 201 and version shape.
+- **Refusals:** malformed form or key returns 400, wrong request media type
+  returns 415, size/member ceilings return 413, and invalid filename, ZIP or
+  static bot check returns 422. A rejected single-file static check retains
+  its submission ID and findings in private history. A rejected version
+  never displaces the active version and never queues a trial.
+- **Verification:** 84 Django cases passed against disposable PostgreSQL with
+  system and migration checks. All 102 selected bundle/registry/tournament
+  flow integration tests passed with the real engine. The production
+  frontend build and all five Playwright cases passed.
+- **Coverage:** SRD-050 and SRD-054 are DONE for the upload contract. Totals
+  are 19 DONE / 60 PARTIAL / 12 TODO. The size limits remain interim.
+## CN-041 — Admin deadline actions and participant notices (2026-11-27)
+
+- **BIO-602:** current Admins can extend either deadline and override a locked
+  name, description or map pool. The requests require CSRF, confirmation,
+  a reason and an idempotency key. Extensions and map changes refuse pinned
+  entries. The scheduler checks the current deadline inside the tournament
+  lock before drawing, closing a race with deadline changes.
+- **Persistence:** the state change, audit entry, response receipt and
+  pending notice share the tournament store transaction. The receipt
+  captures an affected-account count for the official roster audience,
+  including pending verification. Publication uses the existing idempotent
+  notification store and email preferences. Maintenance retries pending
+  notices, including interruptions after publication.
+- **Checks:** all 87 Django cases passed with disposable PostgreSQL; system
+  and migration checks passed. All 200 targeted tournament, notification
+  and service integration cases passed with real-engine coverage.
+- **Coverage:** evidence advances for SRD-034/035/037. The 91 statuses are
+  unchanged. Provider delivery, production deployment, Admin controls and
+  the separate configuration-freeze decision remain open.
 ## CN-042 — Scoped and global audit feeds (2026-11-27)
 
 - **BIO-610:** role-scoped tournament and Admin global read endpoints with

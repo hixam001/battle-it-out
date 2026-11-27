@@ -82,6 +82,12 @@ supersedes previous valid version. - Invalid replacement never replaces
 active version. - Every version and validation outcome remains in
 history.
 
+**HTTP checks (BIO-504 / CN-040):** single multipart file, supported filename
+or flat ZIP, missing/duplicate fields, size limits (including the expanded ZIP),
+actionable static rejection and retained history, foreign tournament scope,
+stored-deadline closure and reopening on extension, same-key retry and
+conflict for a different body. Rejected static versions never queue a check.
+
 ### TC-03 --- Two-bot match and resource enforcement
 
 **Jira:** BIO-203 / BIO-204 / BIO-205\
@@ -220,6 +226,16 @@ damaged replay incidents and archive refusal. It exercises archive during
 file verification, confirms vault file deletion on disk and preserves bracket
 and match history. The real-engine `test_replays` suite separately exercises
 collection and purge for native engine output in a temporary vault.
+
+#### Implemented deadline notice subset (BIO-602 / CN-041)
+
+Web tests exercise current Admin authorization and CSRF, independent deadline
+ordering, immutable entry pins, locked-setting override, affected roster
+counts, private dashboard notice with email switched off, committed-action
+retry and an outage of the notification store. Maintenance republishes a
+pending notice. A failed acknowledgement after publication does not duplicate
+the audit, dashboard item or email outbox. The timer regression extends the
+deadline after a tick reads the tournament and verifies no early draw or pins.
 
 #### Implemented archive HTTP subset (BIO-606 / CN-035)
 
@@ -411,7 +427,7 @@ TC-02/05/07/08 plan; it does not close the execution/production acceptance gates
 
 | Surface | Required verification / implemented checks |
 |---|---|
-| Python bundles | ZIP traversal/duplicates/symlinks/expansion limits; every module checked; curated exact versions; complete-digest verdict and pin binding; changed helper/dependency refusal; authorized reproducible export; real two-sided native-module engine trial |
+| Python bundles | ZIP traversal/duplicates/symlinks/expansion limits; every module checked; unique exact-version declarations; reviewed catalogue digests; same-version source drift refusal; older snapshots and exports across a new release; complete-digest verdict and pin binding; authorized reproducible export; real two-sided native-module engine trial |
 | Private live board | Real board changes observed before completion; native schema only; no raw WebSocket listener; numeric allowlist/private file mode; baseline engine round/reason comparison; scope revoked on next poll; archived access denied and frame files purged |
 | PostgreSQL API | Anonymous/foreign scope denial; current roster/assignment authority; staff source read audit; stored deadline/captain upload gate; CSRF/session and independent durable source/account login limits |
 | Disputes | Team-private actual match reference; idempotent create; payload mismatch; optimistic conflict; staff-only transitions/reason; comments/closed-state behavior; result records unchanged; state/audit/receipt rollback; database rejection of audit-history changes |

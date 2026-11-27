@@ -687,6 +687,119 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   PostgreSQL, local services and temporary replay paths. No provider or
   production environment was used.
 
+### 2026-11-26 — BIO-505: submission read endpoints
+
+- Started from merged `origin/main` `d66b95d` on
+  `BIO-505-submission-read-api`. The approved current upload paths were
+  available for this task.
+- Added validation details for one version and game IDs on history. Scope
+  checks bind history and validation to the requested tournament. Official
+  roster teams can read empty history before the first upload. Staff history
+  and validation reads create PostgreSQL audit records. Existing source and
+  bundle downloads retain integrity checks and legacy audit.
+- All 85 Django tests passed in 9.713 s with disposable PostgreSQL, including
+  six new cases. System and migration-drift checks passed. Registry and bundle
+  units ran 70 cases, 67 passed and three real-engine cases skipped. Test state
+  stayed temporary. No new engine or browser tests were needed for the reads.
+- Updated API/test docs, coverage, CN-036, Jira and project memory. BIO-505
+  closes under the current automatic activation rule. Production storage and
+  retention remain in the backlog. SRD-057 moves to DONE for 18 DONE /
+  61 PARTIAL / 12 TODO across 91 requirements. Continued on independent
+  frontend foundation work (BIO-701) from merged main.
+### 2026-11-26 — BIO-701: frontend foundation
+
+- Started from merged `origin/main` `d66b95d` on
+  `BIO-701-frontend-foundation`, with the independent BIO-505 PR pending.
+- Finished the client error envelope and request ID support in `api.ts`.
+  `main.tsx` now guards restricted direct links, preserves the destination
+  through sign-in and supports keyboard skip navigation in both the public
+  page and private console.
+- TypeScript and Vite build passed; all eight Playwright cases passed in
+  12.1 s with a disposable PostgreSQL database and real Django sessions.
+  New cases check keyboard focus, restricted route refusal and the request ID
+  on a real failed login. Local processes stopped after the suite.
+- Updated the design, development guide, coverage, Jira, changelog,
+  CN-037 and project memory. BIO-701 closes for the current console.
+  All 91 requirement statuses and the nine backlog categories remain.
+  Full usability/accessibility acceptance is tracked under BIO-708.
+### 2026-11-26 — BIO-603: bracket and round actions
+
+- Started `BIO-603-bracket-round-actions` from merged main `d66b95d` with the
+  previous bracket reads in place and independent BIO-505/701 PRs open.
+- Added scoped staff pool selection, manual draw and sequential round start.
+  The scheduler and API share the draw; current deadlines and map hashes are
+  checked before pins. Draw records exclusions and never starts a round.
+  Start checks idempotency, current authorization and pinned integrity; it
+  cannot requeue a paused round. Read projections show recorded game win counts.
+- All 85 Django tests passed (six new action tests, 9.221 s). System and
+  migration-drift checks passed. Selected scheduler/flow/map/service integration
+  mode passed all 164 tests in 79.846 s with temporary real-game outputs.
+- Updated the API/README, Jira, coverage, CN-038 and shared memory. Existing
+  code and the three staff actions complete BIO-603. SRD-023 moves to DONE.
+  Organizer screens, raw engine points, production deployment, house bots
+  and cutoff draw are tracked separately. All nine backlog categories remain.
+### 2026-11-27 — BIO-510: exact curated dependency releases
+
+- Started BIO-510-curated-dependency-pins from fetched origin/main at d66b95d
+  while PRs #44–46 were open against main. Read the merged memory, latest
+  handoff and bundle, API, data-model and requirements specifications.
+- Updated the bundle catalogue and validator, HTTP catalogue and React list.
+  Each exact release has a reviewed digest. Publication and ingestion verify
+  the shipped bytes. Stored bundles use their declared release to verify
+  their existing bytes. Reject duplicate declarations and preserve the
+  biohelpers 1.0.0 digest, manifest and aggregate content hashes.
+- All 73 targeted bundle/registry tests passed with the real engine
+  (31.063 s). All 80 web tests passed with disposable PostgreSQL (8.154 s).
+  Django system and migration-drift checks and the production frontend
+  build passed. Confirmed the original CN-028 fixture hash with the base
+  implementation. Tests used temporary outputs.
+- Updated the bundle guide, API contract, Jira, test plan, coverage, changelog,
+  CN-039 and project memory. All 91 requirement statuses and nine backlog
+  categories remain. An additional module name needs a collision review
+  against previously accepted local modules. No new package was added.
+### 2026-11-27 — BIO-504: submission upload contract
+
+- Started BIO-504-upload-contract from fetched origin/main at d66b95d while
+  PRs #44–47 were open against main. Read project memory, latest handoff and
+  the upload, deadline, requirements and acceptance specifications.
+- Updated the HTTP upload route, bundle size errors and tournament flow.
+  Exactly one multipart bot.py or bounded ZIP is accepted from the current
+  captain. The tournament store lock protects the deadline while the shared
+  flow stores and queues the upload. The 201 version shape stays compatible.
+  Actionable static 422 details identify the stored rejected version and its
+  findings. The console refreshes history after a rejected attempt.
+- All 84 Django cases passed with disposable PostgreSQL on the final run
+  (7.784 s), with system and migration-drift checks. All 102 targeted
+  bundle/registry/tournament-flow integration cases passed (62.693 s).
+  The production frontend build and all five Playwright cases passed (9.8 s).
+  Checks used disposable state and replays.
+- Updated the API and app guides, Jira, requirement coverage, test plan,
+  changelog, CN-040 and project memory. SRD-050 and SRD-054 are DONE for the
+  upload contract. All 91 rows and nine backlog categories remain. The
+  product size limits and deployed edge request limits remain open.
+### 2026-11-27 — BIO-602: deadline actions and participant notices
+
+- Started BIO-602-deadline-notices from fetched origin/main at d66b95d with
+  PRs #44–48 open against main. Read the project memory, latest handoff and
+  tournament, notification, API, requirements and acceptance specifications.
+- Added confirmed Admin deadline extension and emergency override routes.
+  Current authorization is checked for each request and again under the
+  account lock before committing. The tournament change, audit record,
+  same-key receipt and notice audience share one store transaction.
+  Notification publication is idempotent, respects the existing email
+  preference and recovers through maintenance. The service reports pending
+  events. Pinned entry versions block reopening and map overrides.
+- Reused the fresh-deadline draw lock from the parallel BIO-603 work in the
+  scheduler so this branch can land independently. A regression extends
+  the deadline after the scheduler reads its initial snapshot and verifies
+  the timer does not pin or draw early.
+- All 87 Django cases and system/migration checks passed with disposable
+  PostgreSQL (8.639 s). All 200 targeted tournament/notification/service
+  integration tests passed, including the stale-deadline case and real
+  engine service lifecycle. Test state and replays stayed temporary.
+- Updated the API and service guides, runbook, Jira, test plan, changelog,
+  CN-041, coverage and memory. All 91 statuses and nine backlog categories
+  remain. Email production delivery, Admin screens and DEC-08 remain open.
 ### 2026-11-27 — BIO-610: role-scoped audit feeds
 
 - Cut BIO-610-scoped-audit-log from fetched origin/main at d66b95d.
