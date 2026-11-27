@@ -336,13 +336,15 @@ with current code and the coverage matrix; nothing here is closed by intake.
    suitability, per-round re-verification and production persistence remain.
    Other OSes, 3.16/free-threaded builds and CI remain unverified/unbuilt. New
    native bundle/live tests do not close any of these execution gates.
-4. **Registration/submissions:** invitation/claim/verification
-   endpoints and code delivery; remaining registration API contracts; locked-entry
+4. **Registration/submissions:** public claim and verification endpoints and
+   invitation delivery; remaining registration API contracts; locked-entry
    Admin exception; team size/name/captain policy, source retention/deletion,
    approved upload/version/limiter caps and manual-activation decision. HTTP
    upload/history/source/bundle delivery and queued checks now exist and use the
    official stored deadline/current roster Actor. CN-044 adds scoped staff
    roster reads, import, correction and exclusions. CN-045 adds team profiles.
+   CN-049 adds staff invitation code metadata and issue/revoke/replace endpoints.
+   Plaintext codes appear only in successful issuance or replacement responses.
    BIO-504 defines multipart,
    size and actionable static-error responses. Interim caps are 256 KiB and
    500 versions/team; the 32-file bundle ceiling is verified on export and

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 from django.urls import path
+from backend.registration import registration as G
 from . import results
 from . import round_actions
 from . import views as V
@@ -34,6 +35,11 @@ urlpatterns = [
     path('api/v1/tournaments/<str:tid>/roster/import/', roster.import_roster),
     path('api/v1/tournaments/<str:tid>/roster/report/', roster.report),
     path('api/v1/tournaments/<str:tid>/roster/<str:entry_id>/', roster.correct_entry),
+    path('api/v1/tournaments/<str:tid>/invitation-codes/', roster.invitation_codes),
+    path('api/v1/tournaments/<str:tid>/invitation-codes/<str:code_id>/revoke/',
+         roster.change_invitation_code, {'operation': G.revoke_code}),
+    path('api/v1/tournaments/<str:tid>/invitation-codes/<str:code_id>/replace/',
+         roster.change_invitation_code, {'operation': G.replace_code}),
     path('api/v1/tournaments/<str:tid>/disputes/', V.disputes),
     path('api/v1/tournaments/<str:tid>/disputes/<uuid:did>/', V.dispute_detail),
     path('api/v1/tournaments/<str:tid>/bracket/', results.bracket),

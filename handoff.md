@@ -911,3 +911,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - The owner authorized the merges. The pull requests landed individually
   on main in numerical order, using the verified conflict resolutions.
   Forty-five tracked Jira items remain.
+
+### 2026-11-27 — BIO-502 staff invitation code API
+
+- Started `BIO-502-staff-invitation-codes` from fetched main at `2ff7bcd`
+  with #55 and #56 open against main. The roster API now provides listing
+  and initial issuance for current staff, and Admin-only revoke and replace
+  with confirmation and a reason. It reuses `backend/registration` as the
+  authority for eligibility, status, hashes, single use and audit.
+- Initial issuance retries skip already-issued entries and replacement
+  retries return conflict. Plaintext appears only in successful create
+  responses, and the listing excludes reasons and hashes. Current roster
+  deadlines determine expiry. Account claims, delivery and verification
+  remain tracked under BIO-502.
+- All 130 Django tests passed against disposable PostgreSQL, with system and
+  migration checks. The tests exercised CSRF, current scope, exact Admin
+  rights and old-code refusal. Updated the API and web guides, test plan,
+  coverage evidence, Jira, CN-049 and project memory. All 91 requirement
+  statuses and nine backlog categories remain. User replay files were preserved.

@@ -112,3 +112,37 @@ def correct_entry(request, tid, entry_id):
                                expected_version=version)
 
     return _apply(request, tid, action, write=True)
+
+
+@api_view(['GET', 'POST'])
+@parser_classes([RosterJSONParser])
+def invitation_codes(request, tid):
+    if request.method == 'GET':
+        def listing(reg, who):
+            return {'items': [{key: value for key, value in item.items() if key != 'reason'}
+                              for item in G.list_codes(reg, who, tid)]}
+
+        return _apply(request, tid, listing)
+
+    def issue(reg, who):
+        fields = ('roster_entry_ids',)
+        ids = body_fields(request, fields, fields)['roster_entry_ids']
+        if not isinstance(ids, list) or not 1 <= len(ids) <= G.MAX_ENTRIES or not all(
+                isinstance(entry, str) and R.KEY_RE.fullmatch(entry) for entry in ids):
+            raise ValidationError(f'Provide 1–{G.MAX_ENTRIES} valid roster entry IDs.')
+        return G.issue_codes(reg, who, tid, ids)
+
+    return _apply(request, tid, issue, write=True)
+
+
+@api_view(['POST'])
+@parser_classes([RosterJSONParser])
+def change_invitation_code(request, tid, code_id, *, operation):
+    def action(reg, who):
+        if who.role != 'admin':
+            raise PermissionDenied('Admin access is required.')
+        fields = ('confirm', 'reason')
+        data = body_fields(request, fields, fields)
+        return operation(reg, who, tid, code_id, data['reason'], confirm=data['confirm'])
+
+    return _apply(request, tid, action, write=True)

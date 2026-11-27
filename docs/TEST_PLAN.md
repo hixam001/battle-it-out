@@ -156,6 +156,11 @@ row rejection, identical-key retry, live Organizer scope and revocation,
 CSRF, optimistic corrections, a locked claim, and exclusions after the
 stored registration deadline.
 
+**Invitation staff HTTP checks (BIO-502 / CN-049)** cover one-time initial
+issuance, Admin revoke/replace, same-scope and cross-scope permissions, CSRF,
+metadata listing without plaintext, rejection of the replaced code by the
+registration library, and expiry and revival under the current deadline.
+
 **Team profile HTTP checks (BIO-503 / CN-045)** cover verified-member order,
 no contact data, pending verification, same-tournament team and cross-
 tournament refusals, Organizer revocation, archived visibility and the
