@@ -50,7 +50,9 @@ service user. Its layout matches `work_queue.service`: `registry.json`,
 `registration.json`, `notifications.json`, `host.lock`, and `out/`. The vault
 uses `replays/` and `replays.json`; successful failed-email alert receipts use
 `email-alerts.json`. Use these same vault paths when the application calls
-`tournaments.archive`. The CLI creates new state under umask `0077` and makes
+`tournaments.archive`. Maintenance retries pending deadline notifications
+from `tournaments.json` and reports the number still pending in
+`deadline_notices_pending`. The CLI creates new state under umask `0077` and makes
 new data directories private; existing directory permissions are the operator's
 responsibility. Store files are trusted application state, never uploads.
 

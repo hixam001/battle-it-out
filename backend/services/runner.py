@@ -19,7 +19,7 @@ from typing import Callable
 from backend.match_orchestrator import maps as M, orchestrator as O, replays as P
 from backend.match_orchestrator.store import JsonFileStore
 from backend.match_runner import launcher as L
-from backend.notifications import notifications as N
+from backend.notifications import notifications as N, sources as NS
 from backend.registration import registration as G
 from backend.submission_registry import registry as R
 from backend.tournament_flow import flow as F
@@ -107,6 +107,7 @@ class Runtime:
             raise RuntimeError("alert adapter failed") from None
 
     def maintenance(self, *, now=time.time) -> dict:
+        pending = NS.publish_deadline_notices(self.tournaments, self.registration, self.notifications, now=now)
         catalogue = M.load_engine_maps(self.config.engine_jar)
         result = S.tick(self.tournaments, self.flow, catalogue=catalogue,
                         engine_version=L.load_lock()["engine_version"], vault=self.vault,
@@ -122,7 +123,8 @@ class Runtime:
                         series = state.get("series", {}).get(pairing.get("series_id"), {})
                         for game in series.get("games", []):
                             (self.config.data_dir / "live" / (game["match_id"] + ".json")).unlink(missing_ok=True)
-        return {key: len(result[key]) for key in ("opened", "completed", "waiting", "blocked", "excluded")}
+        return {**{key: len(result[key]) for key in ("opened", "completed", "waiting", "blocked", "excluded")},
+                "deadline_notices_pending": len(pending)}
 
     def emails(self, *, now=time.time) -> dict:
         if "send" not in self.adapters:

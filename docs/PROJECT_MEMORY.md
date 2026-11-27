@@ -62,6 +62,10 @@ remaining backlog after every task.
   captain, accepts exactly one multipart file and passes the current official
   deadline to the shared store/queue flow. Static rejections return actionable
   findings and never change the active bot.
+- CN-041 completes BIO-602 for the local Admin API. Deadline extension and
+  locked-setting override commit an audit and a notice for the affected roster
+  accounts. Maintenance retries pending notices. The scheduler uses the
+  current deadline under the tournament store lock before pinning.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -324,7 +328,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    (BIO-510). More packages require source and module collision review and pins,
    additional languages follow compatibility work, and arbitrary participant
    installs/custom runtimes remain unapproved.
-5. **Tournament operations and deletion:** remaining tournament and deadline
+5. **Tournament operations and deletion:** remaining tournament lifecycle
    HTTP actions and permission tests; full results UI, engine point display and
    paused-job mutation controls; queued/
    cancelable account deletion, historical-roster removal without changed
@@ -338,14 +342,14 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Admins and assigned Organizers. CN-038 delivers staff map-pool selection,
    bracket draw and sequential round-start actions.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
-   store migration, real provider and deployment; announcements, automatic notice
-   calls after extension/override, affected-user
-   counts, Organizer approval/rejection and dispute notices; mandatory security
+   store migration, real provider and deployment; announcements,
+   Organizer approval/rejection and dispute notices; mandatory security
    email policy, owner wording/retry review, expiry alerts and real outage drill.
    Check/round/draw adapters and failed-email alert retry hooks already exist.
    CN-030 supplies linked-participant feed/read/preferences HTTP endpoints with
    current explicit links and the shared service store. CN-031 implements the
-   linked-participant inbox and deadline/notice dashboard. Announcement authoring,
+   linked-participant inbox and deadline/notice dashboard. CN-041 delivers
+   extension and override notices with affected accounts counted. Announcement authoring,
    staff inboxes and a final pagination contract remain open.
 7. **Replays/logs/privacy:** role-scoped match-log HTTP delivery, object storage,
    short-lived URLs, full browser replay player (DEC-10), deployed purge schedule,

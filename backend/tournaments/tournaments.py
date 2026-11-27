@@ -34,6 +34,7 @@ stores. Times are epoch seconds; the API layer converts from and to ISO-8601 UTC
 from __future__ import annotations
 
 import copy
+import hashlib
 import math
 import time
 from dataclasses import dataclass
@@ -92,7 +93,8 @@ def _empty_state() -> dict:
 
 def _state_ok(state) -> bool:
     return isinstance(state, dict) and state.get("schema") == SCHEMA and all(
-        isinstance(state.get(k), t) for k, t in (("tournaments", dict), ("idempotency", dict), ("audit", list)))
+        isinstance(state.get(k), t) for k, t in (("tournaments", dict), ("idempotency", dict), ("audit", list))
+    ) and isinstance(state.get("notice_receipts", {}), dict)
 
 
 class TournamentStore(JsonFileStore):
@@ -107,6 +109,13 @@ class Tournaments:
     @classmethod
     def at(cls, path: Path | str) -> "Tournaments":
         return cls(TournamentStore(Path(path)))
+
+
+@dataclass(frozen=True)
+class NoticeRequest:
+    idempotency_key: str
+    recipients: Callable[[], list[str]]
+    before_change: Callable[[], None]
 
 
 # ------------------------------------------------------------------------------------------------ helpers
@@ -398,15 +407,63 @@ def edit(reg: Tournaments, actor: R.Actor | None, tournament_id: str, changes: d
         return _view(rec, actor)
 
 
+def _apply_notice_action(reg, actor, tournament_id, intent, request, change, now) -> dict:
+    """Commit the change, audit, receipt and delivery record in the same store."""
+    with reg.store.transaction() as state:
+        rec = _managed_rec(state, actor, tournament_id)
+        if request is None:
+            notice = change(state, rec, now())
+            return {"tournament": _view(rec, actor), "notice": notice}
+        if rec["status"] == DELETED:
+            raise NotFound("no such tournament")
+        if not R.KEY_RE.fullmatch(request.idempotency_key):
+            raise Invalid("a safe idempotency key is required")
+        event_id = "deadline-" + hashlib.sha256(
+            f"{actor.user_id}\0{request.idempotency_key}".encode()
+        ).hexdigest()
+        intent = [tournament_id, *intent]
+        receipts = state.setdefault("notice_receipts", {})
+        prior = receipts.get(event_id)
+        if prior:
+            if prior["intent"] != intent:
+                raise Conflict("the idempotency key was used for a different deadline action")
+            return copy.deepcopy(prior["response"])
+        request.before_change()
+        notice = change(state, rec, now())
+        notice["event_id"] = event_id
+        state["audit"][-1]["id"] = event_id
+        recipients = request.recipients()
+        response = {"tournament": _view(rec, actor), "notification_event_id": event_id, "audit_event_id": event_id,
+                    "affected_participants": len(recipients)}
+        receipts[event_id] = {"intent": intent, "response": response,
+                              "pending": {"notice": notice, "recipients": recipients}}
+        return copy.deepcopy(response)
+
+
+def pending_notices(reg: Tournaments, event_id: str | None = None) -> dict[str, dict]:
+    receipts = reg.store.snapshot().get("notice_receipts", {})
+    if event_id is not None:
+        receipt = receipts.get(event_id)
+        return {event_id: receipt["pending"]} if receipt and receipt["pending"] is not None else {}
+    return {key: receipt["pending"] for key, receipt in receipts.items() if receipt["pending"] is not None}
+
+
+def mark_notice_published(reg: Tournaments, event_id: str) -> None:
+    with reg.store.transaction() as state:
+        state["notice_receipts"][event_id]["pending"] = None
+
+
 def extend_deadline(reg: Tournaments, actor: R.Actor | None, tournament_id: str, deadline_type: str,
                     new_deadline: float, reason: str, *, confirm: bool = False,
+                    notice_request: NoticeRequest | None = None,
                     now: Callable[[], float] = time.time) -> dict:
     """Admin extends the registration or the submission deadline, also after it has passed (`extend-deadline`).
 
     The new time must be later than the current one and than now. Refused once the bracket is drawn
     (`running` or later): the pins are write-once, so reopening uploads would promise something the draw
     cannot keep. Extending registration past the submission deadline is refused (extend that one first).
-    Returns the change plus the `notice` that affected participants must receive."""
+    Returns the change and notice. A notice request stores the delivery and
+    idempotency receipt atomically with the change."""
     actor = _who(actor, ("admin",))
     if confirm is not True:
         raise Invalid("an extension needs confirm=true")
@@ -414,11 +471,10 @@ def extend_deadline(reg: Tournaments, actor: R.Actor | None, tournament_id: str,
         raise Invalid(f"deadline_type must be one of {', '.join(DEADLINE_TYPES)}")
     new_deadline = _time("new_deadline", new_deadline)
     reason = _reason(reason)
-    with reg.store.transaction() as state:
-        rec = _managed_rec(state, actor, tournament_id)
+
+    def change(state, rec, t):
         if rec["status"] not in (APPROVED, OPEN):
             raise Conflict(f"a tournament that is {rec['status']} has no deadline that can be extended")
-        t = now()
         old = rec["deadlines"][deadline_type]
         if new_deadline <= old or new_deadline <= t:
             raise Invalid("the new deadline must be later than the current one and than now")
@@ -431,11 +487,15 @@ def extend_deadline(reg: Tournaments, actor: R.Actor | None, tournament_id: str,
                   "old": old, "new": new_deadline, "reason": reason, "at": _iso(t), "authorizer": actor.user_id}
         _audit(state, t, actor.user_id, "extend_deadline", rec["id"], deadline_type=deadline_type, old=old,
                new=new_deadline, reason=reason)
-        return {"tournament": _view(rec, actor), "notice": notice}
+        return notice
+
+    return _apply_notice_action(reg, actor, tournament_id, ["extend_deadline", deadline_type, new_deadline, reason],
+                                notice_request, change, now)
 
 
 def emergency_override(reg: Tournaments, actor: R.Actor | None, tournament_id: str, setting: str, value, reason: str,
-                       *, confirm: bool = False, now: Callable[[], float] = time.time) -> dict:
+                       *, confirm: bool = False, notice_request: NoticeRequest | None = None,
+                       now: Callable[[], float] = time.time) -> dict:
     """Admin changes a locked setting without extending the deadline (`emergency-override`).
 
     Only name, description and the map pool can be overridden (a deadline has its own extension, and every
@@ -449,20 +509,25 @@ def emergency_override(reg: Tournaments, actor: R.Actor | None, tournament_id: s
         raise Invalid(f"setting must be one of {', '.join(OVERRIDABLE)}")
     value = _clean(setting, value)
     reason = _reason(reason)
-    with reg.store.transaction() as state:
-        rec = _managed_rec(state, actor, tournament_id)
+
+    def change(state, rec, t):
         if rec["status"] in (ARCHIVED, DELETED):
             raise Conflict(f"a tournament that is {rec['status']} cannot be changed")
         if setting == "map_pool_id" and rec["status"] in (RUNNING, COMPLETED):
             raise Conflict("the bracket is already drawn; its maps cannot change")
-        t = now()
+        if notice_request is not None and (rec["status"] not in (APPROVED, OPEN, RUNNING, COMPLETED)
+                                           or t < rec["deadlines"][FIELD_LOCK[setting]]):
+            raise Conflict("the setting has not been locked by its deadline")
         old = rec[setting]
         rec[setting] = value
         rec["version"] += 1
         notice = {"kind": "emergency_override", "tournament": rec["id"], "setting": setting, "old": old, "new": value,
                   "reason": reason, "at": _iso(t), "authorizer": actor.user_id}
         _audit(state, t, actor.user_id, "emergency_override", rec["id"], setting=setting, old=old, new=value, reason=reason)
-        return {"tournament": _view(rec, actor), "notice": notice}
+        return notice
+
+    return _apply_notice_action(reg, actor, tournament_id, ["emergency_override", setting, value, reason],
+                                notice_request, change, now)
 
 
 # --------------------------------------------------------------------------------------- the state machine

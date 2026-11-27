@@ -14,6 +14,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
   multipart file and reports unsupported request types, size limits and
   static failures. The current tournament deadline governs uploads and
   static failures retain their findings without replacing an active bot.
+- **Admin deadline actions (BIO-602; CN-041)** extend a registration or
+  submission deadline and override a locked setting with an audited reason.
+  The response reports the affected count and participant notice status.
+  Maintenance retries pending notices after an interruption.
 
 - **Private replay download (BIO-605; CN-032):** authenticated `.bc26` attachment from the existing vault after current tournament authorization and digest verification. Archive denies new downloads for every role, and hidden replays share the missing response. The live match list now exposes the game ID for downloads.
 

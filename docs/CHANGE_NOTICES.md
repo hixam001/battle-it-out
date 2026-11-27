@@ -588,3 +588,22 @@ Decisions from the owner that change or narrow what the requirement documents (P
   frontend build and all five Playwright cases passed.
 - **Coverage:** SRD-050 and SRD-054 are DONE for the upload contract. Totals
   are 19 DONE / 60 PARTIAL / 12 TODO. The size limits remain interim.
+## CN-041 — Admin deadline actions and participant notices (2026-11-27)
+
+- **BIO-602:** current Admins can extend either deadline and override a locked
+  name, description or map pool. The requests require CSRF, confirmation,
+  a reason and an idempotency key. Extensions and map changes refuse pinned
+  entries. The scheduler checks the current deadline inside the tournament
+  lock before drawing, closing a race with deadline changes.
+- **Persistence:** the state change, audit entry, response receipt and
+  pending notice share the tournament store transaction. The receipt
+  captures an affected-account count for the official roster audience,
+  including pending verification. Publication uses the existing idempotent
+  notification store and email preferences. Maintenance retries pending
+  notices, including interruptions after publication.
+- **Checks:** all 87 Django cases passed with disposable PostgreSQL; system
+  and migration checks passed. All 200 targeted tournament, notification
+  and service integration cases passed with real-engine coverage.
+- **Coverage:** evidence advances for SRD-034/035/037. The 91 statuses are
+  unchanged. Provider delivery, production deployment, Admin controls and
+  the separate configuration-freeze decision remain open.

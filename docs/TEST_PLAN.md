@@ -220,6 +220,16 @@ file verification, confirms vault file deletion on disk and preserves bracket
 and match history. The real-engine `test_replays` suite separately exercises
 collection and purge for native engine output in a temporary vault.
 
+#### Implemented deadline notice subset (BIO-602 / CN-041)
+
+Web tests exercise current Admin authorization and CSRF, independent deadline
+ordering, immutable entry pins, locked-setting override, affected roster
+counts, private dashboard notice with email switched off, committed-action
+retry and an outage of the notification store. Maintenance republishes a
+pending notice. A failed acknowledgement after publication does not duplicate
+the audit, dashboard item or email outbox. The timer regression extends the
+deadline after a tick reads the tournament and verifies no early draw or pins.
+
 #### Implemented archive HTTP subset (BIO-606 / CN-035)
 
 The archive tests exercise exact JSON confirmation, session CSRF, Admin and
