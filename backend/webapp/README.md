@@ -94,6 +94,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET | `/dependencies/` | Public curated dependency names, versions and hashes |
 | GET | `/tournaments/{id}/live/` | Authoritative match metadata and allowlisted numeric latest boards; authorization on every poll; archived returns 410 |
 | GET | `/matches/{match_id}/replay/` | Current-scope `.bc26` attachment from the private replay vault; hidden/missing 404, archived 410, unavailable 503 |
+| GET | `/matches/{match_id}/logs/` | Official game's verified structured attempt log, redacted by current team or staff scope |
 | GET | `/tournaments/{id}/analytics/` | Team win rates/byes, series decisions, failures, maps, version results, round progress and median/p95 attempt time |
 | GET | `/tournaments/{id}/bracket/` | Current-scope recorded bracket, with `null` before draw, game IDs and progression |
 | GET/PUT | `/tournaments/{id}/map-pool/` | Staff list and optimistic selection of a stored map pool |
@@ -117,6 +118,12 @@ Missing runtime samples remain absent rather than invented zeroes. Attempt p95
 uses the nearest rank; median uses the ordinary sample median. Version IDs are
 match metadata; source bytes, host paths, provider errors and claim tokens are
 not part of analytics, live boards or the operations reader.
+
+The match-log endpoint reads the worker's private `out/matches` path under
+the shared data directory. Web and worker processes need access to the same
+verified attempt files. The response is JSON and contains only the current
+role's allowed event fields. Archive removes replays while allowing
+authorized access to retained log history.
 
 ## Submission upload (BIO-504 / CN-040)
 
@@ -234,7 +241,7 @@ backend/.venvs/web/bin/python backend/webapp/manage.py test \
   backend.webapp.tests_replays backend.webapp.tests_results backend.webapp.tests_archive \
   backend.webapp.tests_submission_reads backend.webapp.tests_round_actions \
   backend.webapp.tests_deadlines backend.webapp.tests_audit \
-  backend.webapp.tests_roster backend.webapp.tests_teams
+  backend.webapp.tests_roster backend.webapp.tests_teams backend.webapp.tests_match_logs
 backend/.venvs/py3.15/bin/python backend/run_tests.py
 backend/.venvs/py3.15/bin/python backend/run_tests.py --integration
 ```

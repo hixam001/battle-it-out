@@ -876,3 +876,38 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated the web and API guides, test plan, Jira, requirement evidence,
   changelog, CN-045 and memory. All 91 statuses and nine backlog categories
   remain. DEC-12 and historical account deletion are still open.
+
+### 2026-11-27 — BIO-605: private structured match logs
+
+- Cut BIO-605-scoped-match-log-api from fetched origin/main at d66b95d.
+  Read project memory, handoff, existing replay/attempt APIs and CN-007
+  visibility policy. Continued BIO-605 after its earlier replay download.
+- Added the scoped log route for official game attempts. It checks current
+  role and exact game-side membership, selects the latest recorded log
+  unless an attempt is requested and verifies normal worker storage, size,
+  SHA-256, event order and identity. Reuses the structured-log role filter
+  and projects known fields. Archive leaves retained log history readable.
+- All 86 Django cases passed with disposable PostgreSQL (8.653 s), including
+  seven new log access and integrity cases. System and migration checks passed.
+  All 54 targeted structured-log and service integration cases passed
+  with real engine coverage (38.965 s). Test replay paths were temporary.
+- Updated the API and web guides, coverage, Jira, test plan, CN-046,
+  changelog and project memory. All 91 statuses and nine backlog categories
+  remain. Browser playback, durable production log retention and object
+  storage decisions remain open.
+
+### 2026-11-27 — Merge reconciliation for PRs #44–54
+
+- Reconciled the eleven separate Jira branches in a disposable worktree
+  from origin/main at d66b95d. Preserved CN-036–046, eleven task logs, all
+  nine backlog categories and all 91 requirement rows. The combined
+  requirement counts are 22 DONE / 57 PARTIAL / 12 TODO.
+- Combined Django checks passed (127 in 15.254 s), with system and
+  migration-drift checks. All 412 targeted integration tests passed
+  (102.163 s, including real Battlecode games). Full backend unit mode
+  found 786 tests with 738 passes and 48 expected integration skips.
+  The frontend production build and all eight Playwright checks passed.
+  Test databases, services and replays used temporary state.
+- The owner authorized the merges. The pull requests landed individually
+  on main in numerical order, using the verified conflict resolutions.
+  Forty-five tracked Jira items remain.

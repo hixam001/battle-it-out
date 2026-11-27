@@ -30,6 +30,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 - **Private team profiles (BIO-503; CN-045)** show the official team name,
   verified member slots and captain to current team members and tournament
   staff.
+- **Private match logs (BIO-605; CN-046)** serve verified, role-filtered
+  structured logs for official game attempts. Teams see their own output
+  and shared events, and staff see their authorized fields.
 
 - **Private replay download (BIO-605; CN-032):** authenticated `.bc26` attachment from the existing vault after current tournament authorization and digest verification. Archive denies new downloads for every role, and hidden replays share the missing response. The live match list now exposes the game ID for downloads.
 

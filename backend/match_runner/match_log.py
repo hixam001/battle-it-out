@@ -340,16 +340,20 @@ def write_jsonl(path: Path, events: list[dict]) -> dict:
             "sha256": hashlib.sha256(body).hexdigest()}
 
 
-def read_jsonl(path: Path) -> list[dict]:
+def parse_jsonl(text: str, *, source: str = "match log") -> list[dict]:
     out = []
-    for n, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
+    for n, line in enumerate(text.splitlines(), 1):
         if not line.strip():
             continue
         try:
             e = json.loads(line)
         except ValueError as exc:
-            raise ValueError(f"{path}:{n}: not JSON ({exc})")
+            raise ValueError(f"{source}:{n}: not JSON ({exc})") from exc
         if not isinstance(e, dict) or e.get("schema") != SCHEMA or e.get("visibility") not in VISIBILITIES:
-            raise ValueError(f"{path}:{n}: not a schema-{SCHEMA} log event")
+            raise ValueError(f"{source}:{n}: not a schema-{SCHEMA} log event")
         out.append(e)
     return out
+
+
+def read_jsonl(path: Path) -> list[dict]:
+    return parse_jsonl(Path(path).read_text(encoding="utf-8"), source=str(path))

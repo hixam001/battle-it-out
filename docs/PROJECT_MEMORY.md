@@ -22,7 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
-- Latest continuation on 2026-11-26: PRs #39–43 integrate the participant
+- On 2026-11-27, PRs #44–54 landed individually on main. The latest
+  handoff records the combined verification and 45 remaining Jira items.
+- On 2026-11-26, PRs #39–43 integrate the participant
   dashboard and inbox, scoped replay downloads, operator runbook, bracket and
   game reads, and confirmed tournament archive. The owner approved merging all
   five to `main`. See CN-031–035 and the handoff for implementation and checks.
@@ -79,6 +81,9 @@ remaining backlog after every task.
 - CN-045 completes BIO-503 team reads. The private roster profile exposes
   verified member slots and captain with current tournament and team scope.
   CN-020 still governs the interim team size and registered-name lock.
+- CN-046 completes the BIO-605 match-log API alongside native replay
+  downloads. The HTTP view verifies the recorded attempt's structured log
+  and returns the CN-007 role projection with allowlisted diagnostic fields.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -369,14 +374,15 @@ with current code and the coverage matrix; nothing here is closed by intake.
    linked-participant inbox and deadline/notice dashboard. CN-041 delivers
    extension and override notices with affected accounts counted. Announcement authoring,
    staff inboxes and a final pagination contract remain open.
-7. **Replays/logs/privacy:** role-scoped match-log HTTP delivery, object storage,
+7. **Replays/logs/privacy:** object storage,
    short-lived URLs, full browser replay player (DEC-10), deployed purge schedule,
    backups/restore, indicator-text exposure review, durable log retention and
    complete end-to-end privacy verification. Private live numeric boards now
    omit arbitrary text, check current scope per poll and are denied/purged after
    archive. Full viewer overlays/traps/animations and production reconnect/load
    evidence remain. CN-032 adds current-scope native replay downloads from the
-   private vault. Production retention of worker-side artifacts, raw native
+   private vault. CN-046 exposes verified role-scoped structured attempt logs.
+   Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
    team, tournament creation/approval/deadline/round management, full bracket/
@@ -750,3 +756,17 @@ passed. 164 selected library/service cases passed in 79.846 s with real engine
 games. SRD-023 advances to DONE on this branch. All nine backlog categories and
 91 requirement rows remain. Full results UI, raw engine point totals, recovery
 authority, house bots, and cutoff draws remain separately tracked.
+
+## Merge reconciliation evidence for PRs #44–54
+
+The locally reconciled PRs complete submission reads and uploads, frontend
+foundation, bracket and round actions, exact dependency pins and reproducible
+bundles, deadline notices, audit feeds, roster and team reads, and structured
+match-log delivery. The owner authorized the eleven PRs to merge into main individually, in
+number order. Their tested conflict resolutions are retained in the merges.
+
+All 127 Django cases and 412 targeted integration cases passed together.
+Backend unit mode passed 738 of 786 cases with 48 expected skips. The frontend
+production build and eight Playwright checks passed. See the latest handoff for
+test context. All nine backlog categories remain and track the remaining
+45 Jira items after the open implementation PRs.
