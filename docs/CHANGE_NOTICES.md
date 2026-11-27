@@ -751,3 +751,17 @@ Decisions from the owner that change or narrow what the requirement documents (P
   migration checks. The probe recovered after a real connection refusal at
   an unreachable Unix socket. The 18 HTTP boundary cases also pass without
   PostgreSQL. Worker and production readiness remain open.
+
+## CN-052 — Scoped tournament announcements (2026-11-27)
+
+- **BIO-607:** Admins and assigned Organizers can submit a headline and
+  message for a published, unarchived tournament. The API chooses the
+  verified roster audience, uses the existing inbox and honors email
+  preferences. The author and counts appear in staff audit.
+- Creation stores the receipt, audit, inbox entries and outbox atomically
+  in the existing notification store. Retries use a key scoped to the
+  author and tournament and preserve the original audience. Tournament
+  purge removes announcement content and receipts and keeps safe audit.
+- All 145 Django tests passed with disposable PostgreSQL plus system and
+  migration checks. All 101 notification library tests passed. Authoring UI,
+  additional notice sources, PostgreSQL migration and delivery remain open.

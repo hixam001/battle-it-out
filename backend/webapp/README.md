@@ -86,6 +86,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET | `/notifications/` | Linked recipient's bounded feed, unread/tournament filters and counts |
 | PATCH | `/notifications/{id}/` | Recipient-only read/unread setter; same-team notices remain private |
 | GET/PATCH | `/me/notification-preferences/` | Shared worker email preference; dashboard always enabled |
+| POST | `/tournaments/{id}/announcements/` | Current staff publish to the verified roster with session CSRF and an idempotency key |
 | GET/POST | `/tournaments/` | Scoped list and staff draft creation with an idempotency key |
 | GET/PATCH | `/tournaments/{id}/` | Scoped detail and version-checked staff settings edit |
 | POST | `/tournaments/{id}/submit-for-approval/`, `/approve/`, `/reject/`, `/open-registration/` | Current scope and a version check, with approval confirmation or rejection reason |
@@ -178,9 +179,17 @@ Missing/foreign notification IDs receive the same `404`. Preferences and reads
 use the same private `notifications.json` as service workers. Turning email off
 keeps dashboard notices and skips queued email when delivery runs. GET
 preferences returns `email_enabled` and always-true `dashboard_enabled`.
-Delivery errors/provider fields are never returned. Announcements, real
-providers, automatic deadline/override notices and notification UI are separate
-follow-ups; the PostgreSQL migration of notification state remains open.
+Delivery errors and provider fields stay private. The existing inbox shows
+announcements, deadline changes and emergency overrides. Real providers and
+the PostgreSQL migration of notification state remain open.
+
+Admins and assigned Organizers can publish an announcement with JSON
+`headline` and `message` fields and an `Idempotency-Key`. The route targets
+verified roster accounts of a published, unarchived tournament and returns
+the counts of dashboard notices and queued emails. The announcement text
+appears in the recipients' inboxes, while the staff audit records the author,
+event ID and counts. See the
+[announcement contract](../../docs/API_CONTRACT.md#post-tournamentsidannouncements).
 
 ## Dispute workflow
 

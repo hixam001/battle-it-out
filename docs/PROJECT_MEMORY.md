@@ -22,6 +22,10 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-607 / CN-052 adds staff announcement publishing to the verified roster.
+  The dashboard entries, optional email queue, author audit and retry receipt
+  commit together. Staff authoring UI, other notice sources and production
+  delivery remain open. All 145 Django tests and 101 notification tests passed.
 - The owner approved PRs #58 and #59. The reconciled branch preserves
   CN-050 and CN-051 and the full 91-row coverage matrix. Queue and replay
   incidents join the Admin audit feed, and `/api/v1/ready/` probes PostgreSQL.
@@ -384,15 +388,16 @@ with current code and the coverage matrix; nothing here is closed by intake.
    bracket draw and sequential round-start actions. CN-047 adds draft creation,
    detail, edit, submit, approve, reject and open registration over HTTP.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
-   store migration, real provider and deployment; announcements,
-   Organizer approval/rejection and dispute notices; mandatory security
+   store migration, real provider and deployment; Organizer approval/rejection
+   and dispute notices; mandatory security
    email policy, owner wording/retry review, expiry alerts and real outage drill.
    Check/round/draw adapters and failed-email alert retry hooks already exist.
    CN-030 supplies linked-participant feed/read/preferences HTTP endpoints with
    current explicit links and the shared service store. CN-031 implements the
    linked-participant inbox and deadline/notice dashboard. CN-041 delivers
-   extension and override notices with affected accounts counted. Announcement authoring,
-   staff inboxes and a final pagination contract remain open.
+   extension and override notices with affected accounts counted. CN-052 adds
+   scoped announcement publishing to the verified roster. Announcement
+   authoring UI, staff inboxes and a final pagination contract remain open.
 7. **Replays/logs/privacy:** object storage,
    short-lived URLs, full browser replay player (DEC-10), deployed purge schedule,
    backups/restore, indicator-text exposure review, durable log retention and
@@ -789,3 +794,20 @@ Backend unit mode passed 738 of 786 cases with 48 expected skips. The frontend
 production build and eight Playwright checks passed. See the latest handoff for
 test context. All nine backlog categories remain and track the remaining
 45 Jira items after the open implementation PRs.
+
+## CN-052 continuation evidence
+
+BIO-607 adds `POST /api/v1/tournaments/{id}/announcements/` on
+`BIO-607-tournament-announcements` from `eda8358`. Admins and assigned
+Organizers publish bounded text to verified roster accounts in a published,
+unarchived tournament. The existing dashboard feed and email preference
+apply. The notification store commits the audience, delivery queue,
+author-attributed audit and retry receipt together. Keys are scoped to the
+author and tournament and the retry returns the original counts. Temporary
+test data exercised both authorization and deletion retention.
+
+All 145 Django tests passed on disposable PostgreSQL, with system and
+migration checks, and all 101 notification library tests passed on project
+Python 3.15.2. All 91 statuses and nine backlog categories remain. Staff
+authoring UI, account provisioning for staff recipients, real provider and
+PostgreSQL notification migration remain open.

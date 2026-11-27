@@ -15,12 +15,14 @@ from backend.registration import registration as G
 from backend.submission_registry import registry as R
 from backend.tournaments import tournaments as T
 from . import domain as D
-from .models import Identity
+from .models import Identity, OrganizerAssignment
 
 
 FEED = '/api/v1/notifications/'
 PREFERENCES = '/api/v1/me/notification-preferences/'
 PASSWORD = 'notification-test-fixture-passphrase'
+ANNOUNCEMENTS = '/api/v1/tournaments/cup/announcements/'
+ANNOUNCEMENT = {'headline': 'Schedule update', 'message': 'The captains’ briefing starts at noon.'}
 
 
 class NotificationAPI(TestCase):
@@ -285,3 +287,124 @@ class NotificationAPI(TestCase):
         self.assertIn('GET', response['Allow'])
         self.assert_error(self.client.delete(FEED + self.first + '/'), 405, 'METHOD_NOT_ALLOWED')
         self.assertEqual(before, self.rt.notifications.store.snapshot())
+
+    def publish(self, body=ANNOUNCEMENT, *, key='fixture-announcement', path=ANNOUNCEMENTS):
+        return self.client.post(path, body, format='json', HTTP_IDEMPOTENCY_KEY=key)
+
+    def test_announcement_notifies_only_verified_roster_and_respects_email(self):
+        admin = R.Actor('fixture-admin', 'admin')
+        now = time.time()
+        T.create(self.rt.tournaments, admin, 'foreign', 'Other cup', '', now + 3600, now + 7200,
+                 idempotency_key='foreign-cup')
+        T.approve(self.rt.tournaments, admin, 'foreign', confirm=True)
+        T.open_registration(self.rt.tournaments, admin, 'foreign')
+        for tid, name in (('cup', 'pending'), ('foreign', 'outsider')):
+            email = f'{name}@example.org'
+            G.import_roster(self.rt.registration, admin, tid, [
+                {'email': email, 'team_key': name, 'team_name': name, 'member_number': 1, 'role': 'captain'},
+            ])
+            row, = G.issue_codes(self.rt.registration, admin, tid)['issued']
+            G.claim(self.rt.registration, tid, email, row['code'], 'roster-' + name)
+        G.confirm_email(self.rt.registration, 'foreign', 'roster-outsider')
+        self.patch(PREFERENCES, {'email_enabled': False})
+        OrganizerAssignment.objects.create(user=self.organizer, tournament_id='cup')
+        self.client.force_authenticate(self.organizer)
+        response = self.publish()
+        self.assertEqual(response.status_code, 201, response.content)
+        receipt = response.json()
+        self.assertEqual(set(receipt), {'id', 'recipients', 'email_queued'})
+        self.assertEqual((receipt['recipients'], receipt['email_queued']), (3, 2))
+        audit = self.client.get('/api/v1/tournaments/cup/audit-logs/').json()['items']
+        published, = [item for item in audit if item['action'] == 'announcement_published']
+        self.assertEqual(published['actor_id'], str(self.organizer.pk))
+        self.assertEqual(published['detail'], {'announcement_id': receipt['id'], 'event_type': 'announcement',
+                                              'created': 3, 'email_queued': 2})
+        self.assertNotIn(ANNOUNCEMENT['message'], str(audit))
+
+        # A retry retains the original audience even after somebody verifies.
+        G.confirm_email(self.rt.registration, 'cup', 'roster-pending')
+        before = self.rt.notifications.store.snapshot()
+        replay = self.publish()
+        self.assertEqual(replay.status_code, 201, replay.content)
+        self.assertEqual(replay.json(), receipt)
+        self.assertNotEqual(replay['X-Request-ID'], response['X-Request-ID'])
+        self.assert_error(self.publish({**ANNOUNCEMENT, 'message': 'Different update.'}), 409, 'STATE_CONFLICT')
+        self.assertEqual(self.rt.notifications.store.snapshot(), before)
+
+        self.client.force_authenticate(self.alice)
+        note = self.client.get(FEED + '?tournament_id=cup').json()['items'][0]
+        self.assertEqual((note['title'], note['body'], note['email_status']),
+                         (ANNOUNCEMENT['headline'], ANNOUNCEMENT['message'], 'disabled'))
+        self.assertNotIn(note['id'], before['deliveries'])
+        published = [n for n in before['notifications'].values() if n['event_key'] == receipt['id']]
+        self.assertEqual({n['recipient'] for n in published}, {'roster-alice', 'roster-bob', 'roster-teammate'})
+        self.assertEqual(sum(n['id'] in before['deliveries'] for n in published), 2)
+
+    def test_announcement_requires_current_staff_scope_and_session_csrf(self):
+        self.assert_error(self.publish(), 403, 'FORBIDDEN')
+        self.client.force_authenticate(None)
+        self.assert_error(self.publish(), 401, 'UNAUTHENTICATED')
+        self.client.force_authenticate(self.organizer)
+        self.assert_error(self.publish(), 404, 'NOT_FOUND')
+        assignment = OrganizerAssignment.objects.create(user=self.organizer, tournament_id='cup')
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.organizer)
+        csrf = client.get('/api/v1/auth/session/').json()['csrf']
+        def post(**headers):
+            return client.post(ANNOUNCEMENTS, json.dumps(ANNOUNCEMENT), content_type='application/json',
+                               HTTP_IDEMPOTENCY_KEY='fixture-session', **headers)
+        self.assert_error(post(), 403, 'FORBIDDEN')
+        first = post(HTTP_X_CSRFTOKEN=csrf)
+        self.assertEqual(first.status_code, 201, first.content)
+        before = self.rt.notifications.store.snapshot()
+        OrganizerAssignment.objects.filter(pk=assignment.pk).update(active=False)
+        self.assert_error(post(HTTP_X_CSRFTOKEN=csrf), 404, 'NOT_FOUND')
+        self.assertEqual(self.rt.notifications.store.snapshot(), before)
+
+    def test_announcement_rejects_invalid_bodies_and_keys(self):
+        self.client.force_authenticate(self.admin)
+        before = self.rt.notifications.store.snapshot()
+        for body, key in (({}, 'valid'), ({**ANNOUNCEMENT, 'recipient': 'roster-bob'}, 'valid'),
+                          ({**ANNOUNCEMENT, 'headline': 'x' * 121}, 'valid'),
+                          ({**ANNOUNCEMENT, 'message': 'x' * 2001}, 'valid'),
+                          ({**ANNOUNCEMENT, 'message': '  '}, 'valid'),
+                          ({**ANNOUNCEMENT, 'message': '\ud800'}, 'valid'),
+                          (ANNOUNCEMENT, ''), (ANNOUNCEMENT, 'invalid/key')):
+            with self.subTest(body=str(body)[:100], key=key):
+                response = self.client.generic('POST', ANNOUNCEMENTS, json.dumps(body),
+                                               content_type='application/json', HTTP_IDEMPOTENCY_KEY=key)
+                self.assert_error(response, 400, 'VALIDATION_ERROR')
+        self.assert_error(self.client.generic('POST', ANNOUNCEMENTS, 'announcement', content_type='text/plain'),
+                          415, 'UNSUPPORTED_MEDIA_TYPE')
+        self.assertEqual(self.rt.notifications.store.snapshot(), before)
+
+    def test_announcement_capacity_failure_rolls_back_audit_receipt_and_outbox(self):
+        self.client.force_authenticate(self.admin)
+        before = self.rt.notifications.store.snapshot()
+        with patch.object(N, 'MAX_AUDIT', 0):
+            self.assert_error(self.publish(), 409, 'STATE_CONFLICT')
+        self.assertEqual(self.rt.notifications.store.snapshot(), before)
+        self.assertEqual(self.publish().status_code, 201)
+
+    def test_announcement_lifecycle_and_purge_keep_only_safe_audit(self):
+        self.client.force_authenticate(self.admin)
+        for status in (T.DRAFT, T.PENDING, T.REJECTED, T.ARCHIVED):
+            with self.subTest(status=status):
+                with self.rt.tournaments.store.transaction() as state:
+                    state['tournaments']['cup']['status'] = status
+                self.assert_error(self.publish(), 409, 'STATE_CONFLICT')
+        with self.rt.tournaments.store.transaction() as state:
+            state['tournaments']['cup']['status'] = T.COMPLETED
+        result = self.publish()
+        self.assertEqual(result.status_code, 201, result.content)
+        announcement_id = result.json()['id']
+        with self.rt.tournaments.store.transaction() as state:
+            state['tournaments']['cup']['status'] = T.DELETED
+        self.assert_error(self.publish(), 404, 'NOT_FOUND')
+        N.purge_tournament(self.rt.notifications, self.rt.registration, R.Actor('fixture-admin', 'admin'),
+                           'cup', confirm=True)
+        after = self.rt.notifications.store.snapshot()
+        self.assertNotIn(announcement_id, after['announcement_receipts'])
+        self.assertNotIn(ANNOUNCEMENT['message'], str(after))
+        audit = self.client.get('/api/v1/admin/audit-logs/?tournament_id=cup').json()['items']
+        self.assertTrue(any(item['detail'].get('announcement_id') == announcement_id for item in audit))

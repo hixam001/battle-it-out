@@ -84,7 +84,7 @@ def _empty_state() -> dict:
 def _state_ok(state) -> bool:
     return isinstance(state, dict) and state.get("schema") == SCHEMA and all(
         isinstance(state.get(k), dict) for k in ("notifications", "inbox", "preferences", "deliveries")) \
-        and isinstance(state.get("audit"), list)
+        and isinstance(state.get("audit"), list) and isinstance(state.get("announcement_receipts", {}), dict)
 
 
 class NotificationStore(JsonFileStore):
@@ -176,7 +176,7 @@ def _param(name: str, spec: tuple, value):
     kind, arg = spec
     if kind == "text":
         if not isinstance(value, str) or not value.strip() or len(value) > arg \
-                or any(ord(c) < 32 or ord(c) == 127 for c in value):
+                or any(ord(c) < 32 or ord(c) == 127 or 0xD800 <= ord(c) <= 0xDFFF for c in value):
             raise Invalid(f"{name} must be non-empty text of at most {arg} characters without control characters")
         return value.strip()
     if kind == "int":
@@ -300,31 +300,74 @@ def notify(center: Notifications, event_type: str, tournament_id: str, recipient
     users = sorted({_user(u) for u in recipients})
     if len(users) > MAX_RECIPIENTS:
         raise Invalid(f"at most {MAX_RECIPIENTS} recipients per event")
-    t = now()
-    created = existing = queued = 0
     with center.store.transaction() as state:
-        for user in users:
-            nid = _nid(key, user)
-            if nid in state["notifications"]:
-                existing += 1
-                continue
-            if len(state["notifications"]) >= MAX_NOTIFICATIONS:
-                raise Conflict("the notification store is full; an operator must clean it before anything else changes")
-            email = _email_on(state, user)
-            state["notifications"][nid] = {
-                "id": nid, "recipient": user, "tournament_id": tid, "event_type": event_type, "event_key": key,
-                "title": title, "body": body, "created_at": t, "read_at": None,
-                "email_status": EMAIL_PENDING if email else EMAIL_DISABLED}
-            state["inbox"].setdefault(user, []).append(nid)
-            if email:
-                state["deliveries"][nid] = {"id": nid, "recipient": user, "status": "pending", "attempts": 0,
-                                            "next_at": t, "last_error": None, "provider_message_id": None,
-                                            "updated_at": t}
-                queued += 1
-            created += 1
-        if created:
-            _audit(state, t, "system", "notify", event_type=event_type, tournament=tid, event_key=key, created=created)
+        at = now()
+        result = _create_notifications(state, event_type, tid, key, users, title, body, at)
+        if result["created"]:
+            _audit(state, at, "system", "notify", event_type=event_type, tournament=tid, event_key=key,
+                   created=result["created"])
+    return result
+
+
+def _create_notifications(state, event_type, tid, key, users, title, body, at):
+    created = existing = queued = 0
+    for user in users:
+        nid = _nid(key, user)
+        if nid in state["notifications"]:
+            existing += 1
+            continue
+        if len(state["notifications"]) >= MAX_NOTIFICATIONS:
+            raise Conflict("the notification store is full; an operator must clean it before anything else changes")
+        email = _email_on(state, user)
+        state["notifications"][nid] = {
+            "id": nid, "recipient": user, "tournament_id": tid, "event_type": event_type, "event_key": key,
+            "title": title, "body": body, "created_at": at, "read_at": None,
+            "email_status": EMAIL_PENDING if email else EMAIL_DISABLED}
+        state["inbox"].setdefault(user, []).append(nid)
+        if email:
+            state["deliveries"][nid] = {"id": nid, "recipient": user, "status": "pending", "attempts": 0,
+                                        "next_at": at, "last_error": None, "provider_message_id": None,
+                                        "updated_at": at}
+            queued += 1
+        created += 1
     return {"created": created, "existing": existing, "email_queued": queued}
+
+
+def publish_announcement(center: Notifications, reg: G.Registration, actor: R.Actor, tournament_id: str,
+                         params: dict, *, idempotency_key: str, now: Callable[[], float] = time.time) -> dict:
+    """Publish once to the tournament's verified roster and store an author-attributed audit."""
+    me, tid = _me(actor), _tid(tournament_id)
+    if me.role != "admin" and (me.role != "organizer" or tid not in me.tournament_ids):
+        raise Forbidden("only tournament staff may publish an announcement")
+    title, body = render("announcement", tid, params)
+    key = _key(idempotency_key)
+    event_id = "announcement-" + hashlib.sha256(f"{me.user_id}\0{tid}\0{key}".encode()).hexdigest()
+    fingerprint = hashlib.sha256(json.dumps([title, body]).encode()).hexdigest()
+    # Serialize publication with lifecycle changes, then commit the result, audit
+    # and outbox together. Never call a provider while holding either lock.
+    with reg.tournaments.store.transaction() as tournaments:
+        record = tournaments["tournaments"].get(tid)
+        if record is None or record["status"] == T.DELETED:
+            raise NotFound("no such tournament")
+        if record["status"] not in (T.APPROVED, T.OPEN, T.RUNNING, T.COMPLETED):
+            raise Conflict("announcements require a published, unarchived tournament")
+        users = G.account_ids(reg, tid, verified_only=True)
+        with center.store.transaction() as state:
+            receipts = state.setdefault("announcement_receipts", {})
+            if event_id in receipts:
+                receipt = receipts[event_id]
+                if receipt["fingerprint"] != fingerprint:
+                    raise Conflict("key already used for a different announcement")
+                return receipt["response"]
+            if len(users) > MAX_RECIPIENTS:
+                raise Conflict("the tournament exceeds the announcement audience limit")
+            at = now()
+            result = _create_notifications(state, "announcement", tid, event_id, users, title, body, at)
+            response = {"id": event_id, "recipients": result["created"], "email_queued": result["email_queued"]}
+            _audit(state, at, me.user_id, "announcement_published", tournament=tid, event_type="announcement",
+                   announcement_id=event_id, created=result["created"], email_queued=result["email_queued"])
+            receipts[event_id] = {"tournament_id": tid, "fingerprint": fingerprint, "response": response}
+            return response
 
 
 def notify_audience(center: Notifications, reg: G.Registration, event_type: str, tournament_id: str, params: dict, *,
@@ -566,6 +609,9 @@ def purge_tournament(center: Notifications, reg: G.Registration, actor: R.Actor 
             state["inbox"][user] = [i for i in state["inbox"][user] if i in state["notifications"]]
             if not state["inbox"][user]:
                 del state["inbox"][user]
+        receipts = state.get("announcement_receipts", {})
+        for event_id in [key for key, receipt in receipts.items() if receipt["tournament_id"] == tid]:
+            del receipts[event_id]
         if gone:
             _audit(state, now(), me.user_id, "purge", tournament=tid, notifications=len(gone))
         return {"notifications": len(gone)}
