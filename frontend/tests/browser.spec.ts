@@ -351,22 +351,53 @@ test("bracket links show match results and a recorded coin flip after replay arc
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
   await page.getByRole("link", { name: "Replay", exact: true }).click();
+  const replayUrl = page.url();
   const download = page.waitForEvent("download");
   await page.getByRole("link", { name: "Download replay" }).click();
   expect((await download).suggestedFilename()).toMatch(/\.bc26$/);
 
-  const session = await page.request.get("/api/v1/auth/session/");
-  const archive = await page.request.post("/api/v1/tournaments/tied-fixture/archive/", {
-    data: { confirm: true }, headers: { "X-CSRFToken": (await session.json()).csrf },
-  });
-  expect(archive.ok()).toBe(true);
-  expect((await archive.json()).replays_deleted).toBe(true);
-  await page.getByRole("button", { name: "Refresh replay status" }).click();
+  await page.goto("/admin/manage-tournaments/tied-fixture/settings");
+  const archive = page.getByRole("region", { name: "Tournament archive" });
+  const action = archive.getByRole("button", { name: "Archive tournament" });
+  await expect(action).toBeDisabled();
+  await expect(archive.getByText(/permanently removes replay files/)).toBeVisible();
+  await archive.screenshot({ path: test.info().outputPath("archive-mobile.png") });
+  await archive.getByLabel("Confirm archive and replay removal").check();
+  await action.click();
+  await expect(archive.getByRole("status")).toHaveText("Tournament archived. Replay files were removed from the vault.");
+  await expect(archive.getByRole("link", { name: "View retained results" })).toHaveAttribute(
+    "href", "/participant/tournaments/tied-fixture/bracket",
+  );
+  await page.goto(replayUrl);
   await expect(page.getByText("Replay no longer available. The tournament is archived.")).toBeVisible();
   await expect(page.getByRole("link", { name: "Download replay" })).toHaveCount(0);
   await page.getByRole("link", { name: "Back to match" }).click();
   await expect(page).toHaveURL(matchUrl);
   await expect(page.getByRole("heading", { name: "Recorded coin flip" })).toBeVisible();
+});
+
+test("assigned Organizer archives a completed tournament and can verify the purge after reload", async ({ page, useSession }) => {
+  const path = "/organizer/tournaments/organizer-archive";
+  await useSession(page, "organizer");
+  await page.goto("/organizer/tournaments/tied-fixture");
+  await expect(page.getByRole("alert")).toContainText("The requested resource was not found.");
+  await expect(page.getByRole("region", { name: "Tournament archive" })).toHaveCount(0);
+  await page.goto(path);
+  const archive = page.getByRole("region", { name: "Tournament archive" });
+  await archive.screenshot({ path: test.info().outputPath("archive-desktop.png") });
+  await page.route("**/api/v1/tournaments/organizer-archive/archive/", async (route) => {
+    const result = await route.fetch();
+    expect(result.ok()).toBe(true);
+    await route.fulfill({ response: result, json: { ...await result.json(), replays_deleted: false } });
+  }, { times: 1 });
+  await archive.getByLabel("Confirm archive and replay removal").check();
+  await archive.getByRole("button", { name: "Archive tournament" }).click();
+  await expect(archive.getByRole("status")).toContainText("Maintenance will retry file removal.");
+  await expect(archive.getByRole("button", { name: "Check replay purge" })).toBeVisible();
+  await page.reload();
+  await archive.getByRole("button", { name: "Check replay purge" }).click();
+  await expect(archive.getByRole("status")).toContainText("Replay files were removed from the vault.");
+  await expect(archive.getByRole("button", { name: "Archive tournament" })).toHaveCount(0);
 });
 
 test("scoped bracket navigation shows pending draws and keeps foreign tournaments hidden", async ({ page, useSession }) => {

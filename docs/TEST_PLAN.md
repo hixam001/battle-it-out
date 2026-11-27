@@ -449,6 +449,15 @@ confirms direct approval, opens registration separately and follows the
 deadline controls link. An unsubmitted Organizer draft has no direct
 approval control. Organizer sessions cannot open the Admin creation form.
 
+### Staff archive controls (BIO-606 / CN-066)
+
+The browser checks archive confirmation for Admin and assigned Organizer
+sessions, refusal of an unassigned Organizer, a pending-purge receipt and
+successful verification after reload. The Admin path downloads a disposable
+replay before archive, verifies its link disappears after archive, and opens
+the retained match result. The Django archive suite tests on-disk purge
+failure and maintenance recovery.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

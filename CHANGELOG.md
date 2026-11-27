@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Staff archive controls (BIO-606, CN-066)** confirm tournament archive,
+  report replay purge status, and link to retained results.
+
 - **Admin tournament management (BIO-707, CN-065)** lists tournaments,
   creates and edits drafts, and supports confirmed approval of Admin drafts
   and a separate action to open registration.
