@@ -156,6 +156,11 @@ row rejection, identical-key retry, live Organizer scope and revocation,
 CSRF, optimistic corrections, a locked claim, and exclusions after the
 stored registration deadline.
 
+**Team profile HTTP checks (BIO-503 / CN-045)** cover verified-member order,
+no contact data, pending verification, same-tournament team and cross-
+tournament refusals, Organizer revocation, archived visibility and the
+existing library's size and name-lock rules.
+
 ### TC-07 --- Permissions, privacy, audit, and deletion
 
 **Jira:** BIO-EPIC-04 / BIO-EPIC-05 / BIO-EPIC-06\

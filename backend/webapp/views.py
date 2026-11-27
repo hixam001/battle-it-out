@@ -109,6 +109,16 @@ def tournaments(request):
 
 
 @api_view(['GET'])
+def team_profile(request, tid, team):
+    who, _ = D.tournament(request.user, tid)
+    try:
+        profile = G.team_view(D.runtime().registration, who, tid, team)
+    except G.NotFound as exc:
+        raise NotFound() from exc
+    return private(profile)
+
+
+@api_view(['GET'])
 @permission_classes([AllowAny])
 def dependencies(request):
     return Response({'items': BU.dependency_catalogue(), 'max_files': BU.MAX_FILES, 'max_bytes': BU.MAX_BYTES})

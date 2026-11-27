@@ -101,6 +101,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | POST | `/tournaments/{id}/rounds/{round_number}/start/` | Staff confirmed and idempotent start through the shared worker queue |
 | GET | `/matches/{match_id}/` | Current-scope game and enclosing series result, including pinned version IDs and stored coin flip |
 | GET | `/tournaments/{id}/analytics.csv` | Authorized team CSV with formula escaping |
+| GET | `/tournaments/{id}/teams/{team}/` | Team member/assigned Organizer/Admin profile with verified slots and captain, private/no-store |
 | GET/POST | `/tournaments/{id}/teams/{team}/submissions/` | Team-private history with game references; one multipart bot.py or bounded flat ZIP, current captain and stored deadline, idempotent queued validation |
 | GET | `/tournaments/{id}/submissions/{version}/validation/` | Current validation status and ordered check details for a visible version |
 | GET | `/tournaments/{id}/submissions/{version}/download/` | Authorized source/bundle; staff reads audited; private/no-store |
@@ -232,7 +233,8 @@ backend/.venvs/web/bin/python backend/webapp/manage.py test \
   backend.webapp.tests backend.webapp.tests_http backend.webapp.tests_notifications \
   backend.webapp.tests_replays backend.webapp.tests_results backend.webapp.tests_archive \
   backend.webapp.tests_submission_reads backend.webapp.tests_round_actions \
-  backend.webapp.tests_deadlines backend.webapp.tests_audit
+  backend.webapp.tests_deadlines backend.webapp.tests_audit \
+  backend.webapp.tests_roster backend.webapp.tests_teams
 backend/.venvs/py3.15/bin/python backend/run_tests.py
 backend/.venvs/py3.15/bin/python backend/run_tests.py --integration
 ```

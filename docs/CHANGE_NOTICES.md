@@ -640,6 +640,7 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Coverage:** SRD-004 and BIO-REQ-21 stay PARTIAL for the final caps,
   production acceptance and later languages. The local BIO-509 bundle
   implementation and export are complete.
+
 ## CN-044 — Official roster API (2026-11-27)
 
 - **BIO-501:** Admins and currently assigned Organizers can read the roster
@@ -653,3 +654,16 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Checks:** 84 Django cases passed with disposable PostgreSQL and system
   and migration checks. All 149 targeted registration and tournament cases
   passed. SRD-038 moves to DONE for the local roster contract.
+
+## CN-045 — Private team profile (2026-11-27)
+
+- **BIO-503:** a team profile reports the official team name and verified
+  member slots, including which member is captain. The response omits contact
+  data and invitations. Current team membership or explicit Organizer/Admin
+  scope applies to each request, including archived tournaments.
+- **Policy:** the existing CN-020 rules govern roster size, names and
+  captaincy. The profile is read-only. Deletion and the final DEC-12 policy
+  remain separate.
+- **Checks:** all 83 Django cases passed with disposable PostgreSQL, and
+  system and migration checks passed. All 69 registration tests passed.
+  Requirement statuses remain unchanged.

@@ -20,6 +20,7 @@ urlpatterns = [
     path('api/v1/tournaments/<str:tid>/analytics/', V.analytics),
     path('api/v1/tournaments/<str:tid>/analytics.csv', V.analytics_csv),
     path('api/v1/tournaments/<str:tid>/live/', V.live),
+    path('api/v1/tournaments/<str:tid>/teams/<str:team>/', V.team_profile),
     path('api/v1/tournaments/<str:tid>/teams/<str:team>/submissions/', V.submissions),
     path('api/v1/tournaments/<str:tid>/submissions/<str:sid>/download/', V.download),
     path('api/v1/tournaments/<str:tid>/submissions/<str:sid>/validation/', V.submission_validation),

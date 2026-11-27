@@ -76,6 +76,9 @@ remaining backlog after every task.
 - CN-044 completes the BIO-501 roster API. Admins and assigned Organizers
   can import bounded CSV/JSON, correct unclaimed entries with a version
   check, and retrieve the roster and exclusion report.
+- CN-045 completes BIO-503 team reads. The private roster profile exposes
+  verified member slots and captain with current tournament and team scope.
+  CN-020 still governs the interim team size and registered-name lock.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -328,13 +331,14 @@ with current code and the coverage matrix; nothing here is closed by intake.
    suitability, per-round re-verification and production persistence remain.
    Other OSes, 3.16/free-threaded builds and CI remain unverified/unbuilt. New
    native bundle/live tests do not close any of these execution gates.
-4. **Registration/submissions:** invitation/team/claim/verification
+4. **Registration/submissions:** invitation/claim/verification
    endpoints and code delivery; remaining registration API contracts; locked-entry
    Admin exception; team size/name/captain policy, source retention/deletion,
    approved upload/version/limiter caps and manual-activation decision. HTTP
    upload/history/source/bundle delivery and queued checks now exist and use the
    official stored deadline/current roster Actor. CN-044 adds scoped staff
-   roster reads, import, correction and exclusions. BIO-504 defines multipart,
+   roster reads, import, correction and exclusions. CN-045 adds team profiles.
+   BIO-504 defines multipart,
    size and actionable static-error responses. Interim caps are 256 KiB and
    500 versions/team; the 32-file bundle ceiling is verified on export and
    re-upload (BIO-509). Native flat modules and
