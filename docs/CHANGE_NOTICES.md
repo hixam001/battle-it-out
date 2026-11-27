@@ -700,3 +700,16 @@ Decisions from the owner that change or narrow what the requirement documents (P
   system and migration checks. Backend unit mode found 786 tests and passed
   738 with 48 expected integration skips. SRD-030 through SRD-033 are DONE for
   the local contract.
+
+## CN-048 — Official series and match incident audit (2026-11-27)
+
+- **BIO-407:** the existing audit feeds read official series events, including
+  stored coin flips. Participants see their own teams' series, and assigned
+  Organizers see the tournament's series. Admins see incident openings and
+  resolutions from the match-worker store. Game scope comes from the stored
+  bracket, with detached incidents shown only in the unfiltered Admin feed.
+- Opening and resolution have separate IDs. Reads preserve the authoritative
+  history and omit internal notes, raw diagnostics and replay paths. Permanent
+  legacy storage and queue/replay incident ingestion remain open.
+- All 129 Django tests passed against disposable PostgreSQL. System and
+  migration-drift checks passed. Requirement status counts are unchanged.

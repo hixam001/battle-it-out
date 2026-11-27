@@ -877,21 +877,28 @@ real email providers and mandatory security-email policy remain open.
 
 **Implemented (BIO-610 / CN-042):** Read-only audit across PostgreSQL feature
 actions and existing tournament, registration, submission and notification
-audit stores. Both routes return `items` and a nullable `next_offset`.
+audit stores. BIO-407 / CN-048 adds official series history and match-worker
+incident events. Both routes return `items` and a nullable `next_offset`.
 The optional parameters are `limit` (1–200, default 50) and `offset`
 (0–2147483647). Records are ordered newest first with a deterministic
 source and sequence tie-break. Appends can shift offset pages.
 
 The tournament route uses current verified roster or explicit Organizer scope.
 Participants see public lifecycle events, their own teams' upload/verdict
-metadata and their own teams' disputes. Assigned Organizers see tournament
-staff activity. The global route is Admin-only and additionally accepts
+metadata, disputes and official series history. Assigned Organizers see
+tournament staff activity and official series history. Incident openings and
+resolutions are visible to Admins. The global route additionally accepts
 `tournament_id`, including IDs of deleted tournaments with retained audit.
 Missing and hidden scoped tournaments share `404`. Archive retains access
 for currently authorized roles.
 
 Records contain `id`, `source`, `action`, `created_at`, `tournament_id`,
 an explicit `detail` projection and a role-appropriate `actor_id` for staff.
+Series records include the series ID and stage, with a stored coin-flip ID
+and winning side and team for a flip. Incidents include their ID, type,
+game ID and attempt count when recorded. Match incidents are associated to a
+tournament through its stored bracket and game. Unassigned match incidents
+appear only in the unfiltered Admin feed.
 Free-form reasons, invitation/provider credentials, source and host paths are
 excluded. Private/no-store and the shared error envelope apply.
 

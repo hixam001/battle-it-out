@@ -22,18 +22,23 @@ PUBLIC_TOURNAMENT_ACTIONS = frozenset({
 })
 DISPUTE_ACTIONS = ('dispute_opened', 'dispute_updated')
 ORGANIZER_FEATURE_ACTIONS = (*DISPUTE_ACTIONS, 'submission_history_read', 'submission_validation_read')
+SERIES_ACTIONS = frozenset({'created', 'in_progress', 'game_finished', 'paused', 'tiebreak_game',
+                            'coin_flip', 'completed'})
 DETAIL_TOKENS = {
     'tournament': ('from', 'to', 'status', 'deadline_type', 'setting'),
     'registration': ('team',),
     'submissions': ('submission_id', 'team_id', 'status', 'role'),
     'notifications': ('event_type',),
     'web': ('status', 'team_id', 'submission_id', 'user_id', 'dispute_id'),
+    'series': ('series_id', 'stage', 'coin_flip_id', 'result_type', 'winner_side', 'winner_team'),
+    'incident': ('incident_id', 'incident_type', 'match_id'),
 }
 DETAIL_NUMBERS = {
     'registration': ('created', 'updated', 'rejected', 'count'),
     'submissions': ('teams',),
     'notifications': ('created', 'attempts'),
     'web': ('version',),
+    'incident': ('attempt_count',),
 }
 DETAIL_FLAGS = {
     'tournament': ('replays_deleted',),
@@ -106,6 +111,62 @@ def _legacy_rows(audit, source, who, tid, reference=None):
         yield row_key, item
 
 
+def _official_series(state, tid):
+    series = state.get('series', {})
+    for bracket in state.get('brackets', {}).values():
+        event_tid = bracket.get('tournament_id')
+        if not event_tid or (tid is not None and event_tid != tid):
+            continue
+        for round_record in bracket['rounds']:
+            for pairing in round_record['matches']:
+                record = series.get(pairing['series_id'])
+                if record:
+                    yield event_tid, record
+
+
+def _series_rows(series, tid):
+    sid = series['id']
+    for sequence, event in enumerate(series['history']):
+        action = event['event']
+        if action not in SERIES_ACTIONS:
+            continue
+        detail = {'series_id': sid, 'stage': series['stage']}
+        if action == 'coin_flip' and (flip := series['coin_flip']):
+            detail.update(coin_flip_id=flip['id'], winner_team=flip['result_team'], winner_side=flip['result_side'])
+        elif action == 'completed' and (result := series['result']):
+            detail.update(result_type=result['result_type'], winner_team=result['winner_team'],
+                          winner_side=result['winner_side'])
+        yield _item('series', f'{sid}-{sequence:06d}', parse_datetime(event['at']), tid, action, None, detail)
+
+
+def _incident_rows(incidents, match_tournaments, tid):
+    for incident in incidents:
+        match_id = incident.get('match_id')
+        event_tid = match_tournaments.get(match_id) if match_id else incident.get('tournament_id')
+        if tid is not None and event_tid != tid:
+            continue
+        incident_id = incident['id']
+        detail = {'incident_id': incident_id, 'match_id': match_id, 'incident_type': incident['incident_type'],
+                  'attempt_count': incident.get('attempt_count')}
+        yield _item('incident', f'{incident_id}-0', parse_datetime(incident['created_at']), event_tid,
+                    'incident_opened', None, detail)
+        if incident.get('resolved_at'):
+            yield _item('incident', f'{incident_id}-1', parse_datetime(incident['resolved_at']), event_tid,
+                        'incident_resolved', incident.get('resolved_by'), detail)
+
+
+def _match_rows(state, who, tid):
+    match_tournaments = {}
+    for event_tid, series in _official_series(state, tid):
+        if who.role == 'participant' and who.team_ids.isdisjoint((series['team_a'], series['team_b'])):
+            continue
+        yield from _series_rows(series, event_tid)
+        if who.role == 'admin':
+            match_tournaments.update((game['match_id'], event_tid) for game in series['games'])
+    if who.role == 'admin':
+        yield from _incident_rows(state['incidents'], match_tournaments, tid)
+
+
 def _rows(rt, who, tid, tournament_state, window):
     yield from _web_rows(who, tid, window)
     yield from _legacy_rows(tournament_state['audit'], 'tournament', who, tid)
@@ -116,6 +177,7 @@ def _rows(rt, who, tid, tournament_state, window):
         return rec.get('tournament_id'), {'team_id': rec.get('team_id')}
 
     yield from _legacy_rows(submissions['audit'], 'submissions', who, tid, submission_reference)
+    yield from _match_rows(rt.flow.store.snapshot(), who, tid)
     if who.role != 'participant':
         registration = rt.registration.store.snapshot()
         yield from _legacy_rows(registration['audit'], 'registration', who, tid)

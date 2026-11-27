@@ -935,3 +935,19 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - All 137 Django tests passed with the Python code from PRs #55–57 applied
   together in a disposable checkout, with system and migration checks. The PRs
   remain individually based on main. Shared documentation appends overlap.
+
+### 2026-11-27 — BIO-407 official series and match incident audit
+
+- Started `BIO-407-match-audit-history` from fetched main at `2ff7bcd` while
+  BIO-601 PR #55 was open against main. `backend/webapp/audit.py` now reads
+  official bracket-linked series history and match-worker incidents. Team
+  and Organizer scopes apply to series. Admin incident openings and resolutions
+  have separate IDs and use typed fields, with game scope from stored pairings.
+- All 129 Django tests passed on disposable PostgreSQL, including actual
+  library-generated coin flip and pause/resume records, cross-tournament
+  filters, and a verified participant without a series. System and migration
+  checks passed. Tests used disposable state and no engine match was run.
+- Updated the API, Jira, coverage evidence, CN-048 and project memory. All
+  status counts and nine backlog categories remain. BIO-407 still needs the
+  permanent legacy audit migration, queue/replay incident sources and full
+  deletion and recovery verification.
