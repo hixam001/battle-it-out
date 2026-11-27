@@ -6,6 +6,21 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Console foundation (BIO-701; CN-037):** keyboard skip navigation, access screens for restricted direct links, and server request IDs on API errors.
+- **Exact dependency release pins (BIO-510; CN-039)** verify published source
+  against a recorded SHA-256. Adding a new version preserves older snapshots
+  and exports. The existing `biohelpers` 1.0.0 pin and bundle hashes are unchanged.
+- **Submission upload contract (BIO-504; CN-040)** requires exactly one
+  multipart file and reports unsupported request types, size limits and
+  static failures. The current tournament deadline governs uploads and
+  static failures retain their findings without replacing an active bot.
+- **Admin deadline actions (BIO-602; CN-041)** extend a registration or
+  submission deadline and override a locked setting with an audited reason.
+  The response reports the affected count and participant notice status.
+  Maintenance retries pending notices after an interruption.
+- **Scoped audit feeds (BIO-610; CN-042)** provide current-role tournament audit
+  and Admin global audit, with paginated redacted metadata and retained
+  deleted-tournament records for Admins.
 - **Reproducible Python bundle downloads (BIO-509; CN-043)** use stable ZIP
   metadata. A bundle at the 32-file limit with no dependencies can be
   uploaded again with the same content hash.

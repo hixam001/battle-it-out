@@ -206,3 +206,55 @@ test("notifications deep link keeps unlinked accounts out of the personal feed",
   );
   await expect(page.getByRole("checkbox", { name: "Email notifications" })).toHaveCount(0);
 });
+
+test("private console opens by keyboard and guards a direct Operations link", async ({ page }) => {
+  const adminRequests: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/v1/admin/operations/") adminRequests.push(request.url());
+  });
+  await page.goto("/#operations");
+  await page.getByLabel("Username", { exact: true }).fill("captain-a");
+  await page.getByLabel("Password", { exact: true }).fill("test-fixture-passphrase");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveText("Admin access is required to open Operations.");
+  await expect(page.getByRole("link", { name: "Operations", exact: true })).toHaveCount(0);
+  await expect(page).toHaveURL(/#operations$/);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const skip = page.getByRole("link", { name: "Skip to content" });
+  await page.keyboard.press("Tab");
+  await expect(skip).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("main")).toBeFocused();
+  await expect(page).toHaveURL(/#operations$/);
+  await page.getByRole("link", { name: "Open Dashboard" }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  expect(adminRequests).toEqual([]);
+});
+
+test("staff notification route is guarded before fetching a participant inbox", async ({ page }) => {
+  const inboxRequests: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/v1/notifications/") inboxRequests.push(request.url());
+  });
+  await page.goto("/notifications");
+  await page.getByLabel("Username", { exact: true }).fill("organizer");
+  await page.getByLabel("Password", { exact: true }).fill("test-fixture-passphrase");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveText("Notifications are available to linked participant accounts.");
+  await expect(page.getByRole("link", { name: "Notifications", exact: true })).toHaveCount(0);
+  expect(inboxRequests).toEqual([]);
+});
+
+test("a failed API request shows its server request ID with the message", async ({ page }) => {
+  await page.goto("/#console");
+  await page.getByLabel("Username", { exact: true }).fill("captain-a");
+  await page.getByLabel("Password", { exact: true }).fill("incorrect-test-password");
+  const failedLogin = page.waitForResponse((response) => new URL(response.url()).pathname === "/api/v1/auth/login/");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  const response = await failedLogin;
+  expect(response.status()).toBe(401);
+  const requestId = response.headers()["x-request-id"];
+  expect(requestId).toMatch(/^req_[0-9a-f]{32}$/);
+  await expect(page.getByRole("alert")).toHaveText(`Invalid username or password. Request ID ${requestId}.`);
+});

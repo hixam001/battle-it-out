@@ -78,15 +78,14 @@ game and one advancement per winner.
 1. Record the tournament ID, the deadline type, current and requested times
    with timezone, and the reason. Verify the current state and whether a
    bracket has been drawn. An affected Organizer can request the change.
-2. The Admin-only `tournaments.extend_deadline` library accepts a later
-   future time in approved/open tournaments and requires confirmation and
-   reason. Keep registration at or before submission. If both must move past
-   the current submission deadline, request the submission change first.
-3. The interim console has no deadline mutation control. Send the request
-   through the tournament's authorized operator process. The library
-   records audit and returns a notice payload. Automatic dashboard/email
-   dispatch and affected-recipient counts need BIO-602. Use the agreed event
-   communication path for the confirmed deadline.
+2. With a current Admin session, submit the later time, reason and explicit
+   confirmation through the [deadline API](API_CONTRACT.md#post-tournamentsidextend-deadline).
+   Keep registration at or before submission. If both must move past the
+   current submission deadline, extend submission first.
+3. Record the audit event ID, affected count and notification status from the
+   response. If publication is pending, check the next maintenance pass for
+   `deadline_notices_pending`. Retrying the same request with its original key
+   can also finish publication. Eligible email delivery runs separately.
 4. Confirm the stored deadline and event timezone with an authorized
    participant and verify whether the registration or upload window reopened.
    A drawn bracket locks pins. Escalate a request that arrives after the draw.

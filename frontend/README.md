@@ -48,6 +48,13 @@ filtering, paging, read/unread actions and email preferences. Turning email off
 keeps dashboard notices active. Refresh returns to the first page of the current
 filter and picks up new notices.
 
+Direct console links preserve the destination through sign-in. Operations is
+Admin-only, and the personal inbox uses participant scope. The API remains
+authoritative for account and tournament access. The shared API client preserves
+error codes, details and server request IDs. A visible request ID gives support
+a reference when an API call fails. The first keyboard stop on the public page
+and in the console jumps to main content when activated.
+
 Browser fixtures must target loopback and use disposable seeded accounts/data.
 Use the [Django local environment](../backend/webapp/README.md#install-and-run)
 with `BIO_WEB_DEBUG=1`, a fresh PostgreSQL database named `bio_qa_*`, and a new
@@ -70,4 +77,6 @@ npm test
 to an already installed compatible Chromium executable. Screenshots go to
 ignored test-results. Desktop/mobile layout, keyboard navigation, real login,
 analytics, dispute/comment, submissions catalogue, logout, Admin operations,
-the dashboard and private inbox are exercised using local test data.
+the dashboard and private inbox are exercised using local test data. Additional
+checks cover direct role-restricted links, the keyboard skip link and a real
+failed-login response with its matching request ID.
