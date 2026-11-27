@@ -108,23 +108,41 @@ def tick(reg: T.Tournaments, flow: F.Flow, *, catalogue: dict[str, str], engine_
 
 def _open(reg, flow, rec, teams_of, catalogue, engine_version, rng, now, by, report, tell) -> None:
     tid = rec["id"]
-    if not rec["map_pool_id"]:
-        raise F.FlowError("the tournament has no map pool; an Admin or its Organizer must set one")
-    teams = teams_of(tid)
-    if not teams:
-        raise F.FlowError("no team to draw (none registered or none uploaded); nothing can be drawn")
     try:
-        drawn = F.open_bracket(flow, tid, tid, list(teams), rec["map_pool_id"], catalogue, engine_version,
-                               deadline_at=rec["deadlines"][T.SUBMISSION], now=now, rng=rng)
+        drawn = open_ready_bracket(reg, flow, tid, teams_of=teams_of, catalogue=catalogue,
+                                   engine_version=engine_version, rng=rng, now=now, by=by, tell=tell)
     except R.PendingChecks as e:
         report["waiting"][tid] = list(e.teams)
         return
     if drawn["excluded"]:
         report["excluded"][tid] = list(drawn["excluded"])
-    if tell is not None:
-        tell(tid, drawn["excluded"])
-    T.mark_running(reg, tid, by, now=now)
     report["opened"].append(tid)
+
+
+def open_ready_bracket(reg: T.Tournaments, flow: F.Flow, tid: str, *, teams_of: Callable[[str], list[str]],
+                       catalogue: dict[str, str], engine_version: str, by: str,
+                       tell: Callable[[str, list[str]], object] | None = None,
+                       rng=None, now: Callable[[], float] = time.time) -> dict:
+    """Draw exactly one eligible tournament and advance its lifecycle without starting a round."""
+    teams = teams_of(tid)
+    drawn = None
+
+    def prepare(rec):
+        nonlocal drawn
+        if not rec["map_pool_id"]:
+            raise F.FlowError("the tournament has no map pool; an Admin or its Organizer must set one")
+        if not teams:
+            raise F.FlowError("no team to draw (none registered or none uploaded); nothing can be drawn")
+        drawn = F.open_bracket(flow, tid, tid, list(teams), rec["map_pool_id"], catalogue, engine_version,
+                               deadline_at=rec["deadlines"][T.SUBMISSION], now=now, rng=rng)
+        if tell is not None:
+            tell(tid, drawn["excluded"])
+
+    T.mark_running(reg, tid, by, prepare=prepare, now=now)
+    if drawn is None:
+        pins = flow.registry.store.snapshot()["pins"].get(tid, {}).get("teams", {})
+        return {"bracket": B.get_bracket(flow.store, tid), "excluded": sorted(team for team in pins if pins[team] is None)}
+    return drawn
 
 
 def _finish(reg, flow, rec, now, by, report) -> None:

@@ -54,6 +54,22 @@ class SchedBase(BracketBase):
 
 
 class Opening(SchedBase):
+    def test_extension_after_timer_snapshot_prevents_the_draw_and_pins(self):
+        self.ready(("ta", "tb"))
+        self.clock.t = DEADLINE
+
+        def registered_teams(tid):
+            T.extend_deadline(self.treg, ADMIN, tid, T.SUBMISSION, DEADLINE + 100,
+                              "Approved extension", confirm=True, now=self.clock)
+            return ["ta", "tb"]
+
+        result = self.tick(teams_of=registered_teams)
+        self.assertEqual(result["opened"], [])
+        self.assertEqual(self.snap()["pins"], {})
+        self.assertEqual(self.status(), "registration_open")
+        self.clock.t = DEADLINE + 100
+        self.assertEqual(self.tick()["opened"], ["t1"])
+
     def test_nothing_happens_before_the_submission_deadline(self):
         self.ready(("ta", "tb"))
         self.clock.t = DEADLINE - 1

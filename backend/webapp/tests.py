@@ -8,6 +8,7 @@ import time
 import zipfile
 from pathlib import Path
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import DatabaseError, transaction
 from django.test import TestCase, Client, override_settings
 from rest_framework.test import APIClient
@@ -17,6 +18,7 @@ from backend.match_orchestrator import bracket as B, maps as M
 from backend.match_orchestrator.tests.test_bracket import lower_wins
 from backend.tournament_flow import flow as F
 from backend.tournaments import tournaments as T
+from backend.work_queue import jobs as J
 from backend.work_queue.tests.test_handlers import verdict
 from . import domain as D
 from .models import Identity, OrganizerAssignment, Dispute, AuditEvent, Receipt
@@ -148,6 +150,92 @@ class FeatureAPI(TestCase):
         self.assertEqual(download['Content-Type'],'application/zip')
         self.client.force_authenticate(self.b)
         self.assertEqual(self.client.get('/api/v1/tournaments/uploads/submissions/'+response.data['id']+'/download/').status_code,404)
+
+    def make_upload_target(self, *, deadline_offset=5000):
+        self.make_cup('uploads', self.now - 3000, self.now + deadline_offset)
+        self.register('uploads', [('a', 'upload-a')])
+        return '/api/v1/tournaments/uploads/teams/upload-a/submissions/'
+
+    def upload_file(self, path, *, name='bot.py', raw=BOT, key='upload'):
+        return self.client.post(path, {'file': SimpleUploadedFile(name, raw)}, format='multipart',
+                                HTTP_IDEMPOTENCY_KEY=key)
+
+    def assert_upload_error(self, response, status, code):
+        self.assertEqual(response.status_code, status, response.data)
+        error = response.data['error']
+        self.assertEqual(error['code'], code)
+        self.assertEqual(error['request_id'], response['X-Request-ID'])
+        return error
+
+    def test_upload_requires_multipart_and_one_file(self):
+        path = self.make_upload_target()
+        self.assert_upload_error(self.post(path, {'file': 'bot.py'}), 415, 'UNSUPPORTED_MEDIA_TYPE')
+        bodies = ({'file': 'bot.py'}, {'file': [SimpleUploadedFile('bot.py', BOT),
+                                               SimpleUploadedFile('bot.py', BOT)]},
+                  {'file': SimpleUploadedFile('bot.py', BOT), 'deadline': self.now + 9000})
+        for body in bodies:
+            response = self.client.post(path, body, format='multipart', HTTP_IDEMPOTENCY_KEY='one')
+            self.assert_upload_error(response, 400, 'VALIDATION_ERROR')
+        self.assert_upload_error(self.upload_file(path, key=''), 400, 'VALIDATION_ERROR')
+        self.assert_upload_error(self.upload_file(path, name='strategy.py'), 422, 'BOT_VALIDATION_FAILED')
+        self.assertEqual(self.client.get(path).data['items'], [])
+
+    def test_upload_reports_raw_and_expanded_size_limits(self):
+        from backend.submission_bundle import bundle as BU
+        from backend.submission_bundle.tests.test_bundle import archive
+        path = self.make_upload_target()
+        for name, data in (
+            ('bot.py', b'x' * (BU.MAX_BYTES + 1)),
+            ('strategy.zip', archive({'bot.py': BOT, 'helper.py': b'#' * BU.MAX_BYTES})),
+            ('strategy.zip', archive({'bot.py': BOT, **{f'helper{i}.py': b'' for i in range(BU.MAX_FILES)}})),
+        ):
+            with self.subTest(name=name, size=len(data)):
+                self.assert_upload_error(self.upload_file(path, name=name, raw=data), 413, 'FILE_TOO_LARGE')
+        self.assert_upload_error(self.upload_file(path, name='strategy.zip', raw=b'not a ZIP'), 422,
+                                 'BOT_VALIDATION_FAILED')
+        self.assertEqual(self.client.get(path).data['items'], [])
+
+    def test_static_refusal_has_findings_stays_in_history_and_never_queues(self):
+        path = self.make_upload_target()
+        created = self.upload_file(path)
+        self.assertEqual(created.status_code, 201, created.data)
+        sid = created.data['id']
+        claim = R.claim_check(self.rt.flow.registry, sid)
+        R.record_verdict(self.rt.flow.registry, claim, verdict(BOT))
+        for _ in range(2):
+            result = self.upload_file(path, key='invalid', raw=b'def turn(\n')
+            error = self.assert_upload_error(result, 422, 'BOT_VALIDATION_FAILED')
+            self.assertEqual(error['details']['submission_id'], 'upload-a-v2')
+            finding = error['details']['reasons'][0]
+            self.assertEqual(finding['line'], 1)
+            self.assertEqual(error['message'], finding['message'])
+        history = self.client.get(path).data['items']
+        self.assertEqual([(item['id'], item['is_active']) for item in history],
+                         [(sid, True), ('upload-a-v2', False)])
+        self.assertEqual([job['payload']['submission_id'] for job in J.list_jobs(self.rt.flow.queue)
+                          if job['kind'] == J.CHECK_SUBMISSION].count('upload-a-v2'), 0)
+
+    def test_upload_observes_extension_and_reuses_version_and_job_on_retry(self):
+        path = self.make_upload_target(deadline_offset=-1000)
+        self.assert_upload_error(self.upload_file(path), 409, 'STATE_CONFLICT')
+        T.extend_deadline(self.rt.tournaments, ADM, 'uploads', T.SUBMISSION, self.now + 4000,
+                          'Approved fixture extension', confirm=True)
+        first = self.upload_file(path)
+        self.assertEqual(first.status_code, 201, first.data)
+        self.assertEqual(self.upload_file(path).data, first.data)
+        self.assert_upload_error(self.upload_file(path, raw=BOT + b'\n'), 409, 'STATE_CONFLICT')
+        jobs = [job for job in J.list_jobs(self.rt.flow.queue)
+                if job['payload'].get('submission_id') == first.data['id']]
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['status'], J.QUEUED)
+        self.assertNotIn('check_job', first.data)
+
+    def test_captain_in_both_tournaments_cannot_submit_a_team_under_wrong_tournament(self):
+        self.make_upload_target()
+        path = '/api/v1/tournaments/uploads/teams/ta/submissions/'
+        self.assert_upload_error(self.upload_file(path, key='one'), 404, 'NOT_FOUND')
+        self.assert_upload_error(self.upload_file(path, key='new'), 404, 'NOT_FOUND')
+        self.assertEqual(len(self.rt.flow.registry.store.snapshot()['submissions']), 2)
 
     def test_login_rate_limit_is_durable_and_failure_does_not_create_a_session(self):
         client=Client(enforce_csrf_checks=True)

@@ -16,16 +16,24 @@ def game_ref(state, game):
     }
 
 
+def series_wins(series):
+    return {side: sum(game['winner_side'] == side for game in series['games']) for side in ('A', 'B')}
+
+
+def official_bracket(tid, brackets):
+    # The scheduler uses the tournament ID; older flows can have a different
+    # bracket ID linked to the same tournament record.
+    return next((record for record in brackets if record['id'] == tid), brackets[0] if brackets else None)
+
+
 @api_view(['GET'])
 def bracket(request, tid):
     D.tournament(request.user, tid)
     state, brackets = D.bracket_for(tid)
-    if not brackets:
+    official = official_bracket(tid, brackets)
+    if official is None:
         return Response({'tournament_id': tid, 'bracket': None})
 
-    # The scheduler uses the tournament ID; older flows can have a different
-    # bracket ID linked to the same tournament record.
-    official = next((record for record in brackets if record['id'] == tid), brackets[0])
     view = B.public_view(official)
     view['map_pool_id'] = official.get('map_pool')
     for round_source, round_view in zip(official['rounds'], view['rounds']):
@@ -34,6 +42,7 @@ def bracket(request, tid):
             series = state.get('series', {}).get(sid)
             pairing_view['series'] = None if series is None else {
                 'id': sid, 'status': series['status'],
+                'wins': series_wins(series),
                 'games': [game_ref(state, game) for game in series['games']],
             }
     return Response({'tournament_id': tid, 'bracket': view})
@@ -66,5 +75,6 @@ def match_detail(request, mid):
         del game_view['has_replay']
         game_view.update(game_ref(state, game))
     view['versions'] = {'A': series['submission_a'], 'B': series['submission_b']}
+    view['wins'] = series_wins(series)
     view['tiebreak_maps'] = series['tiebreak_maps']
     return Response({'tournament_id': tid, 'match_id': mid, 'round_number': round_number, 'series': view})
