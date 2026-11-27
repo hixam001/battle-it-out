@@ -905,7 +905,8 @@ Both PATCH routes set an absolute state and are naturally idempotent; this
 slice needs no idempotency-key receipt. Every response uses CN-029's fresh
 request ID and `private, no-store`; errors use the shared envelope. No SQL/JSON
 cross-store transaction or full notification database migration is claimed.
-The [participant inbox](../frontend/README.md) uses these endpoints (CN-031).
+The participant inbox and account settings use these endpoints (CN-031/069).
+See the [frontend guide](../frontend/README.md).
 Deadline changes publish participant notices (CN-041). Real email providers
 and mandatory security-email policy remain open.
 

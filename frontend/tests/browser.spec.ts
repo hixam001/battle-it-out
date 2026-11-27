@@ -243,6 +243,38 @@ test("notifications deep link keeps unlinked accounts out of the personal feed",
     "Notifications are available to signed-in participants with a linked tournament account.",
   );
   await expect(page.getByRole("checkbox", { name: "Email notifications" })).toHaveCount(0);
+  await page.goto("/account/settings");
+  await expect(page.getByRole("alert")).toHaveText(
+    "Notifications are available to signed-in participants with a linked tournament account.",
+  );
+  await expect(page.getByRole("checkbox", { name: "Email notifications" })).toHaveCount(0);
+});
+
+test("account settings shares the linked participant's email preference with the inbox", async ({ page, useSession }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await useSession(page, "captain-a");
+  await page.goto("/account/settings");
+  await expect(page).toHaveURL("/account/settings");
+  await expect(page.getByRole("heading", { name: "Account settings", exact: true })).toBeVisible();
+  const toggle = page.getByRole("checkbox", { name: "Email notifications" });
+  await expect(toggle).toBeChecked();
+  await toggle.focus();
+  await page.keyboard.press("Space");
+  await expect(page.getByText("Email notifications disabled.")).toBeVisible();
+  await expect(toggle).not.toBeChecked();
+  await expect(page.getByText("Dashboard notifications are always on.")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("account-settings-mobile.png"), fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.screenshot({ path: test.info().outputPath("account-settings-desktop.png"), fullPage: true });
+
+  await page.getByRole("link", { name: "Notifications", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Fixture notice 22" })).toBeVisible();
+  await expect(toggle).not.toBeChecked();
+  await toggle.click();
+  await expect(page.getByText("Email notifications enabled.")).toBeVisible();
+  await page.getByRole("link", { name: "Account settings", exact: true }).click();
+  await expect(toggle).toBeChecked();
 });
 
 test("private console opens by keyboard and guards a direct Operations link", async ({ page }) => {
@@ -273,15 +305,19 @@ test("private console opens by keyboard and guards a direct Operations link", as
 });
 
 test("staff notification route is guarded before fetching a participant inbox", async ({ page, useSession }) => {
-  const inboxRequests: string[] = [];
+  const privateRequests: string[] = [];
   page.on("request", (request) => {
-    if (new URL(request.url()).pathname === "/api/v1/notifications/") inboxRequests.push(request.url());
+    if (["/api/v1/notifications/", "/api/v1/me/notification-preferences/"].includes(new URL(request.url()).pathname)) {
+      privateRequests.push(request.url());
+    }
   });
   await useSession(page, "organizer");
   await page.goto("/notifications");
   await expect(page.getByRole("alert")).toHaveText("Notifications are available to linked participant accounts.");
   await expect(page.getByRole("link", { name: "Notifications", exact: true })).toHaveCount(0);
-  expect(inboxRequests).toEqual([]);
+  await page.goto("/account/settings");
+  await expect(page.getByRole("alert")).toHaveText("Account settings are available to linked participant accounts.");
+  expect(privateRequests).toEqual([]);
 });
 
 test("a failed API request shows its server request ID with the message", async ({ page }) => {

@@ -17,7 +17,7 @@ npm run build --prefix frontend
 Start Django on `127.0.0.1:8000` and Vite on `127.0.0.1:5173`; Vite proxies `/api`
 on the same origin. All service/data directories must be outside `frontend/`.
 Production static assets are generated into ignored `frontend/dist/`. Serve
-`index.html` for `/dashboard`, `/notifications`, `/participant/team` and
+`index.html` for `/dashboard`, `/notifications`, `/account/settings`, `/participant/team` and
 `/participant/submissions`, `/bracket`,
 `/participant/tournaments/{id}/bracket`, `/matches/{id}` and
 `/matches/{id}/replay`, `/admin`, `/admin/approvals`, `/admin/audit`,
@@ -58,8 +58,9 @@ The dashboard shows the selected tournament's status, both deadlines in your
 browser timezone, and its three latest personal notices. The linked-participant
 inbox at `/notifications` keeps historical notices available and supports unread
 filtering, paging, read/unread actions and email preferences. Turning email off
-keeps dashboard notices active. Refresh returns to the first page of the current
-filter and picks up new notices.
+keeps dashboard notices active. Linked participants can change the same email
+preference from **Account settings**. Refresh returns to the first page of
+the current inbox filter and picks up new notices.
 
 My team shows the verified roster and the team's recorded bracket standing
 for the selected tournament. Bot submissions shows the active version,

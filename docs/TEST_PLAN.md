@@ -472,6 +472,13 @@ paused match, a dead job's type and failure count, and a fresh response after
 refresh. A participant is refused before operations data is requested at
 either console address.
 
+### Participant account settings (BIO-702 / CN-069)
+
+The browser opens `/account/settings` as a linked participant, changes the
+email preference by keyboard, confirms persisted state in the inbox and
+verifies that a dashboard notice is still present. An unlinked account sees an access
+message. Staff sessions reach the guard before a preferences request.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

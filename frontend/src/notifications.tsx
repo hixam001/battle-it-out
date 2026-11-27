@@ -63,7 +63,7 @@ function EmailPreference({ onDenied }: { onDenied: () => void }) {
     const controller = new AbortController();
     setError("");
     api<Preferences>(preferencePath, { signal: controller.signal })
-      .then(setPreferences)
+      .then((preferences) => { if (!controller.signal.aborted) setPreferences(preferences); })
       .catch((error: Error) => {
         if (controller.signal.aborted) return;
         if (denied(error)) onDenied();
@@ -238,6 +238,18 @@ export function Inbox({ tournaments }: { tournaments: ReadonlyMap<string, string
           <EmailPreference onDenied={onDenied} />
         </div>
       )}
+    </>
+  );
+}
+
+export function AccountSettings() {
+  const [blocked, block] = useState(false);
+  const onDenied = useCallback(() => block(true), []);
+  return (
+    <>
+      <div className="workspace-heading"><h1>Account settings</h1></div>
+      {blocked ? <section className="panel"><p role="alert">{NO_ACCESS}</p></section>
+        : <EmailPreference onDenied={onDenied} />}
     </>
   );
 }

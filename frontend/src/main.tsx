@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { api, setCsrfToken } from "./api";
-import { Inbox, TournamentNotices } from "./notifications";
+import { AccountSettings, Inbox, TournamentNotices } from "./notifications";
 import { Submissions, Team } from "./participant";
 import { BracketResults, MatchResult, Replay } from "./results";
 import { Approvals } from "./approvals";
@@ -397,6 +397,7 @@ function Landing({ open }: { open: () => void }) {
 const consoleLinks = [
   { page: "dashboard", href: "/dashboard", label: "Dashboard", icon: "⌂" },
   { page: "notifications", href: "/notifications", label: "Notifications", icon: "◈" },
+  { page: "account-settings", href: "/account/settings", label: "Account settings", icon: "⚙" },
   { page: "live", href: "/#console", label: "Match room", icon: "◉" },
   { page: "bracket", href: "/bracket", label: "Bracket & results", icon: "▦" },
   { page: "analytics", href: "/#analytics", label: "Analytics", icon: "▥" },
@@ -662,7 +663,7 @@ function Console({ user, route, navigate, logout }: {
   const organizerPage = page.startsWith("organizer");
   const adminManagement = page.startsWith("admin-");
   const staffSettingsPath = adminManagement ? adminTournamentSettings : organizerTournamentPath;
-  const showTournament = !organizerPage && !adminManagement && !["notifications", "operations", "approvals",
+  const showTournament = !organizerPage && !adminManagement && !["notifications", "account-settings", "operations", "approvals",
     "audit", "match", "replay"].includes(page);
   const canOpen = (target: ConsolePage) => {
     if (target.startsWith("admin-") || ["operations", "approvals", "audit", "deadlines", "invitations"].includes(target)) return user.admin;
@@ -670,7 +671,7 @@ function Console({ user, route, navigate, logout }: {
     if (target.startsWith("organizer")) {
       return role === "organizer" || (loading && !user.admin);
     }
-    if (target === "notifications") return !user.admin && role !== "organizer";
+    if (target === "notifications" || target === "account-settings") return !user.admin && role !== "organizer";
     if (target === "team") return role === "participant" || (loading && !user.admin);
     return true;
   };
@@ -686,7 +687,7 @@ function Console({ user, route, navigate, logout }: {
         </a>
         <p className="eyebrow">COMPETITION CONSOLE</p>
         <nav aria-label="Console">
-          {consoleLinks.filter((link) => canOpen(link.page) && (!loading || !["notifications", "team", "organizer", "announce"].includes(link.page))).map((link) => (
+          {consoleLinks.filter((link) => canOpen(link.page) && (!loading || !["notifications", "account-settings", "team", "organizer", "announce"].includes(link.page))).map((link) => (
             <a key={link.page} href={link.href} aria-current={page === link.page ? "page" : undefined}
               onClick={(event) => {
                 if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -744,12 +745,15 @@ function Console({ user, route, navigate, logout }: {
               : organizerPage ? "Organizer access is required to manage tournaments."
               : page === "announce" ? "Tournament staff access is required to post announcements."
               : page === "team" ? "My team is available to participant accounts."
+              : page === "account-settings" ? "Account settings are available to linked participant accounts."
               : "Notifications are available to linked participant accounts."}</p>
             <a href="/dashboard">Open Dashboard</a>
           </section>
         ) : page === "notifications" ? (
           loading ? <p role="status">Checking notification access…</p> :
             <Inbox tournaments={new Map(cups.map((item) => [item.id, item.name]))} />
+        ) : page === "account-settings" ? (
+          loading ? <p role="status">Checking account access…</p> : <AccountSettings />
         ) : page === "operations" ? (
           <Operations />
         ) : page === "approvals" ? (

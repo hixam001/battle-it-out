@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-702 / CN-069 adds the linked participant account settings page
+  with the shared inbox email preference. The build and all 28 browser tests passed.
 - BIO-604 / CN-068 adds Admin Operations triage at `/admin`, with attempt
   and alert state, dead jobs and refresh. The build and 27 browser tests passed.
+  PR #76 merged into `main` at `449fa64`.
 - BIO-707 / CN-067 adds Admin roster and team management links, including
   audited source downloads. The production build and 27 browser tests passed.
   PR #75 merged into `main` at `28dd7c5`.
@@ -460,7 +463,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    extension and override notices with affected accounts counted. CN-052 adds
    scoped announcement publishing to the verified roster. CN-057 adds
    staff authoring and receipt counts in the console. Staff inboxes and a
-   final pagination contract remain open.
+   final pagination contract remain open. CN-069 adds the linked participant
+   account settings route for the same email preference.
 7. **Replays/logs/privacy:** object storage,
    short-lived URLs, full browser replay player (DEC-10), deployed purge schedule,
    backups/restore, indicator-text exposure review, durable log retention and
@@ -1121,3 +1125,18 @@ checks both records, refresh, and participant refusal on both addresses.
 All 91 statuses, nine backlog categories and 42 Jira items remain.
 Recovery authority remains open. The linked participant settings page
 can reuse the inbox email preference next.
+
+## CN-069 continuation evidence
+
+BIO-702 starts from merged main at `449fa64` on
+`BIO-702-participant-account-settings`. Linked participants can manage the
+same email preference in account settings and the inbox. The existing API
+enforces current recipient scope and keeps dashboard delivery enabled.
+
+The production build and all 28 Playwright tests passed (46.3 s). The
+browser verified keyboard changes, persisted state across both views,
+retained dashboard notices and access checks. Earlier runs exposed the
+asynchronous checkbox assertion and the existing ten-attempt source limit.
+Fixture sessions were reused for the successful run. All 91 statuses,
+nine backlog categories and 42 tracked Jira items remain. Public signup,
+verification and account deletion remain open.
