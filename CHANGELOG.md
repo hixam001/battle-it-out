@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Participant account settings (BIO-702, CN-069)** provides the shared
+  email preference directly at `/account/settings`.
+
 - **Admin Operations triage (BIO-604, CN-068)** shows incident attempts,
   alert state and dead-job details at `/admin`.
 

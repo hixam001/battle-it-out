@@ -1340,3 +1340,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   CN-068, changelog, coverage and memory. The 91 statuses, nine backlog
   categories and 42 tracked Jira items remain. Mutation authority stays
   open. Participant email preferences can be exposed at account settings.
+
+### 2026-11-28 — BIO-702 Participant account settings
+
+- Confirmed PR #76 merged into `main` at `449fa64`. Started
+  `BIO-702-participant-account-settings` from the fetched commit.
+- The `/account/settings` console reuses the inbox email preference and
+  existing current-recipient API. Both locations show the saved setting.
+  Staff access is guarded before requests and dashboard delivery stays on.
+- The production build and all 28 Playwright tests passed (46.3 s).
+  The browser checks keyboard toggling, dashboard notice retention and
+  refusal for staff and unlinked users. The final run waits for server
+  confirmation and reuses fixture sessions within the existing login limit.
+  Desktop and mobile renders used disposable data.
+- Updated the user and frontend guides, flow and API specs, test plan,
+  Jira, CN-069, changelog, coverage and memory. The 91 statuses, nine
+  backlog categories and 42 tracked Jira items remain. The dedicated login
+  address can use the existing session form. Registration, verification
+  and deletion stay open.

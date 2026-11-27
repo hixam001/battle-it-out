@@ -421,8 +421,8 @@ Authenticated Web App (later phase)
   `/notifications`                          Linked          Dashboard notification Read/unread,        Empty, unread,
                                              participant     feed                   email preference   delivery issue
 
-  `/account/settings`                       Authenticated   Preferences/deletion   Email toggle,       Active, queued,
-                                                                                   deletion request    cancelled
+  `/account/settings`                       Linked          Notification settings  Email toggle        Enabled, disabled
+                                             participant
 
   `/organizer`                              Organizer       Assigned tournament    Open/create         Empty, pending, active
                                                             list                   tournament          
@@ -475,6 +475,10 @@ Authenticated Web App (later phase)
   ---------------------------------------------------------------------------------------------------------------------------
 
 ## 6. Decision points (IF--THEN)
+
+Account settings provides the email preference for linked participants.
+The deletion request and cancellation described in FLOW-07 are tracked in
+BIO-608.
 
 -   **IF** an Organizer creates a tournament, **THEN** it remains
     unavailable for registration until Admin approval.

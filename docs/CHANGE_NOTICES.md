@@ -920,3 +920,11 @@ Decisions from the owner that change or narrow what the requirement documents (P
   Staff can refresh the read-only snapshot.
 - The production build and 27 Playwright tests passed with a disposable
   paused match and dead job. Participants are refused on both addresses.
+
+## CN-069 — Participant account settings (2026-11-28)
+
+- **BIO-702:** Linked participants can open `/account/settings` and change
+  the email preference shared with the inbox. Dashboard delivery remains
+  enabled. The existing API applies recipient scope and session CSRF.
+- The production build and all 28 Playwright tests passed, including
+  keyboard use, cross-view persistence and the linked-participant guard.

@@ -75,8 +75,9 @@ remain open.
 ## 4. Notifications and account lifecycle
 
 Open **Notifications** to read personal notices, filter to unread, mark a notice
-read or unread, or update your email preference. The inbox is available to
-linked participant accounts and includes past notices. Dashboard notices stay
+read or unread, or update your email preference. **Account settings** shows
+the same email control. The inbox is available to linked participant accounts
+and includes past notices. Dashboard notices stay
 available when email is disabled. Email delivery depends on the event's provider
 configuration. Self-service account requests and deletion are planned.
 
