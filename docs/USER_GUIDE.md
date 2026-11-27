@@ -73,6 +73,12 @@ available and open it in the Battlecode client. Archive removes the download
 and retains match history. Browser playback and raw engine point totals
 remain open.
 
+From a selected game, open **Structured match log** to view the latest
+available attempt or enter an earlier attempt number. Expand events to
+read match metadata or your team's output. Assigned Organizers can see
+both teams' output. Authorized viewers can still read retained logs after
+archive.
+
 ## 4. Notifications and account lifecycle
 
 Open **Notifications** to read personal notices, filter to unread, mark a notice

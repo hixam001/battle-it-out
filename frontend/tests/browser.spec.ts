@@ -462,6 +462,48 @@ test("assigned Organizer archives a completed tournament and can verify the purg
   await expect(archive.getByRole("button", { name: "Archive tournament" })).toHaveCount(0);
 });
 
+test("match logs show verified attempts and the current viewer's own team output", async ({ page, useSession }) => {
+  await useSession(page, "captain-a");
+  await page.goto("/participant/tournaments/cup/bracket");
+  await page.getByRole("link", { name: "Match details", exact: true }).click();
+  const matchPath = new URL(page.url()).pathname;
+  const result = await page.request.get(`/api/v1${matchPath}/`);
+  expect(result.ok()).toBe(true);
+  const isTeamA = (await result.json()).series.teams.A === "ta";
+  const own = isTeamA ? "A" : "B";
+  const other = isTeamA ? "B" : "A";
+  await page.getByRole("link", { name: "Structured match log" }).click();
+  await expect(page).toHaveURL(`${matchPath}/logs`);
+  await expect(page.getByRole("heading", { name: "Attempt 1" })).toBeVisible();
+  await page.getByText(`Team ${own} output`, { exact: true }).click();
+  await expect(page.getByText(isTeamA ? "First side output" : "Second side output", { exact: true })).toBeVisible();
+  await expect(page.getByText(`Team ${other} output`, { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Platform diagnostics", { exact: true })).toHaveCount(0);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await page.screenshot({ path: test.info().outputPath("match-logs-desktop.png"), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("match-logs-mobile.png"), fullPage: true });
+
+  const number = page.getByRole("spinbutton", { name: "Attempt number" });
+  await number.fill("2");
+  await page.getByRole("button", { name: "View attempt" }).click();
+  await expect(page.getByRole("status")).toHaveText("This attempt log is unavailable to your account.");
+  await page.getByRole("button", { name: "Latest recorded log" }).click();
+  await expect(page.getByRole("heading", { name: "Attempt 1" })).toBeVisible();
+
+  await useSession(page, "organizer");
+  await page.reload();
+  await expect(page.getByText("Team A output", { exact: true })).toBeVisible();
+  await expect(page.getByText("Team B output", { exact: true })).toBeVisible();
+  await expect(page.getByText("Platform diagnostics", { exact: true })).toHaveCount(0);
+  await useSession(page, "admin");
+  await page.reload();
+  await expect(page.getByText("Platform diagnostics", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Back to match" }).click();
+  await expect(page).toHaveURL(matchPath);
+});
+
 test("scoped bracket navigation shows pending draws and keeps foreign tournaments hidden", async ({ page, useSession }) => {
   await useSession(page, "captain-a");
   await page.goto("/participant/tournaments/tied-fixture/bracket");

@@ -1376,3 +1376,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   categories and 42 tracked Jira items remain. Public signup, verification
   and deletion stay open. A console view for the existing structured match
   logs is ready for the next results PR.
+
+### 2026-11-28 — BIO-705 Structured match log view
+
+- Confirmed PR #78 merged into `main` at `7e9cea2`. Started
+  `BIO-705-structured-match-log-view` from the fetched commit.
+- Selected games link to a browser view for their verified attempt log.
+  It opens the latest recorded attempt and accepts an explicit attempt
+  number. Event details and team output use the existing role-filtered
+  API response. The output is rendered as text.
+- The production build and all 29 Playwright tests passed (45.7 s).
+  The browser checks the latest and missing attempts, participant side
+  filtering, assigned Organizer output, Admin diagnostics and return
+  navigation. Desktop and mobile renders used a disposable log fixture.
+- Updated API and flow specs, user and frontend guides, test plan, Jira,
+  CN-071, changelog, coverage and memory. All 91 statuses, nine backlog
+  categories and 42 tracked Jira items remain. Browser replay playback,
+  raw engine scores and log retention are open. Mobile console navigation
+  has a ready accessibility improvement for the next PR.

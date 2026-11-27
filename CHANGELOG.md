@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Structured match log view (BIO-705, CN-071)** displays verified attempt
+  events and team output according to the current viewer's scope.
+
 - **Dedicated sign-in (BIO-702, CN-070)** provides `/login` for provisioned
   accounts and opens the dashboard after authentication.
 

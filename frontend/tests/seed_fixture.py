@@ -18,6 +18,7 @@ def main():
     from backend.match_orchestrator.tests.test_bracket import MAPS, teams
     from backend.match_orchestrator.tests.test_maps import ENGINE, FILES, GOOD, make_jar
     from backend.match_orchestrator.tests.test_tiebreak import COIN, Coin, won
+    from backend.match_runner import match_log
     from backend.notifications import notifications
     from backend.registration import registration
     from backend.submission_registry import registry
@@ -66,6 +67,29 @@ def main():
             registry.record_verdict(stored, registry.claim_check(stored, source['id']), verdict(BOT))
             fixture.make_cup('tied-fixture', fixture.now - 3000, fixture.now - 1000)
             store = fixture.rt.flow.store
+            official = store.snapshot()
+            log_mid = official['series'][fixture.sid]['games'][0]['match_id']
+            game = official['matches'][log_mid]
+            attempt = game['attempts'][0]
+            log_context = {
+                'trace_id': attempt['trace_id'], 'match_id': log_mid, 'attempt': 1,
+                'teams': {'A': game['team_a'], 'B': game['team_b']},
+                'submissions': {'A': game['submission_a'], 'B': game['submission_b']},
+                'engine_version': ENGINE, 'map': game['map'], 'started_at': attempt['started_at'],
+                'finished_at': attempt['finished_at'],
+            }
+            winner = game['result']['winner_side']
+            log_result = {'outcome': 'completed', 'classification': 'normal', 'kind': 'score', 'winner': winner,
+                          'reason': 'Won on points', 'round': 1}
+            events = match_log.build_events(log_result, log_context,
+                                            '[A: #5@1] First side output\n[B: #6@1] Second side output\n')
+            relative_log = Path('out', 'matches', log_mid, 'attempt-1', 'match-20261128-000001.events.jsonl')
+            fixture_log = fixture.root / relative_log
+            fixture_log.parent.mkdir(parents=True, exist_ok=True)
+            log_info = match_log.write_jsonl(fixture_log, events)
+            log_info['path'] = str(state / relative_log)
+            with store.transaction() as data:
+                data['matches'][log_mid]['attempts'][0]['summary']['structured_log'] = log_info
             orchestrator.create_match(store, 'paused-fixture-match', 'ta', 'tb', 'one', 'ta-v1', 'tb-v1', max_attempts=1)
             orchestrator.queue_match(store, 'paused-fixture-match')
             _, attempt = orchestrator.claim(store, 'paused-fixture-match', 'fixture-worker')
