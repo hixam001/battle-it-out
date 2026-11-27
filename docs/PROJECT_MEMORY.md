@@ -22,7 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
-- Latest continuation on 2026-11-26: PRs #39–43 integrate the participant
+- On 2026-11-27, PRs #44–54 landed individually on main. The latest
+  handoff records the combined verification and 45 remaining Jira items.
+- On 2026-11-26, PRs #39–43 integrate the participant
   dashboard and inbox, scoped replay downloads, operator runbook, bracket and
   game reads, and confirmed tournament archive. The owner approved merging all
   five to `main`. See CN-031–035 and the handoff for implementation and checks.
@@ -54,6 +56,31 @@ remaining backlog after every task.
 - CN-032–035 add native replay downloads, the interim operations runbook,
   bracket/game history reads and confirmed archive with retryable vault purge.
   Browser replay playback, full results screens and production recovery remain open.
+- CN-039 completes BIO-510 for the approved catalogue. Each exact release has
+  a recorded SHA-256. Publishing and uploading verify the source, and stored
+  bundles keep their original hashes and release pins. The only published
+  release is biohelpers 1.0.0.
+- CN-040 completes the local BIO-504 upload contract. It verifies the scoped
+  captain, accepts exactly one multipart file and passes the current official
+  deadline to the shared store/queue flow. Static rejections return actionable
+  findings and never change the active bot.
+- CN-041 completes BIO-602 for the local Admin API. Deadline extension and
+  locked-setting override commit an audit and a notice for the affected roster
+  accounts. Maintenance retries pending notices. The scheduler uses the
+  current deadline under the tournament store lock before pinning.
+- CN-042 completes the BIO-610 read APIs for scoped tournament audit and
+  Admin global audit over existing event stores. Verified participants see
+  their teams' audit and public tournament events. Admins can filter
+  retained deletion audit by tournament ID.
+- CN-043 completes the local BIO-509 bundle export. Stable ZIP metadata and
+  optional dependency declarations allow a 32-file bundle to be uploaded
+  again with its original hash when it has no dependencies.
+- CN-044 completes the BIO-501 roster API. Admins and assigned Organizers
+  can import bounded CSV/JSON, correct unclaimed entries with a version
+  check, and retrieve the roster and exclusion report.
+- CN-045 completes BIO-503 team reads. The private roster profile exposes
+  verified member slots and captain with current tournament and team scope.
+  CN-020 still governs the interim team size and registered-name lock.
 - CN-046 completes the BIO-605 match-log API alongside native replay
   downloads. The HTTP view verifies the recorded attempt's structured log
   and returns the CN-007 role projection with allowlisted diagnostic fields.
@@ -76,7 +103,7 @@ remaining backlog after every task.
   ran 20 times each on 3.13 and 3.15, totaling 120 real matches. Unit mode
   skips integration cases; three engine-dependent tests need the project venv.
   These are Claude's recorded results, not a new four-version run by Codex.
-- Coverage currently records **17 DONE / 62 PARTIAL / 12 TODO / 0 DEFERRED**
+- Coverage currently records **22 DONE / 57 PARTIAL / 12 TODO / 0 DEFERRED**
   across **91** requirements. DONE denotes the documented library/tool scope,
   not owner acceptance or an independent security review. Counts and row-level
   gaps live in [REQUIREMENTS_COVERAGE.md](REQUIREMENTS_COVERAGE.md).
@@ -152,7 +179,7 @@ raise a refusal after the transaction when its audit/limiter write must survive.
 | `registration` | Official CSV/JSON roster, invitation issue/revoke/replace, claim/confirm, limiter, membership-derived participant Actor and registered teams | `registration.py`; CN-020/021 |
 | `notifications` | Mandatory dashboard feed, recipient-only reads, email preference/outbox/leases/retry, event adapters and worker/timer hooks | `notifications.py`, `sources.py`; CN-022/023 |
 | `services` | Configured notification-enabled worker, roster-aware maintenance with vault/live cleanup, separate email/alert processes through optional adapters; locks, signals, status and systemd template | `runner.py`; CN-027/028 |
-| `submission_bundle` | Bounded flat Python ZIPs, native local-module checks, aggregate digests and curated pinned biohelpers source; exact trials/activation/pins/export | `bundle.py`; CN-028 |
+| `submission_bundle` | Bounded flat Python ZIPs, native local-module checks, aggregate digests and reviewed exact-release biohelpers source; exact trials/activation/pins/export | `bundle.py`; CN-028/039 |
 | `live_view` | Transport-only NetServer adapter, unchanged engine/schema, numeric board snapshots with no raw listener; private HTTP polling and archive cleanup | `transport.py`, `transport/battlecode/server/NetServer.java`; CN-028 |
 | `webapp` / `frontend` | Django/DRF/PostgreSQL feature sessions/scope/API, transactional disputes/audit, analytics and Admin reader; React public landing/feature console | Package READMEs, `DESIGN.md`; CN-028 |
 
@@ -291,6 +318,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    errors/request IDs and process liveness. CN-026's full administration
    proposal remains open. Legacy creator fallback remains outside these scoped
    feature routes and must be replaced before the full role API is implemented.
+   CN-042 reads current-role scoped audit across the existing stores. Permanent
+   migration and integration with series history and incidents remain open.
 2. **Service operation:** deploy/supervise the CN-027/028 worker, maintenance,
    email, alert and web processes; approve/implement real email/Admin adapters;
    target-host restart/outage drills; pinned worker/container image and runtime
@@ -307,19 +336,23 @@ with current code and the coverage matrix; nothing here is closed by intake.
    suitability, per-round re-verification and production persistence remain.
    Other OSes, 3.16/free-threaded builds and CI remain unverified/unbuilt. New
    native bundle/live tests do not close any of these execution gates.
-4. **Registration/submissions:** roster/invitation/team/claim/verification
-   endpoints and code delivery; final error/media-type contracts; locked-entry
+4. **Registration/submissions:** invitation/claim/verification
+   endpoints and code delivery; remaining registration API contracts; locked-entry
    Admin exception; team size/name/captain policy, source retention/deletion,
    approved upload/version/limiter caps and manual-activation decision. HTTP
    upload/history/source/bundle delivery and queued checks now exist and use the
-   official stored deadline/current roster Actor. Interim caps are 256 KiB and
-   500 versions/team; bundle input ceiling is 32 files. Native flat modules and
-   curated biohelpers 1.0.0 are supported; more packages require review/pins,
+   official stored deadline/current roster Actor. CN-044 adds scoped staff
+   roster reads, import, correction and exclusions. CN-045 adds team profiles.
+   BIO-504 defines multipart,
+   size and actionable static-error responses. Interim caps are 256 KiB and
+   500 versions/team; the 32-file bundle ceiling is verified on export and
+   re-upload (BIO-509). Native flat modules and
+   curated biohelpers 1.0.0 are supported with exact release/digest verification
+   (BIO-510). More packages require source and module collision review and pins,
    additional languages follow compatibility work, and arbitrary participant
    installs/custom runtimes remain unapproved.
-5. **Tournament operations and deletion:** remaining tournament/deadline/
-   bracket-generate/round-start HTTP actions and permission tests;
-   explicit map-pool selection; full results UI, engine score display and
+5. **Tournament operations and deletion:** remaining tournament lifecycle
+   HTTP actions and permission tests; full results UI, engine point display and
    paused-job mutation controls; queued/
    cancelable account deletion, historical-roster removal without changed
    results, captain transfer/no successor (DEC-07), team delete/restore after
@@ -329,16 +362,17 @@ with current code and the coverage matrix; nothing here is closed by intake.
    correction policy and automatic notices remain. The Admin operations reader
    is implemented; additional action controls remain open. CN-034 delivers
    current-scope bracket and game result reads, including archived history. CN-035 adds confirmed archive for current
-   Admins and assigned Organizers.
+   Admins and assigned Organizers. CN-038 delivers staff map-pool selection,
+   bracket draw and sequential round-start actions.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
-   store migration, real provider and deployment; announcements, automatic notice
-   calls after extension/override, affected-user
-   counts, Organizer approval/rejection and dispute notices; mandatory security
+   store migration, real provider and deployment; announcements,
+   Organizer approval/rejection and dispute notices; mandatory security
    email policy, owner wording/retry review, expiry alerts and real outage drill.
    Check/round/draw adapters and failed-email alert retry hooks already exist.
    CN-030 supplies linked-participant feed/read/preferences HTTP endpoints with
    current explicit links and the shared service store. CN-031 implements the
-   linked-participant inbox and deadline/notice dashboard. Announcement authoring,
+   linked-participant inbox and deadline/notice dashboard. CN-041 delivers
+   extension and override notices with affected accounts counted. Announcement authoring,
    staff inboxes and a final pagination contract remain open.
 7. **Replays/logs/privacy:** object storage,
    short-lived URLs, full browser replay player (DEC-10), deployed purge schedule,
@@ -430,7 +464,8 @@ records unresolved role/provisioning decisions; none is an implemented default.
 | Source | Use |
 |---|---|
 | [PRD.md](PRD.md), [SRD.md](SRD.md) | Product rules and numbered requirements; read their change-notice headers |
-| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–035 decisions, corrections, defaults, proposals and test evidence |
+| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–036 decisions, corrections, defaults, proposals and test evidence |
+| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | Numbered decisions, corrections, defaults, proposals and test evidence |
 | [API_CONTRACT.md](API_CONTRACT.md), [DATA_MODEL.md](DATA_MODEL.md) | Proposed API, entities, constraints, state/access/retention matrices |
 | [APP_FLOW.md](APP_FLOW.md), [../PRODUCT.md](../PRODUCT.md) | User journeys, route inventory, product context; planned screens |
 | [ARCHITECTURE.md](ARCHITECTURE.md), [TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md) | Design boundaries, runner/worker mechanics, commands and troubleshooting |
@@ -675,3 +710,63 @@ checks, 111 targeted real-engine integration tests (50.654 s), the production
 frontend build and five Playwright cases (10.7 s). Test state and replays were
 temporary. Results publication SRD-028 is PARTIAL. All 91 rows and nine
 backlog categories remain.
+
+## CN-036 continuation evidence
+
+BIO-505 closes submission reads on `BIO-505-submission-read-api` from
+`d66b95d`. History lists exact game IDs from stored brackets. The per-version
+validation route returns current state and ordered findings. Both reads use
+current tournament and team/Organizer scope. Visible roster teams without
+uploads return an empty list. Successful staff metadata reads use the
+PostgreSQL feature audit. Source and bundle reads keep their integrity checks
+and existing registry audit. Current activation remains automatic.
+
+All 85 Django tests and Django system/migration checks passed. Registry and
+bundle unit mode ran 70 cases with 67 passes and three integration skips.
+SRD-057 is DONE; 18 DONE / 61 PARTIAL / 12 TODO / 0 DEFERRED across 91 rows.
+The full backlog remains above. BIO-506 extends the HTTP privacy checks across the submission routes. Production retention remains open.
+
+## CN-037 continuation evidence
+
+BIO-701 completes the existing web foundation from `d66b95d` on
+`BIO-701-frontend-foundation`. The shared frontend client retains status,
+error code, details and the server request ID. Keyboard skip navigation moves
+focus without changing the route. Direct Operations and inbox links show
+scope-aware refusals and preserve the requested path through sign-in.
+
+The production frontend build and all eight browser cases passed against
+local fixture Django/PostgreSQL in 12.1 s. The three new cases verify the
+participant Operations guard, the Organizer inbox guard and a real failed
+login with its matching server request ID. The mock competition and sessions
+were disposable. Coverage statuses and all nine backlog categories remain.
+Complete usability/accessible-flow acceptance remains BIO-708.
+
+## CN-038 continuation evidence
+
+BIO-603 closes the bracket and round API from `d66b95d` on
+`BIO-603-bracket-round-actions`. Staff can select a stored pool, confirm a draw
+once the submission deadline passes and confirm a sequential round start.
+The draw uses the existing scheduler logic, verified roster, map pins and
+idempotent exclusion notices. Web uses configured `BIO_ENGINE_JAR` to verify
+its map catalogue; the worker owns execution. Round start cannot requeue a
+paused round. Results expose recorded game win counts by side.
+
+85 Django tests passed in 9.221 s. Django system and migration-drift checks
+passed. 164 selected library/service cases passed in 79.846 s with real engine
+games. SRD-023 advances to DONE on this branch. All nine backlog categories and
+91 requirement rows remain. Full results UI, raw engine point totals, recovery
+authority, house bots, and cutoff draws remain separately tracked.
+
+## Merge reconciliation evidence for PRs #44–54
+
+The locally reconciled PRs complete submission reads and uploads, frontend
+foundation, bracket and round actions, exact dependency pins and reproducible
+bundles, deadline notices, audit feeds, roster and team reads, and structured
+match-log delivery. The owner authorized the eleven PRs to merge into main individually, in
+number order. Their tested conflict resolutions are retained in the merges.
+
+All 127 Django cases and 412 targeted integration cases passed together.
+Backend unit mode passed 738 of 786 cases with 48 expected skips. The frontend
+production build and eight Playwright checks passed. See the latest handoff for
+test context. All nine backlog categories remain and track the remaining
+45 Jira items after the open implementation PRs.

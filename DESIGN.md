@@ -24,3 +24,7 @@ with local system fallbacks. Controls have labels, visible focus states and
 keyboard access; errors/statuses use live regions. Source/protocol details do
 not appear in public workflows except upload constraints that affect participant
 choices. The initial UI is browser-tested, not a formal accessibility audit.
+
+The console and public page let keyboard users skip directly to main content.
+Direct links to restricted screens explain the required access and offer a
+dashboard link. API error messages can include the server request ID for support.

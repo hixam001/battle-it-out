@@ -20,19 +20,22 @@ Standard library only.
 """
 from __future__ import annotations
 
+import logging
 import re
 import time
 from typing import Callable
 
 from backend.match_orchestrator import bracket as B
-from backend.match_orchestrator.store import JsonFileStore
+from backend.match_orchestrator.store import JsonFileStore, StoreError
 from backend.registration import registration as G
 from backend.submission_registry import registry as R
+from backend.tournaments import tournaments as T
 
 from . import notifications as N
 
 _CONTROL = re.compile(r"[\x00-\x1f\x7f]+")
 NO_REASON = "no reason was recorded; see the version history"
+logger = logging.getLogger(__name__)
 
 
 def _plain(text, n: int) -> str:
@@ -48,6 +51,21 @@ def _sum(total: dict, part: dict) -> dict:
 
 def _empty() -> dict:
     return {"created": 0, "existing": 0, "email_queued": 0}
+
+
+def publish_deadline_notices(tournaments: T.Tournaments, registration: G.Registration,
+                             center: N.Notifications, *, event_id: str | None = None,
+                             now: Callable[[], float] = time.time) -> list[str]:
+    """Publish committed deadline notices and return the IDs still pending."""
+    failed = []
+    for key, pending in T.pending_notices(tournaments, event_id).items():
+        try:
+            N.notify_notice(center, registration, pending["notice"], recipients=pending["recipients"], now=now)
+            T.mark_notice_published(tournaments, key)
+        except (N.NotificationError, OSError, StoreError):
+            failed.append(key)
+            logger.warning("Deadline notification event %s is pending", key)
+    return failed
 
 
 # ---------------------------------------------------------------------------------------------- validation

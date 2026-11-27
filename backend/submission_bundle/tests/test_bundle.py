@@ -7,7 +7,9 @@ import tempfile
 import time
 import unittest
 import zipfile
+from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 from backend.submission_bundle import bundle as B
 from backend.submission_registry import registry as R
 from backend.submission_check import trial as T
@@ -39,10 +41,71 @@ class Bundles(unittest.TestCase):
     def test_bundle_is_pinned_deterministically_with_curated_bytes(self):
         files = B.unpack(archive(FILES))
         self.assertEqual(files['biohelpers.py'], B.HELPERS)
+        self.assertEqual(B.digest(files), '9c16438a466182a65628ec31140c3997a9613858d1d255213c4d488f590c0e95')
         self.assertEqual(B.digest(files), B.digest(dict(reversed(list(files.items())))))
         altered = {**files, 'strategy.py': b'def value():\n    return 3\n'}
         self.assertNotEqual(B.digest(files), B.digest(altered))
         self.assertEqual(B.unpack(B.export(files)), files)
+    def test_new_release_preserves_old_snapshot_and_export(self):
+        first = self.upload()
+        old_files = B.snapshot(self.registry.root / first['id'])
+        source = B.HELPERS + b'\ndef identity(value):\n    return value\n'
+        new_release = B.CuratedRelease(hashlib.sha256(source).hexdigest(), 'Test release', source)
+        with patch.dict(B.CATALOGUE, {('biohelpers', '1.1.0'): new_release}):
+            latest = B.unpack(archive({**FILES, 'requirements.json': b'{"biohelpers":"1.1.0"}'}))
+            self.assertEqual(latest['biohelpers.py'], source)
+            self.assertEqual([item['version'] for item in B.dependency_catalogue()], ['1.0.0', '1.1.0'])
+            exported = R.download_bundle(self.registry, CAPTAIN, first['id'])
+            self.assertEqual(B.unpack(exported), old_files)
+            self.assertEqual(B.digest(old_files), first['content_hash'])
+            with self.assertRaises(B.Invalid):
+                B.validate({**old_files, 'biohelpers.py': source})
+    def test_curated_source_drift_prevents_upload_and_publication(self):
+        first = self.upload()
+        name_version = ('biohelpers', '1.0.0')
+        changed = replace(B.CATALOGUE[name_version], source=B.HELPERS + b'# drift\n')
+        with patch.dict(B.CATALOGUE, {name_version: changed}):
+            with self.assertRaisesRegex(RuntimeError, 'reviewed digest'):
+                self.upload(key='drift')
+            with self.assertRaisesRegex(RuntimeError, 'reviewed digest'):
+                B.dependency_catalogue()
+            stored = B.snapshot(self.registry.root / first['id'])
+            self.assertEqual(B.digest(stored), first['content_hash'])
+    def test_requirements_use_one_exact_string_version_per_name(self):
+        for requirements in (
+            b'{"biohelpers":"1.1.0"}',
+            b'{"biohelpers":"~=1.0.0"}',
+            b'{"biohelpers":["1.0.0"]}',
+            b'{"biohelpers":"1.1.0","biohelpers":"1.0.0"}',
+            b'[' * 4000 + b']' * 4000,
+        ):
+            with self.subTest(requirements=requirements[:80]), self.assertRaises(B.Invalid):
+                B.unpack(archive({**FILES, 'requirements.json': requirements}))
+        with self.assertRaises(B.Invalid):
+            B.unpack(archive({**FILES, 'biohelpers.py': B.HELPERS}))
+
+    def test_export_has_stable_members_and_zip_metadata(self):
+        files = B.unpack(archive(FILES))
+        exported = B.export(files)
+        self.assertEqual(exported, B.export(dict(reversed(list(files.items())))))
+        with zipfile.ZipFile(io.BytesIO(exported)) as bundle:
+            self.assertEqual(bundle.namelist(), ['bot.py', 'requirements.json', 'strategy.py'])
+            self.assertEqual(bundle.read('requirements.json'), b'{"biohelpers":"1.0.0"}')
+            for member in bundle.infolist():
+                self.assertEqual(member.date_time, (1980, 1, 1, 0, 0, 0))
+        self.assertEqual(B.unpack(exported), files)
+
+    def test_full_file_count_bundle_can_be_exported_and_uploaded_again(self):
+        submitted = {'bot.py': b'def turn():\n    pass\n'}
+        submitted.update({f'helper{index}.py': b'value = 1\n' for index in range(B.MAX_FILES - 1)})
+        first = self.upload(submitted)
+        exported = R.download_bundle(self.registry, CAPTAIN, first['id'])
+        with zipfile.ZipFile(io.BytesIO(exported)) as bundle:
+            self.assertEqual(set(bundle.namelist()), set(submitted))
+        restored = R.submit_bundle(self.registry, CAPTAIN, 'ta', 'cup', exported, idempotency_key='restored',
+                                   deadline_at=time.time() + 1000)
+        self.assertEqual(restored['content_hash'], first['content_hash'])
+
     def test_hostile_archives_do_not_write_paths(self):
         cases = [ {**FILES, '../escape.py': b'x=1'}, {**FILES, 'nested/a.py': b'x=1'},
                   {**FILES, 'math.py': b'x=1'}, {'helper.py': b'x=1'},

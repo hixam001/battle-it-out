@@ -48,15 +48,20 @@ class Flow:
 # ---------------------------------------------------------------------------------------------- uploads
 
 def upload(flow: Flow, actor: R.Actor | None, team_id: str, tournament_id: str, file_name: str, data: bytes, *,
-           idempotency_key: str, deadline_at: float, now: Callable[[], float] = time.time) -> dict:
-    """`registry.submit`, then queue the check of the new version. Returns the version view plus `check_job`
+           idempotency_key: str, deadline_at: float, now: Callable[[], float] = time.time,
+           bundle: bool = False) -> dict:
+    """Store a Python file or explicit bundle and queue the check of the new version.
+    Returns the version view plus `check_job`
     (the job id, or None when nothing needs checking: a statically invalid version).
 
     Retrying with the same idempotency key is safe at every point: the registry returns the same version and
     the queue returns the same live job (or makes one if the first call died before queueing).
     """
-    view = R.submit(flow.registry, actor, team_id, tournament_id, file_name, data,
-                    idempotency_key=idempotency_key, deadline_at=deadline_at, now=now)
+    options = {"idempotency_key": idempotency_key, "deadline_at": deadline_at, "now": now}
+    if bundle:
+        view = R.submit_bundle(flow.registry, actor, team_id, tournament_id, data, **options)
+    else:
+        view = R.submit(flow.registry, actor, team_id, tournament_id, file_name, data, **options)
     job = None
     if view["validation_status"] == R.VALIDATING:
         job = J.enqueue_check(flow.queue, view["id"], now=now)["id"]
@@ -105,6 +110,10 @@ def open_bracket(flow: Flow, tournament_id: str, bracket_id: str, team_ids: list
       draw and gets the stored one back. The bracket remembers its tournament.
     * Pins are write-once: a repeated call after a later upload or extension changes nothing.
     """
+    pool = M.get_pool(flow.store, pool_id)
+    problems = M.verify_pool(pool, catalogue, engine_version)
+    if problems:
+        raise M.MapError("map pool does not match the engine: " + "; ".join(problems))
     # Refuse a draw that cannot work BEFORE the write-once pin: a pin made for a tournament with fewer than two
     # playable teams could never be corrected by an Admin extension (the pins would stay). Unfinished checks
     # and the deadline are left to `pin_tournament`, which raises its own errors first.
@@ -134,7 +143,7 @@ def open_bracket(flow: Flow, tournament_id: str, bracket_id: str, team_ids: list
 
 
 def start_round(flow: Flow, bracket_id: str, round_no: int, actor: str, *,
-                now: Callable[[], float] = time.time) -> dict:
+                enqueue_paused: bool = True, now: Callable[[], float] = time.time) -> dict:
     """The Organizer starts a round: verify, start, queue. Returns `{"round", "job"}` (`job` is None when the
     round is already complete).
 
@@ -143,7 +152,8 @@ def start_round(flow: Flow, bracket_id: str, round_no: int, actor: str, *,
     * a team's pinned version is not the one the bracket was drawn with;
     * a pinned bot file no longer matches its stored hash (`pinned_folder` re-hashes it and stores a staff
       incident; every pinned version belongs to a bracket team, so this covers what `verify_pins` would).
-    Starting or queueing twice does nothing the second time.
+    Starting or queueing twice does nothing the second time. The HTTP round-start caller can refuse to
+    enqueue a paused round; the trusted library recovery path retains the existing default.
     """
     bracket = B.get_bracket(flow.store, bracket_id)
     tournament_id = bracket.get("tournament_id")
@@ -157,7 +167,7 @@ def start_round(flow: Flow, bracket_id: str, round_no: int, actor: str, *,
         if folder.name != entry["submission"]:
             raise FlowError(f"team {entry['team']} is pinned to {folder.name}, the bracket was drawn with {entry['submission']}")
     rd = B.start_round(flow.store, bracket_id, round_no, actor, now=now)
-    if rd["status"] == B.COMPLETED:
+    if rd["status"] == B.COMPLETED or (rd["status"] == B.PAUSED and not enqueue_paused):
         return {"round": rd, "job": None}
     job = J.enqueue_round(flow.queue, bracket_id, round_no, now=now)
     return {"round": rd, "job": job["id"]}

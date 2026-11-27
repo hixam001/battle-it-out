@@ -424,10 +424,10 @@ override is separate endpoint.\
 **Request:** `{"reason":"Please correct the tournament schedule."}`\
 **Success:** `{"status":"rejected","reason":"..."}`.
 
-### POST `/tournaments/{id}/extend-deadline`
+### POST `/tournaments/{id}/extend-deadline/`
 
 **Purpose:** Extend registration or submission deadline.\
-**Access:** Admin only.\
+**Access:** Current Admin session, session CSRF, and `Idempotency-Key`.\
 **Request:**
 
 ``` json
@@ -439,21 +439,34 @@ override is separate endpoint.\
 }
 ```
 
-**Success:** updated deadline, affected participant count, notification
-event ID. Unused invitation codes remain valid until the new
-registration deadline. Submission extension reopens submissions.\
-**Errors:** `400`, `403`, `409`, `422`.
+The new time must include a timezone and be later than both the current
+deadline and the present time. Registration may not extend past submission.
+Unused codes follow the registration deadline. Extending submission reopens
+uploads while the tournament is open and its entry versions are unpinned.
 
-### POST `/tournaments/{id}/emergency-override`
+### POST `/tournaments/{id}/emergency-override/`
 
 **Purpose:** Admin emergency change after lock without extending
 deadline.\
-**Access:** Admin only.\
+**Access:** Current Admin session, session CSRF, and `Idempotency-Key`.\
 **Request:**
 `{"setting":"...","value":"...","reason":"...","confirm":true}`\
-**Success:** updated setting and audit event. Must notify affected
-participants with setting, reason, time, and authorizer.\
-**Errors:** `400`, `403`, `409`.
+The supported settings are `name`, `description`, and `map_pool_id`.
+A supplied pool ID must exist. The map pool is fixed once entries are
+pinned or the draw is recorded. The notice records the setting, reason,
+time and authorizer. An override leaves the deadlines in place.
+
+**Implemented (BIO-602 / CN-041):** Both actions return `200` with the
+updated `tournament`, `audit_event_id`, `notification_event_id`,
+`affected_participants` and `notification_status`. The audience contains
+accounts holding an official roster place, including pending verification.
+`published` means the dashboard notices exist and eligible email delivery is
+queued. `pending` means the change and its notice are durably committed and
+service maintenance will retry publication. Repeating the same key and
+normalized action as the same Admin reuses the recorded result and can finish
+pending publication. A different deadline action under that key returns
+`409`. Invalid input is `400`, hidden resources are `404`, and forbidden
+or conflicting lifecycle actions return `403` or `409`.
 
 ### POST `/tournaments/{id}/archive`
 
@@ -488,22 +501,40 @@ remain permanently.\
 
 ## 4. Roster, teams, invitations --- BIO-EPIC-05
 
-### POST `/tournaments/{id}/roster/import`
+### POST `/tournaments/{id}/roster/import/`
 
 **Purpose:** Import official roster.\
-**Access:** Admin or assigned Organizer.\
-**Request:** multipart roster file or validated JSON. `[DECIDE]` file
-format.\
-**Success:** import summary with created/updated/rejected rows.\
-**Rules:** corrections allowed before participant registration locks the
-row. No editing locked participant identity/team/member number/role.
+**Access:** Current Admin or explicitly assigned Organizer, session CSRF
+and `Idempotency-Key`.\
+**Request:** The existing CN-020 formats are supported. Send one UTF-8 CSV
+part named `file` with columns `email,team_key,team_name,member_number,role`,
+or JSON containing a `rows` array of those objects. The interim limits are
+1 MiB and 2,000 rows.\
+**Success:** `200` with `batch_id`, `created`, `updated`, `unchanged` and
+redacted `rejected` row numbers and reasons. Rows are assessed individually.
+A retry by the same actor for the same tournament and key reuses the batch
+summary. A different payload under the same key returns `409`. The roster
+store retains the audited summary and discards the file.
 
-### PATCH `/tournaments/{id}/roster/{entry_id}`
+### PATCH `/tournaments/{id}/roster/{entry_id}/`
 
 **Purpose:** Correct an unregistered roster entry.\
-**Access:** Admin or assigned Organizer.\
-**Request:** allowed fields only.\
-**Errors:** `403`, `404`, `409` if participant already registered.
+**Access:** Current Admin or explicitly assigned Organizer with session CSRF.\
+**Request:** `expected_version` as a positive integer and at least one of
+`email`, `team_key`, `team_name`, `member_number`, `role_label`. A claim
+locks the entry. Stale versions and closed or locked entries return `409`.
+Hidden and mismatched tournament/entry IDs share `404`.
+
+### GET `/tournaments/{id}/roster/` and GET `/tournaments/{id}/roster/report/`
+
+Current Admins and explicitly assigned Organizers can read the roster and
+the exclusion report. The roster includes official email addresses and
+row versions for corrections. The report lists status counts, teams
+missing a roster or registered captain, and entry IDs excluded after the
+stored registration deadline. Both responses are private/no-store.
+
+These four BIO-501 routes use the existing roster and interim format rules
+(CN-020/044).
 
 ### POST `/tournaments/{id}/invitation-codes`
 
@@ -529,12 +560,19 @@ authorized issuer at issuance and stored hashed where feasible.
 `{"reason":"Replacement for compromised code","confirm":true}`\
 **Success:** replacement issued. Old code remains unusable.
 
-### GET `/teams/{team_id}`
+### GET `/tournaments/{id}/teams/{team_id}/`
 
-**Purpose:** Team profile.\
-**Access:** team members, assigned Organizer, Admin.\
-**Success:** team data with deleted members omitted from historical
-roster display.
+**Implemented (BIO-503 / CN-045):** Current verified team members, an
+explicitly assigned Organizer and Admin can read `id`, `tournament_id`,
+`name` and verified `members` in member-number order. Each member has
+`member_number`, `role_label` and `is_captain`. The profile has no contact,
+account or invitation data. Archived profiles use the same current scope.
+Missing, foreign, mismatched and deleted scopes share `404`.
+
+The roster remains authoritative for team size, official name and captain.
+The existing CN-020 rules admit corrections only before a claim locks the
+affected entries. Account-deletion cleanup and final DEC-12 policy remain
+separate work.
 
 ### DELETE `/teams/{team_id}`
 
@@ -553,25 +591,37 @@ deletion.
 
 ## 5. Bot submissions --- BIO-EPIC-05
 
-### POST `/teams/{team_id}/submissions`
+### POST `/tournaments/{id}/teams/{team_id}/submissions/`
 
-**Purpose:** Upload a new bot version.\
-**Access:** Team participant with submission permission; captain-only is
-`[DECIDE]`.\
-**Request:** multipart file named exactly `bot.py`; include idempotency
-key.\
-**Success `202`:**
+The registered team captain may upload one multipart `file` with the session
+CSRF token and an `Idempotency-Key` header. The file is either a UTF-8
+`bot.py` or a flat Python bundle ZIP. The server reads the current submission
+deadline from the tournament record.
+
+A successful upload returns `201` with the version record. The check runs
+asynchronously on the existing worker. A new version awaiting the check
+includes these fields.
 
 ``` json
 {
-  "submission_id": "sub_123",
+  "id": "team-a-v4",
   "version": 4,
-  "status": "validating"
+  "validation_status": "validating"
 }
 ```
 
-**Errors:** `400`, `403`, `409` deadline closed, `413`, `415`, `422`.
-Invalid upload must not replace current active version.
+- `400` for missing or duplicate fields and an invalid idempotency key.
+- `403` for a visible team without upload privileges, and `404` for hidden or
+  mismatched team/tournament scope.
+- `409` after the stored deadline or when the same key is used for a different
+  submission. A retry of an earlier accepted upload reuses its version.
+- `413` for the interim size or ZIP file-count limits, and `415` when the
+  request is outside multipart form data.
+- `422` for an unsupported filename, invalid ZIP or static bot validation
+  failure. A single-file bot that reaches the static check stays in
+  history with `error.details.submission_id` and `error.details.reasons`
+  including a stable code, actionable message and a line when available.
+  No check is queued for it. The active version is retained.
 
 ### GET `/teams/{team_id}/submissions`
 
@@ -579,6 +629,12 @@ Invalid upload must not replace current active version.
 **Access:** team members, assigned Organizer, Admin.\
 **Success:** version, timestamp, validation status/reason, active flag,
 match usage references. Source access remains private.
+
+The implemented route is `GET /tournaments/{id}/teams/{team_id}/submissions/`.
+It returns `items` ordered by version, with `match_ids` for official games in
+the requested tournament that reference each version. A visible roster team
+with no uploads has an empty history. Staff history reads record a
+`submission_history_read` audit event.
 
 ### GET `/submissions/{submission_id}/download`
 
@@ -591,6 +647,15 @@ match usage references. Source access remains private.
 **Purpose:** Read validation outcome.\
 **Access:** owning team, assigned Organizer, Admin.\
 **Success:** structured checks and safe error messages.
+
+The implemented route is `GET /tournaments/{id}/submissions/{submission_id}/validation/`.
+It returns `id`, `tournament_id`, `team_id`, `version`, `is_active`,
+`validation_status`, `check_in_progress` and ordered `validations`. Each check
+has its stage, outcome, findings and recorded timestamps. Trial summaries can
+include side, judgment, outcome, classification, round and runtime. Staff
+reads record a `submission_validation_read` audit event. Source bytes and
+worker claims are excluded. Both reads use current session scope and the
+requested tournament. Unknown, foreign and hidden IDs share `404` errors.
 
 ### POST `/submissions/{submission_id}/activate`
 
@@ -610,12 +675,37 @@ this endpoint if no manual override is required.
 automatic byes, human-team bye priority; house-bot rules pending
 decision.
 
+The implemented route uses a trailing slash and exact JSON confirmation.
+It draws one open tournament after its stored submission deadline using the
+registered teams, pinned valid versions and its verified map pool. It returns
+`{bracket, excluded}` and preserves an existing draw on retry. Neither the
+manual request nor the automatic scheduler starts a round. Pending checks,
+an invalid map pool or lifecycle state return `409`. An unavailable server
+engine catalogue returns `503`.
+
 ### POST `/tournaments/{id}/rounds/{round_id}/start`
 
 **Purpose:** Start the next sequential round.\
 **Access:** assigned Organizer or Admin.\
 **Request:** `{"confirm":true,"idempotency_key":"..."}`\
 **Success:** round enters `running`; match jobs queued.
+
+The implemented route is `POST /tournaments/{id}/rounds/{round_number}/start/`.
+It requires session CSRF and the exact JSON confirmation and idempotency key
+above. The server rechecks staff access before replaying a saved response.
+Results contain `round_number`, `status` and `job_id` (`null` for a completed
+round). A later round whose predecessor is incomplete, a paused round or
+invalid pinned files return `409`. Repeating a start queues at most one job.
+
+### GET and PUT `/tournaments/{id}/map-pool/`
+
+Admin or explicitly assigned Organizer. GET returns `selected_id`, `version`
+and `items` containing the available immutable pool IDs, map names and engine
+versions. PUT requires session CSRF and exactly
+`{"map_pool_id":"...","expected_version":3}`. It selects an existing pool
+under the normal configuration deadline and optimistic version rules. The
+generated bracket retains its stored pool. A stale revision or locked
+tournament returns `409`.
 
 ### GET `/tournaments/{id}/bracket`
 
@@ -627,7 +717,8 @@ decision.
 returns `tournament_id` and a `bracket` object once a draw is stored. The bracket
 contains the recorded draw, registered playoff teams, map-pool ID when recorded,
 rounds, pairings, byes, game IDs/status, advancement and champion. The `bracket`
-field is `null` before a draw. Scores require additional engine result data.
+field is `null` before a draw. The series includes win counts by side based on
+the recorded game outcomes. Raw engine point totals require additional result data.
 
 ### GET `/matches/{match_id}`
 
@@ -640,7 +731,7 @@ identifiers; no source code.
 a game ID exposed by the bracket pairing's `series.games`. The response contains
 `tournament_id`, selected `match_id`, `round_number` and the enclosing `series`.
 The series reports the two pinned version IDs, maps, ordered game outcomes,
-winner/result type and recorded coin flip when applicable. A drawn/paused game
+winner/result type, win counts and recorded coin flip when applicable. A drawn/paused game
 without a decision has a `null` result. Engine scores, raw paths, diagnostics,
 and replay availability are outside this projection.
 
@@ -755,15 +846,30 @@ slice needs no idempotency-key receipt. Every response uses CN-029's fresh
 request ID and `private, no-store`; errors use the shared envelope. No SQL/JSON
 cross-store transaction or full notification database migration is claimed.
 The [participant inbox](../frontend/README.md) uses these endpoints (CN-031).
-Announcements, automatic extension/override notices, real email providers and
-mandatory security-email policy remain open.
+Deadline changes publish participant notices (CN-041). Announcement authoring,
+real email providers and mandatory security-email policy remain open.
 
-### GET `/tournaments/{id}/audit-logs`
+### GET `/tournaments/{id}/audit-logs/` and GET `/admin/audit-logs/`
 
-**Purpose:** Read scoped audit log.\
-**Access:** Admin global; assigned Organizer for assigned tournament;
-Participant for own team/tournament-relevant entries.\
-**Success:** redacted, paginated immutable records.
+**Implemented (BIO-610 / CN-042):** Read-only audit across PostgreSQL feature
+actions and existing tournament, registration, submission and notification
+audit stores. Both routes return `items` and a nullable `next_offset`.
+The optional parameters are `limit` (1–200, default 50) and `offset`
+(0–2147483647). Records are ordered newest first with a deterministic
+source and sequence tie-break. Appends can shift offset pages.
+
+The tournament route uses current verified roster or explicit Organizer scope.
+Participants see public lifecycle events, their own teams' upload/verdict
+metadata and their own teams' disputes. Assigned Organizers see tournament
+staff activity. The global route is Admin-only and additionally accepts
+`tournament_id`, including IDs of deleted tournaments with retained audit.
+Missing and hidden scoped tournaments share `404`. Archive retains access
+for currently authorized roles.
+
+Records contain `id`, `source`, `action`, `created_at`, `tournament_id`,
+an explicit `detail` projection and a role-appropriate `actor_id` for staff.
+Free-form reasons, invitation/provider credentials, source and host paths are
+excluded. Private/no-store and the shared error envelope apply.
 
 ## 8. Internal match-worker contract (not public API)
 
@@ -835,7 +941,12 @@ Canonical new paths use a trailing slash except `analytics.csv`.
 
 - GET/HEAD `/health/` implements process liveness; §1.1 records the shared error/request-ID behavior.
 - Session lifecycle: GET `/auth/session/`, POST `/auth/login/`, POST `/auth/logout/`.
-- GET `/tournaments/` lists current accessible records; GET `/dependencies/` is a public pinned catalogue.
+- GET `/tournaments/` lists current accessible records.
+- GET `/dependencies/` is public. It returns `items` with a `name`, exact
+  `version`, reviewed `sha256` and `description` for each verified release,
+  plus the interim `max_files` and `max_bytes` limits. A bundle may declare
+  one version per name in `requirements.json`. Stored bundles keep their
+  original release pins.
 - GET `/tournaments/{id}/live/` supplies numeric board snapshots and safe match metadata, with current authorization on every poll, private/no-store cache policy and 410 after archive.
 - GET `/tournaments/{id}/analytics/` and `/analytics.csv` expose results-derived team/version/map/round and failure/timing statistics. No source, host path or bot output is included.
 - GET/POST `/tournaments/{id}/teams/{team}/submissions/` and GET `/tournaments/{id}/submissions/{version}/download/` implement team-private history, captain upload using the stored deadline, queued validation and authorized source/bundle delivery. POST accepts one multipart `file` and requires `Idempotency-Key`.
