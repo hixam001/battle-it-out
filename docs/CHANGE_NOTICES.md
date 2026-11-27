@@ -681,3 +681,22 @@ Decisions from the owner that change or narrow what the requirement documents (P
   and migration checks. All 54 targeted structured-log and service tests
   passed with real engine coverage. Requirement statuses remain unchanged.
   Browser playback and production retention remain separate.
+
+## CN-047 — Tournament administration API (2026-11-27)
+
+- **BIO-601:** staff create drafts, read and edit settings, and manually open
+  approved registration. A currently assigned creator submits or resubmits
+  their draft. Admins confirm approval or reject with a recorded reason.
+  Ordinary edits and lifecycle actions check the current version under the
+  same store lock as the audit write.
+- **Creation:** server-generated IDs are stable for an account and
+  `Idempotency-Key`. The creating Organizer gets an explicit audited
+  assignment. An identical retry can repair an assignment after an interrupted
+  PostgreSQL commit. Existing revocations block re-creation on retry.
+- **Scope:** the console's list shape is preserved. Scoped detail adds version
+  and UTC deadlines. Map selection uses the existing dedicated endpoint.
+  Approval notifications and frontend management screens are tracked separately.
+- **Checks:** all 132 Django cases passed against disposable PostgreSQL with
+  system and migration checks. Backend unit mode found 786 tests and passed
+  738 with 48 expected integration skips. SRD-030 through SRD-033 are DONE for
+  the local contract.

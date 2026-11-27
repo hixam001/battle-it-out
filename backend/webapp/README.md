@@ -85,7 +85,9 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET | `/notifications/` | Linked recipient's bounded feed, unread/tournament filters and counts |
 | PATCH | `/notifications/{id}/` | Recipient-only read/unread setter; same-team notices remain private |
 | GET/PATCH | `/me/notification-preferences/` | Shared worker email preference; dashboard always enabled |
-| GET | `/tournaments/` | Only current accessible tournaments and own teams |
+| GET/POST | `/tournaments/` | Scoped list and staff draft creation with an idempotency key |
+| GET/PATCH | `/tournaments/{id}/` | Scoped detail and version-checked staff settings edit |
+| POST | `/tournaments/{id}/submit-for-approval/`, `/approve/`, `/reject/`, `/open-registration/` | Current scope and a version check, with approval confirmation or rejection reason |
 | POST | `/tournaments/{id}/archive/` | Admin/assigned Organizer, exact JSON `{"confirm":true}` and CSRF; completed/archived only, purge status in response |
 | POST | `/tournaments/{id}/extend-deadline/`, `/tournaments/{id}/emergency-override/` | Current Admin only, CSRF, confirmation, reason and idempotency key; returns affected account count and notice status |
 | GET | `/tournaments/{id}/roster/`, `/tournaments/{id}/roster/report/` | Admin/assigned Organizer only, official roster and exclusion report |
@@ -241,7 +243,8 @@ backend/.venvs/web/bin/python backend/webapp/manage.py test \
   backend.webapp.tests_replays backend.webapp.tests_results backend.webapp.tests_archive \
   backend.webapp.tests_submission_reads backend.webapp.tests_round_actions \
   backend.webapp.tests_deadlines backend.webapp.tests_audit \
-  backend.webapp.tests_roster backend.webapp.tests_teams backend.webapp.tests_match_logs
+  backend.webapp.tests_roster backend.webapp.tests_teams backend.webapp.tests_match_logs \
+  backend.webapp.tests_tournament_lifecycle
 backend/.venvs/py3.15/bin/python backend/run_tests.py
 backend/.venvs/py3.15/bin/python backend/run_tests.py --integration
 ```

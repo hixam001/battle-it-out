@@ -95,6 +95,9 @@ class Create(Base):
         a = self.make(key="same")
         b = T.create(self.reg, ORG, "t1", "Cup", "d", REG_D, SUB_D, idempotency_key="same", now=self.clock)
         self.assertEqual(a, b)
+        after_deadline = T.create(self.reg, ORG, "t1", "Cup", "d", REG_D, SUB_D,
+                                  idempotency_key="same", now=lambda: SUB_D + 1)
+        self.assertEqual(a, after_deadline)
         with self.assertRaises(T.Conflict):
             T.create(self.reg, ORG, "t2", "Cup", "d", REG_D, SUB_D, idempotency_key="same", now=self.clock)
         with self.assertRaises(T.Conflict):

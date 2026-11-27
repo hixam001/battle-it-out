@@ -259,6 +259,11 @@ def _move(rec: dict, status: str, state: dict, t: float, actor: str, action: str
     _audit(state, t, actor, action, rec["id"], **{"from": before, "to": status, **detail})
 
 
+def _check_version(rec: dict, expected_version: int | None) -> None:
+    if expected_version is not None and expected_version != rec["version"]:
+        raise Conflict(f"the tournament is at version {rec['version']}, not {expected_version}")
+
+
 # ------------------------------------------------------------------------------------------ create / approve
 
 def create(reg: Tournaments, actor: R.Actor | None, tournament_id: str, name: str, description: str,
@@ -276,15 +281,18 @@ def create(reg: Tournaments, actor: R.Actor | None, tournament_id: str, name: st
               "submission_deadline": _time("submission_deadline", submission_deadline)}
     _check_order(fields["registration_deadline"], fields["submission_deadline"])
     t = now()
-    if fields["registration_deadline"] <= t:
-        raise Invalid("the registration deadline must be in the future")
     with reg.store.transaction() as state:
         key = f"{actor.user_id}/{idempotency_key}"
         seen = state["idempotency"].get(key)
         if seen is not None:
             if seen["tournament"] != tid or seen["fields"] != fields:
                 raise Conflict("this idempotency key was used for a different tournament")
-            return _view(state["tournaments"][tid], actor)
+            rec = state["tournaments"][tid]
+            if rec["created_by_role"] != actor.role:
+                raise Forbidden("the creating role is required to retry this request")
+            return _view(rec, actor)
+        if fields["registration_deadline"] <= t:
+            raise Invalid("the registration deadline must be in the future")
         if tid in state["tournaments"]:
             raise Conflict(f"tournament {tid} already exists")
         if len(state["tournaments"]) >= MAX_TOURNAMENTS:
@@ -302,6 +310,7 @@ def create(reg: Tournaments, actor: R.Actor | None, tournament_id: str, name: st
 
 
 def submit_for_approval(reg: Tournaments, actor: R.Actor | None, tournament_id: str, *,
+                        expected_version: int | None = None,
                         now: Callable[[], float] = time.time) -> dict:
     """The creating Organizer submits a draft or a rejected tournament (`submit-for-approval`). An Admin's own
     draft needs no submission (it is approved directly)."""
@@ -310,6 +319,7 @@ def submit_for_approval(reg: Tournaments, actor: R.Actor | None, tournament_id: 
         rec = _managed_rec(state, actor, tournament_id)
         if rec["created_by"] != actor.user_id:
             raise Forbidden("only the Organizer who created the tournament may submit it")
+        _check_version(rec, expected_version)
         if rec["status"] not in (DRAFT, REJECTED):
             raise Conflict(f"a tournament that is {rec['status']} cannot be submitted for approval")
         if rec["deadlines"][REGISTRATION] <= now():
@@ -319,6 +329,7 @@ def submit_for_approval(reg: Tournaments, actor: R.Actor | None, tournament_id: 
 
 
 def approve(reg: Tournaments, actor: R.Actor | None, tournament_id: str, *, confirm: bool = False,
+            expected_version: int | None = None,
             now: Callable[[], float] = time.time) -> dict:
     """Admin approves (`approve`, `{"confirm": true}`). A pending tournament, or a draft that an Admin created.
     An Organizer's draft that was never submitted cannot be approved over their head."""
@@ -327,6 +338,7 @@ def approve(reg: Tournaments, actor: R.Actor | None, tournament_id: str, *, conf
         raise Invalid("approval needs confirm=true")
     with reg.store.transaction() as state:
         rec = _managed_rec(state, actor, tournament_id)
+        _check_version(rec, expected_version)
         if not (rec["status"] == PENDING or (rec["status"] == DRAFT and rec["created_by_role"] == "admin")):
             raise Conflict(f"a tournament that is {rec['status']} cannot be approved")
         t = now()
@@ -339,12 +351,14 @@ def approve(reg: Tournaments, actor: R.Actor | None, tournament_id: str, *, conf
 
 
 def reject(reg: Tournaments, actor: R.Actor | None, tournament_id: str, reason: str, *,
+           expected_version: int | None = None,
            now: Callable[[], float] = time.time) -> dict:
     """Admin rejects a pending tournament with a reason (kept, shown to the Organizer, who may edit and resubmit)."""
     actor = _who(actor, ("admin",))
     reason = _reason(reason)
     with reg.store.transaction() as state:
         rec = _managed_rec(state, actor, tournament_id)
+        _check_version(rec, expected_version)
         if rec["status"] != PENDING:
             raise Conflict(f"a tournament that is {rec['status']} cannot be rejected")
         t = now()
@@ -374,8 +388,7 @@ def edit(reg: Tournaments, actor: R.Actor | None, tournament_id: str, changes: d
     clean = {k: _clean(k, v) for k, v in changes.items()}
     with reg.store.transaction() as state:
         rec = _managed_rec(state, actor, tournament_id)
-        if expected_version is not None and expected_version != rec["version"]:
-            raise Conflict(f"the tournament is at version {rec['version']}, not {expected_version}")
+        _check_version(rec, expected_version)
         if rec["status"] not in (DRAFT, REJECTED, APPROVED, OPEN):
             raise Conflict(f"a tournament that is {rec['status']} cannot be edited")
         t = now()
@@ -533,12 +546,14 @@ def emergency_override(reg: Tournaments, actor: R.Actor | None, tournament_id: s
 # --------------------------------------------------------------------------------------- the state machine
 
 def open_registration(reg: Tournaments, actor: R.Actor | None, tournament_id: str, *,
+                      expected_version: int | None = None,
                       now: Callable[[], float] = time.time) -> dict:
     """Admin or the managing Organizer opens an approved tournament (decision D4: opening is manual; the PRD
     leaves manual or scheduled open). Refused after the registration deadline."""
     actor = _who(actor)
     with reg.store.transaction() as state:
         rec = _managed_rec(state, actor, tournament_id)
+        _check_version(rec, expected_version)
         if rec["status"] != APPROVED:
             raise Conflict(f"a tournament that is {rec['status']} cannot open registration")
         if rec["deadlines"][REGISTRATION] <= now():
