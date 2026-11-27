@@ -510,6 +510,35 @@ Decisions from the owner that change or narrow what the requirement documents (P
   supervision, staging restore after real archive and permanent-delete workflow.
   Coverage evidence advances without changing the requirement statuses.
 
+## CN-036 — Complete submission read endpoints (2026-11-26)
+
+- **BIO-505:** added per-version validation details, official game IDs on team
+  history, and auditable staff history and validation reads. Existing
+  single-file and bundle downloads retain their audit and integrity checks.
+  Requested tournament scope and current team/Organizer access apply on
+  every read. A visible roster team can have an empty history.
+- **Decisions:** use the existing tournament-scoped route and current
+  automatic latest-valid activation. Staff metadata reads record ID-only
+  PostgreSQL audit events. Production retention remains BIO-408/609 work.
+- **Verification:** 85 Django tests passed with disposable PostgreSQL,
+  including six new submission-read cases. System and migration-drift checks
+  passed. Registry and bundle unit mode ran 70 tests, with 67 passed and three
+  real-game skips. SRD-057 advances to DONE.
+## CN-037 — Frontend routing and error foundation (2026-11-26)
+
+- **BIO-701:** completed the current console foundation. The shared API client
+  preserves the HTTP status, error code, details and server request ID. A valid
+  request ID appears with the actionable error message. JSON/CSRF and multipart
+  uploads share the same request path.
+- Direct Operations and inbox links respect the current Admin/participant
+  guard, retain their address during sign-in and provide a way back to Dashboard
+  when refused. The API checks authorization on its own requests. Public and
+  private pages offer a keyboard skip link and retain visible active navigation.
+- TypeScript/Vite production build and eight Playwright tests passed against
+  disposable PostgreSQL with real Django sessions. Three new browser cases
+  exercise direct-link refusal, keyboard focus and the exact request ID in a
+  failed login. Product-wide usability and accessibility acceptance remain
+  BIO-708. Coverage statuses stay 17 DONE / 62 PARTIAL / 12 TODO on this base.
 ## CN-038 — Complete bracket and round APIs (2026-11-26)
 
 - **BIO-603:** adds staff map-pool selection, confirmed single-tournament

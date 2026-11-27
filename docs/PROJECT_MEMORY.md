@@ -73,7 +73,7 @@ remaining backlog after every task.
   ran 20 times each on 3.13 and 3.15, totaling 120 real matches. Unit mode
   skips integration cases; three engine-dependent tests need the project venv.
   These are Claude's recorded results, not a new four-version run by Codex.
-- Coverage currently records **18 DONE / 61 PARTIAL / 12 TODO / 0 DEFERRED**
+- Coverage currently records **19 DONE / 60 PARTIAL / 12 TODO / 0 DEFERRED**
   across **91** requirements. DONE denotes the documented library/tool scope,
   not owner acceptance or an independent security review. Counts and row-level
   gaps live in [REQUIREMENTS_COVERAGE.md](REQUIREMENTS_COVERAGE.md).
@@ -426,7 +426,7 @@ records unresolved role/provisioning decisions; none is an implemented default.
 | Source | Use |
 |---|---|
 | [PRD.md](PRD.md), [SRD.md](SRD.md) | Product rules and numbered requirements; read their change-notice headers |
-| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–035 decisions, corrections, defaults, proposals and test evidence |
+| [CHANGE_NOTICES.md](CHANGE_NOTICES.md) | CN-001–036 decisions, corrections, defaults, proposals and test evidence |
 | [API_CONTRACT.md](API_CONTRACT.md), [DATA_MODEL.md](DATA_MODEL.md) | Proposed API, entities, constraints, state/access/retention matrices |
 | [APP_FLOW.md](APP_FLOW.md), [../PRODUCT.md](../PRODUCT.md) | User journeys, route inventory, product context; planned screens |
 | [ARCHITECTURE.md](ARCHITECTURE.md), [TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md) | Design boundaries, runner/worker mechanics, commands and troubleshooting |
@@ -672,6 +672,34 @@ frontend build and five Playwright cases (10.7 s). Test state and replays were
 temporary. Results publication SRD-028 is PARTIAL. All 91 rows and nine
 backlog categories remain.
 
+## CN-036 continuation evidence
+
+BIO-505 closes submission reads on `BIO-505-submission-read-api` from
+`d66b95d`. History lists exact game IDs from stored brackets. The per-version
+validation route returns current state and ordered findings. Both reads use
+current tournament and team/Organizer scope. Visible roster teams without
+uploads return an empty list. Successful staff metadata reads use the
+PostgreSQL feature audit. Source and bundle reads keep their integrity checks
+and existing registry audit. Current activation remains automatic.
+
+All 85 Django tests and Django system/migration checks passed. Registry and
+bundle unit mode ran 70 cases with 67 passes and three integration skips.
+SRD-057 is DONE; 18 DONE / 61 PARTIAL / 12 TODO / 0 DEFERRED across 91 rows.
+The full backlog remains above. BIO-506 extends the HTTP privacy checks across the submission routes. Production retention remains open.
+## CN-037 continuation evidence
+
+BIO-701 completes the existing web foundation from `d66b95d` on
+`BIO-701-frontend-foundation`. The shared frontend client retains status,
+error code, details and the server request ID. Keyboard skip navigation moves
+focus without changing the route. Direct Operations and inbox links show
+scope-aware refusals and preserve the requested path through sign-in.
+
+The production frontend build and all eight browser cases passed against
+local fixture Django/PostgreSQL in 12.1 s. The three new cases verify the
+participant Operations guard, the Organizer inbox guard and a real failed
+login with its matching server request ID. The mock competition and sessions
+were disposable. Coverage statuses and all nine backlog categories remain.
+Complete usability/accessible-flow acceptance remains BIO-708.
 ## CN-038 continuation evidence
 
 BIO-603 closes the bracket and round API from `d66b95d` on

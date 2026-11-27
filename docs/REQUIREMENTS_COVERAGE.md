@@ -17,11 +17,11 @@ It does **not** provide: users, roles, tournaments, brackets, byes, house bots, 
 
 | Status | Count | Meaning |
 |---|---|---|
-| DONE | 18 | built and tested here (library or tool level), nothing material missing |
-| PARTIAL | 61 | built in part; the gap column says what is still ours to develop |
+| DONE | 19 | built and tested here (library or tool level), nothing material missing |
+| PARTIAL | 60 | built in part; the gap column says what is still ours to develop |
 | TODO | 12 | not built; no code exists |
 | DEFERRED | 0 | No whole requirement remains deferred; owner activated BIO-REQ-19–23 (CN-028) |
-| **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 73 of the 91 still need development work |
+| **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 72 of the 91 still need development work |
 
 Reading this honestly: the execution libraries and configured service processes exist. CN-028 adds a Django/PostgreSQL feature API, session/scope adapter and React landing/feature console. Many core endpoints, the legacy-store migration, deletion lifecycle, full website/replay flows and production deployment remain open. The five former P2 features are active partial implementations, not five completed launch features. 'DONE' does not mean accepted by the owner or reviewed independently.
 
@@ -74,7 +74,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | SRD-054 | Submissions lock at deadline, extension reopens | None | **PARTIAL** | `submission_registry.submit` refuses at or after the deadline it is given; a later deadline reopens; `pin_tournament` is write-once after the deadline (CN-016) | The registry still trusts the deadline the caller passes; the API must read it from `tournaments.deadline` (CN-019 stores, extends and overrides it) |
 | SRD-055 | A match references the exact bot version used | None | **DONE** | Submission references pinned per match (CN-009 D6); registry versions are read-only folders re-hashed before use (`pinned_folder`, `verify_pins`, CN-016) | `tournament_flow.start_round` re-hashes every pinned bot file before a round starts (CN-018); the orchestrator itself still does not, so a caller that skips the flow skips the check |
 | SRD-056 | Participant views and downloads own source and history | None | **PARTIAL** | Team-scoped history and authorized single-file/bundle HTTP downloads; bytes/digests rechecked and staff reads audited (CN-016/028) | Production private object storage and complete retention/deletion lifecycle |
-| SRD-057 | Assigned Organizer views, cannot change | None | **PARTIAL** | `submission_registry`: assigned Organizer and Admin read and download (audited), every write is refused (CN-016) | Endpoint; how an Organizer assignment is known (EPIC-04) |
+| SRD-057 | Assigned Organizer views, cannot change | None | **DONE** | Explicit current Organizer assignments and read-only source download (CN-028); audited scoped history and validation reads with revocation checks (CN-036) | Production privacy verification is tracked by BIO-506/BIO-801 |
 | SRD-058 | Other teams' source stays private | None | **PARTIAL** | Sandbox mounts only the team's own folder; logs role-scoped; registry answers `NotFound` for anyone outside the team, the assigned Organizer and Admin (CN-016) | Web-level privacy and storage authorization not built |
 | SRD-060 | Dashboard notifications mandatory; email can be disabled | None | **PARTIAL** | Dashboard/outbox (CN-022), linked-recipient API and shared-worker tests (CN-030), participant inbox and persisted browser email preference (CN-031) | Staff recipient provisioning, real email provider, PostgreSQL migration and deployment |
 | SRD-061 | Major events trigger notifications | None | **PARTIAL** | Fixed templates/notice adapters (CN-022); check/match/draw hooks and configured services (CN-023/027); recipient HTTP feed exposes stored events (CN-030) | Announcement API/screens; automatic notice calls after extension/override; owner wording review; real provider/channel and production deployment (DEC-11) |
@@ -121,7 +121,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | BIO-NFR-09 | Backups and tested recovery | None | **TODO** | BIO-EPIC-08 | - |
 | BIO-NFR-10 | Logs avoid secrets and minimise personal data | None | **PARTIAL** | Redactor in `match_log.py`; API errors redact server details even in debug; completion logs contain only request ID/status, with regression checks (CN-029) | Broader log exposure/access/retention review, including Django exception logs; no end-to-end production privacy proof |
 | BIO-NFR-11 | Concurrent match capacity from load tests | None | **TODO** | BIO-EPIC-08 | One match per host today (fixed engine port) |
-| BIO-NFR-12 | UI communicates deadlines, validation, match state, errors | None | **PARTIAL** | React deadline/validation/match/error states (CN-028); responsive dashboard shows both deadlines with timezone and inbox labels read state, pending actions and refusals (CN-031) | Remaining core screens, comprehensive usability and accessibility acceptance |
+| BIO-NFR-12 | UI communicates deadlines, validation, match state, errors | None | **PARTIAL** | React deadline/validation/match states (CN-028), responsive dashboard/inbox (CN-031), direct role guards, keyboard navigation and correlated API errors (CN-037) | Remaining core screens, comprehensive usability and accessibility acceptance |
 
 ## Development backlog derived from this table
 

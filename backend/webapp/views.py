@@ -22,6 +22,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from backend.match_orchestrator import replays as P
+from backend.registration import registration as G
 from backend.submission_registry import registry as R
 from backend.submission_bundle import bundle as BU
 from backend.work_queue import jobs as J
@@ -100,7 +101,6 @@ def tournaments(request):
     who = D.actor(request.user)
     rt = D.runtime()
     records = rt.tournaments.store.snapshot()['tournaments'].values()
-    from backend.registration import registration as G
     return private({'items': [{**{k: r[k] for k in ('id', 'name', 'description', 'status', 'deadlines')},
                                'teams': sorted(who.team_ids & set(G.registered_teams(rt.registration, r['id'])))}
                               for r in records if r['status'] != 'deleted' and (who.role == 'admin' or r['id'] in who.tournament_ids)],
@@ -294,7 +294,22 @@ def submissions(request, tid, team):
     who, record = D.tournament(request.user, tid)
     rt = D.runtime()
     if request.method == 'GET':
-        return private({'items': R.history(rt.flow.registry, who, team)})
+        try:
+            items = R.history(rt.flow.registry, who, team, tournament_id=tid)
+        except R.NotFound:
+            # A roster team can legitimately have no registry entry yet.
+            try:
+                G.team_view(rt.registration, who, tid, team)
+            except G.NotFound as exc:
+                raise NotFound() from exc
+            items = []
+        references = D.submission_match_ids(tid, (item['id'] for item in items))
+        for item in items:
+            item['match_ids'] = references[item['id']]
+        if who.role in ('organizer', 'admin'):
+            AuditEvent.objects.create(actor_id_text=who.user_id, tournament_id=tid,
+                                      action='submission_history_read', detail={'team_id': team})
+        return private({'items': items})
     if who.role != 'participant' or team not in who.captain_of:
         raise PermissionDenied('Only this team’s captain may upload.')
     if set(request.data) != {'file'} or 'file' not in request.FILES:
@@ -316,6 +331,16 @@ def submissions(request, tid, team):
     if result['validation_status'] == R.VALIDATING:
         J.enqueue_check(rt.flow.queue, result['id'])
     return private(result, 201)
+
+
+@api_view(['GET'])
+def submission_validation(request, tid, sid):
+    who, _ = D.tournament(request.user, tid)
+    report = R.validation_report(D.runtime().flow.registry, who, sid, tournament_id=tid)
+    if who.role in ('organizer', 'admin'):
+        AuditEvent.objects.create(actor_id_text=who.user_id, tournament_id=tid,
+                                  action='submission_validation_read', detail={'submission_id': sid})
+    return private(report)
 
 
 @api_view(['GET'])
