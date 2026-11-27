@@ -1,5 +1,6 @@
 import { test as base, expect } from "@playwright/test";
 import type { BrowserContext, Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 type UseSession = (page: Page, username: string) => Promise<void>;
 type Cookies = Awaited<ReturnType<BrowserContext["cookies"]>>;
@@ -717,4 +718,37 @@ test("Organizer selects maps, generates a bracket and separately queues the read
   await page.goto("/organizer/tournaments/invite-fixture/rounds");
   await expect(page.getByText("This tournament is unavailable.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Generate bracket" })).toHaveCount(0);
+});
+
+test("Organizer views assigned teams and downloads verified source with audit", async ({ page, useSession }) => {
+  await useSession(page, "organizer");
+  await page.goto("/organizer/tournaments/cup");
+  await page.getByRole("link", { name: "View teams", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Tournament teams" })).toBeVisible();
+  const select = page.getByRole("combobox", { name: "Team", exact: true });
+  const profile = page.getByRole("region", { name: "Selected team" });
+  await select.selectOption("tb");
+  await expect(profile.getByRole("heading", { name: "TB", exact: true })).toBeVisible();
+  await expect(profile.getByText("Eliminated", { exact: true })).toBeVisible();
+  await select.selectOption("ta");
+  await expect(profile.getByRole("heading", { name: "TA", exact: true })).toBeVisible();
+  await expect(profile.getByRole("table", { name: "Verified team members" }).getByText("Captain")).toBeVisible();
+  await expect(page.getByText("a@uni.edu")).toHaveCount(0);
+  await expect(page.getByLabel("Python bot or bundle")).toHaveCount(0);
+
+  const downloadEvent = page.waitForEvent("download");
+  await page.getByRole("link", { name: "Download v1", exact: true }).click();
+  const download = await downloadEvent;
+  expect(download.suggestedFilename()).toBe("bot.py");
+  expect(await readFile(await download.path(), "utf8")).toBe("def turn():\n    pass\n");
+  const response = await page.request.get("/api/v1/tournaments/cup/audit-logs/?limit=200");
+  expect(response.ok()).toBe(true);
+  const audit = (await response.json()).items;
+  expect(audit).toContainEqual(expect.objectContaining({
+    source: "submissions", action: "download", detail: expect.objectContaining({ submission_id: "ta-v1", role: "organizer" }),
+  }));
+
+  await page.goto("/organizer/tournaments/invite-fixture/teams");
+  await expect(page.getByText("This tournament is unavailable.")).toBeVisible();
+  await expect(page.getByRole("link", { name: /Download v/ })).toHaveCount(0);
 });

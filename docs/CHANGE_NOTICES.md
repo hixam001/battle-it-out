@@ -865,3 +865,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - The production build and 22 Playwright cases passed on disposable state.
   The round browser case uses a synthetic map catalogue and leaves execution
   to the existing worker path.
+
+## CN-063 — Organizer teams and source downloads (2026-11-27)
+
+- **BIO-706:** The assigned Organizer team directory reuses the verified
+  team profile, bracket standing and submission history. Private source
+  downloads use the existing integrity and audit checks.
+- The production build and all 23 Playwright tests passed. The browser
+  compares fixture source bytes and confirms the staff audit event. The
+  local BIO-706 screen scope is complete.

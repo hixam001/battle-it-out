@@ -12,6 +12,7 @@ import { DeadlineControls } from "./deadlines";
 import { InvitationControls } from "./invitations";
 import { Roster } from "./roster";
 import { RoundControls } from "./rounds";
+import { OrganizerTeams } from "./organizer-teams";
 import "./style.css";
 
 type User = { id: number; username: string; admin: boolean };
@@ -409,25 +410,28 @@ const consoleLinks = [
   { page: "organizer", href: "/organizer", label: "Manage tournaments", icon: "▤" },
   { page: "announce", href: "/announcements/new", label: "Post announcement", icon: "◈" },
 ] as const;
-type ConsolePage = (typeof consoleLinks)[number]["page"] | "match" | "replay" | "organizer-roster" | "organizer-rounds";
+type ConsolePage = (typeof consoleLinks)[number]["page"] | "match" | "replay"
+  | "organizer-roster" | "organizer-rounds" | "organizer-teams";
 type ConsoleRoute = { page: ConsolePage; id?: string };
+const detailRoutes: [RegExp, ConsolePage][] = [
+  [/^\/participant\/tournaments\/([^/#]+)\/bracket$/, "bracket"],
+  [/^\/matches\/([^/#]+)\/replay$/, "replay"],
+  [/^\/matches\/([^/#]+)$/, "match"],
+  [/^\/organizer\/tournaments\/([^/#]+)\/roster$/, "organizer-roster"],
+  [/^\/organizer\/tournaments\/([^/#]+)\/rounds$/, "organizer-rounds"],
+  [/^\/organizer\/tournaments\/([^/#]+)\/teams$/, "organizer-teams"],
+  [/^\/organizer\/tournaments\/([^/#]+)$/, "organizer"],
+  [/^\/admin\/tournaments\/([^/#]+)$/, "deadlines"],
+];
 
 function currentRoute(address: string): ConsoleRoute | null {
   const normalized = address.replace(/\/$/, "");
   if (normalized === "/#submissions") return { page: "submissions" };
-  const bracket = normalized.match(/^\/participant\/tournaments\/([^/#]+)\/bracket$/);
-  const game = normalized.match(/^\/matches\/([^/#]+)(\/replay)?$/);
-  const organizer = normalized.match(/^\/organizer\/tournaments\/([^/#]+)(\/(roster|rounds))?$/);
-  const adminTournament = normalized.match(/^\/admin\/tournaments\/([^/#]+)$/);
-  const route = bracket ?? game ?? organizer ?? adminTournament;
-  if (route) {
+  for (const [pattern, page] of detailRoutes) {
+    const match = normalized.match(pattern);
+    if (!match) continue;
     try {
-      return {
-        page: adminTournament ? "deadlines" : organizer ? organizer[3] === "rounds" ? "organizer-rounds"
-          : organizer[3] === "roster" ? "organizer-roster" : "organizer"
-          : bracket ? "bracket" : game?.[2] ? "replay" : "match",
-        id: decodeURIComponent(route[1]),
-      };
+      return { page, id: decodeURIComponent(match[1]) };
     } catch {
       return null;
     }
@@ -648,13 +652,13 @@ function Console({ user, route, navigate, logout }: {
   }, [refreshTournament]);
   const scopedTournament = (page === "bracket" || page === "deadlines") && id;
   const cup = cups.find((c) => c.id === (scopedTournament || selected));
-  const organizerPage = page === "organizer" || page === "organizer-roster" || page === "organizer-rounds";
+  const organizerPage = page.startsWith("organizer");
   const showTournament = !organizerPage && !["notifications", "operations", "approvals", "audit",
     "match", "replay"].includes(page);
   const canOpen = (target: ConsolePage) => {
     if (["operations", "approvals", "audit", "deadlines", "invitations"].includes(target)) return user.admin;
     if (target === "announce") return user.admin || role === "organizer" || loading;
-    if (target === "organizer" || target === "organizer-roster" || target === "organizer-rounds") {
+    if (target.startsWith("organizer")) {
       return role === "organizer" || (loading && !user.admin);
     }
     if (target === "notifications") return !user.admin && role !== "organizer";
@@ -754,6 +758,9 @@ function Console({ user, route, navigate, logout }: {
         ) : page === "organizer-rounds" ? (
           loading ? <p role="status">Loading Organizer access…</p> :
             <RoundControls key={id} tournament={cups.find((record) => record.id === id)} />
+        ) : page === "organizer-teams" ? (
+          loading ? <p role="status">Loading Organizer access…</p> :
+            <OrganizerTeams key={id} tournament={cups.find((record) => record.id === id)} />
         ) : page === "match" ? (
           id && <MatchResult key={id} matchId={id} />
         ) : page === "replay" ? (
