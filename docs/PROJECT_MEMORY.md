@@ -22,6 +22,10 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- The owner approved PRs #58 and #59. The reconciled branch preserves
+  CN-050 and CN-051 and the full 91-row coverage matrix. Queue and replay
+  incidents join the Admin audit feed, and `/api/v1/ready/` probes PostgreSQL.
+  All 140 Django tests passed on the reconciled branch.
 - BIO-601 / CN-047 implements local HTTP tournament lifecycle with current
   staff scope, explicit Organizer creator assignment, version-checked edits
   and approval transitions, and manual registration opening. Approval notices
@@ -324,7 +328,9 @@ with current code and the coverage matrix; nothing here is closed by intake.
    The feature session/scope adapter, operator roster linking, explicit Organizer
    assignments and feature audit tables now exist. CN-029 supplies shared HTTP
    errors/request IDs and process liveness. CN-026's full administration
-   proposal remains open. Legacy creator fallback remains outside these scoped
+   proposal remains open. CN-051 adds a PostgreSQL readiness probe with
+   verified unavailable/recovery behavior. Worker and deployment monitoring
+   remain open. Legacy creator fallback remains outside these scoped
    feature routes and must be replaced before the full role API is implemented.
    CN-042 reads current-role scoped audit across the existing stores. Permanent
    migration remains open. CN-048 and CN-050 add official series history and

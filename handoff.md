@@ -987,3 +987,34 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated Jira, API, coverage evidence, CN-050 and memory. Requirement counts
   remain 26 DONE / 54 PARTIAL / 11 TODO; permanent audit persistence and its
   retention/restore verification remain in the full backlog.
+
+### 2026-11-27 — BIO-404 PostgreSQL readiness
+
+- Started `BIO-404-postgres-readiness` from merged main at `4413b90` while
+  BIO-407 PR #58 was open against main. Added `/api/v1/ready/` in the Django
+  views and routes. The probe uses the configured PostgreSQL credentials and
+  a separate connection with three-second connect and two-second statement
+  timeouts. It returns a redacted `503` on operational failure. Liveness
+  continues to operate during database outages.
+- All 139 Django tests passed on disposable PostgreSQL in 15.884 s. System
+  and migration checks passed. The 18 standalone HTTP boundary cases passed.
+  The readiness tests cover healthy PostgreSQL, real connection refusal via a
+  temporary absent socket, HEAD and recovery after restoring the connection.
+- Updated the API, web guide, test plan, operator runbook, Jira, CN-051,
+  requirement evidence and project memory. All 91 requirement statuses and
+  nine backlog categories remain. Worker/engine readiness and production
+  monitoring remain open. Existing replays were preserved.
+- All 140 Django tests passed in 15.287 s with the Python changes from #58
+  and #59 applied together to `4413b90`, including system and migration
+  checks. The two independently based PRs overlap in the handoff and change
+  notice entries.
+
+### 2026-11-27 — Merge reconciliation for PRs #58 and #59
+
+- The owner approved merging both PRs. BIO-407 #58 landed at `45eafc4`.
+  Reconciled the two shared documentation files in BIO-404 #59 and kept both
+  task records and CN-050–051. Requirement counts stay at 26 DONE,
+  54 PARTIAL and 11 TODO across 91 rows. The full backlog remains in memory.
+- The reconciled candidate passed all 140 Django tests on disposable
+  PostgreSQL in 16.070 s, plus system and migration-drift checks. Existing
+  replay files were preserved.

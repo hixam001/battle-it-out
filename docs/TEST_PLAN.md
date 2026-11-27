@@ -472,7 +472,7 @@ review remain separate acceptance work.
 
 ## 10. HTTP boundary verification — BIO-404 / CN-029
 
-The standalone `backend.webapp.tests_http` suite verifies the same JSON envelope
+The standalone `backend.webapp.tests_http.HTTPContract` class verifies the same JSON envelope
 for Django and DRF errors, direct refusals and unknown routes; stable status/code
 pairs; field errors/actionable validation; malformed JSON/media types; both CSRF
 paths; `Allow`/`Retry-After`; fresh header/body IDs with incoming IDs ignored;
@@ -487,5 +487,8 @@ hidden/missing tournament errors, and idempotent `409` replay with a fresh ID
 while the stored receipt and dispute state remain unchanged. Use the explicit
 module labels above; directory discovery loses package context in this
 repository's namespace layout. These web suites are separate from the execution
-library runner. Database readiness, load, production monitoring and remaining
-BIO-404 pagination/global idempotency/concurrency are not covered by liveness.
+library runner. CN-051 adds a real PostgreSQL query through the readiness path,
+an unreachable socket returning a redacted `503` while liveness stays `200`,
+HEAD parity, and recovery when the connection is restored. Load, production
+monitoring and remaining BIO-404 pagination/global idempotency/concurrency
+are separate checks.

@@ -80,6 +80,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | Method | `/api/v1` path | Behavior |
 |---|---|---|
 | GET/HEAD | `/health/` | Public process liveness only; no database, account, legacy-store or engine access |
+| GET/HEAD | `/ready/` | Public PostgreSQL connectivity check with redacted `503` on an outage |
 | GET | `/auth/session/` | Current user or null and masked CSRF token; private/no-store |
 | POST | `/auth/login/`, `/auth/logout/` | CSRF-protected session lifecycle |
 | GET | `/notifications/` | Linked recipient's bounded feed, unread/tournament filters and counts |
@@ -232,9 +233,11 @@ Django exception-log access/retention still requires operational controls.
 
 This follows Django's [exception-to-response middleware behavior](https://docs.djangoproject.com/en/dev/topics/http/middleware/#exception-handling)
 and addresses the [DRF handler's exception-only scope](https://www.django-rest-framework.org/api-guide/exceptions/#custom-exception-handling).
-The health endpoint only proves this web process can respond; it is **not**
-database/worker/engine readiness or production monitoring. Pagination, global
-idempotency/concurrency and remaining core routes are still BIO-404 work.
+The `/health/` endpoint checks whether the web process can respond. The
+`/ready/` endpoint uses a separate PostgreSQL connection for one read-only
+query with connection and statement timeouts. Worker and engine checks,
+production monitoring, pagination, global idempotency/concurrency and
+remaining core routes are still BIO-404 work.
 
 ## Verification
 
@@ -255,12 +258,11 @@ Web tests require a disposable PostgreSQL database/role with permission to creat
 the test database; no SQLite fallback hides database trigger behavior. Test
 fixtures remain in temporary directories. Browser tests use explicitly labeled
 local fixture data; no real accounts or competitions are exercised.
-Use explicit test-module labels: directory discovery of `backend.webapp` loses
-the package context because `backend` is a namespace directory. The
-`backend.webapp.tests_http` boundary suite also runs independently without a
-database; the feature suite checks real session/CSRF, receipt and privacy behavior
-against PostgreSQL. `backend/run_tests.py` covers the separate execution-library
-suites and does not discover these web modules.
+Use explicit test-module labels. Directory discovery of `backend.webapp` loses
+the package context because `backend` is a namespace directory.
+`backend.webapp.tests_http.HTTPContract` runs without a database. The readiness
+cases and feature suite use disposable PostgreSQL.
+`backend/run_tests.py` covers the separate execution-library suites.
 
 `tests_notifications` adds real-account/session/CSRF, recipient and numeric-ID
 collision privacy, filters/paging, idempotent read/preference, rollback and
