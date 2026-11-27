@@ -17,11 +17,11 @@ It does **not** provide: users, roles, tournaments, brackets, byes, house bots, 
 
 | Status | Count | Meaning |
 |---|---|---|
-| DONE | 18 | built and tested here (library or tool level), nothing material missing |
-| PARTIAL | 61 | built in part; the gap column says what is still ours to develop |
+| DONE | 19 | built and tested here (library or tool level), nothing material missing |
+| PARTIAL | 60 | built in part; the gap column says what is still ours to develop |
 | TODO | 12 | not built; no code exists |
 | DEFERRED | 0 | No whole requirement remains deferred; owner activated BIO-REQ-19–23 (CN-028) |
-| **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 73 of the 91 still need development work |
+| **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 72 of the 91 still need development work |
 
 Reading this honestly: the execution libraries and configured service processes exist. CN-028 adds a Django/PostgreSQL feature API, session/scope adapter and React landing/feature console. Many core endpoints, the legacy-store migration, deletion lifecycle, full website/replay flows and production deployment remain open. The five former P2 features are active partial implementations, not five completed launch features. 'DONE' does not mean accepted by the owner or reviewed independently.
 
@@ -43,11 +43,11 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | SRD-010 | Platform failure restarts with same map and versions and a NEW seed | None | **PARTIAL** | `match_orchestrator` (CN-009) | New seed impossible: engine tie-break seed is not controllable (TC-04 not met) |
 | SRD-011 | Retry up to 10 times, then alert Admin | None | **PARTIAL** | Retry cap, incident and alert function (CN-009); configured alert process recovers pending match/queue/replay incidents and failed emails through an optional adapter (CN-027) | Real Admin channel and deployment/outage drill remain open; attempt-count reading (DEC-05) interim |
 | SRD-012 | Record bot versions, map, engine/runtime version, seed, attempts, result, logs | Partly (replay file only) | **PARTIAL** | Orchestrator match record, JSONL structured logs (CN-007) | JSON-file store is a stand-in (DEC-11); seed is always null |
-| SRD-020 | Single elimination, random pairings, automatic byes | None | **DONE** | `bracket.py` (CN-011): one recorded random draw, byes spread so none meets another | Tournament and map storage; the API that creates it |
+| SRD-020 | Single elimination, random pairings, automatic byes | None | **DONE** | One stored draw and automatic byes (CN-011); deadline scheduler and scoped manual draw use the same flow (CN-038) | Canonical production file/storage deployment tracked separately |
 | SRD-021 | Human teams get bye priority over house bots | None | **PARTIAL** | Byes go to human teams (CN-011) | Meaningful only once house bots exist (DEC-06) |
 | SRD-022 | House bots fill gaps but cannot advance or win | None | **TODO** | BIO-303 | Refused on purpose: placement algorithm undecided (DEC-06); house bots do not exist yet |
-| SRD-023 | Sequential matches, Organizer starts each round | None | **PARTIAL** | `bracket.start_round` / `run_round` (CN-011), host lock; `tournament_flow.start_round` starts and queues a round, `work_queue` plays it (CN-017, CN-018) | Authorization of the Organizer (API layer) |
-| SRD-024 | Normal tie: one tie-break map | None (engine settles ties itself, then flips an unseeded coin) | **DONE** | `tiebreak.py` (CN-010); `maps.py` map pool: 1 tie-break map, distinct from the played maps, pinned by SHA-256 (CN-014) | Organizer-chosen pool in tournament storage; custom maps |
+| SRD-023 | Sequential matches, Organizer starts each round | None | **DONE** | Round runner and queue (CN-011/017/018); current assigned Organizer or Admin starts through confirmed HTTP, with sequential order and duplicate-job checks (CN-038) | Organizer UI and production operation are tracked separately |
+| SRD-024 | Normal tie: one tie-break map | None (engine settles ties itself, then flips an unseeded coin) | **DONE** | Stored tie-break map with engine hash, distinct from played maps (CN-010/014), and staff pool selection (CN-038) | Custom maps tracked separately |
 | SRD-025 | Final tie: three tie-break maps in order | None | **DONE** | `tiebreak.py` (CN-010); `maps.py`: 3 distinct tie-break maps per pool (CN-014) | Reading of 'three maps' (all played, majority of wins) awaits owner confirmation |
 | SRD-026 | Still tied: 50/50 coin flip, displayed, logged, no rerolls | None (engine coin flip is unseeded and unauditable) | **PARTIAL** | Stored one-time draw and safe series projection (CN-010); scoped HTTP results show the persisted flip (CN-034) | Complete bracket/results UI and unified Admin audit |
 | SRD-027 | Qualification cutoff tie: automatic draw, shown, logged, no reruns | None | **TODO** | - | Draw inputs and audit method undecided (DEC-14) |
@@ -93,7 +93,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | BIO-REQ-04 | Validate entrypoint, syntax, imports, runtime | None | **DONE** | `bot_validator` + `submission_check` trial match on both sides (CN-013) | Wiring into upload and activation is BIO-REQ-14 |
 | BIO-REQ-05 | Run two bots in an isolated environment | None | **PARTIAL** | See SRD-007 | See SRD-007 |
 | BIO-REQ-06 | Separate bot failure from platform failure | None | **DONE** | CN-006 | - |
-| BIO-REQ-07 | Automate sequential matches, results, bracket advancement | None | **PARTIAL** | Orchestrator, series, bracket/round runner, queue/flow and interim service commands (CN-009–027); scoped results/bracket reads (CN-034) | Production deployment, round/generate mutations, house bots (DEC-06), qualification draw (DEC-14) |
+| BIO-REQ-07 | Automate sequential matches, results, bracket advancement | None | **PARTIAL** | Queue and round runner (CN-009–027), scoped results/bracket reads (CN-034), draw/start and pool actions (CN-038) | Production deployment, house bots (DEC-06), qualification draw (DEC-14) |
 | BIO-REQ-08 | Generate replays and keep them until archive, then delete | Partly (engine writes `.bc26`; client can view it) | **PARTIAL** | Hashed native replay vault and verified purge (CN-012); authenticated streaming download, archive/revocation and real-engine vault tests (CN-032) | Private object storage and player (DEC-10), production retention of worker-side artifacts and end-to-end archive/recovery verification |
 | BIO-REQ-09 | Platform-failure retry policy | None | **PARTIAL** | See SRD-010, SRD-011 | See SRD-010/011 |
 | BIO-REQ-10 | Prove the engine path end to end before the web build | None | **PARTIAL** | Real matches, series, failure injection, a real 3-team tournament and a 5-team simulation with byes, forfeit, tie-breaks, replays and archive pass (CN-015) | TC-05 not complete: house bots, qualification draw, replay endpoint and worker hand-off |

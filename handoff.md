@@ -722,3 +722,19 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   CN-037 and project memory. BIO-701 closes for the current console.
   All 91 requirement statuses and the nine backlog categories remain.
   Full usability/accessibility acceptance is tracked under BIO-708.
+### 2026-11-26 — BIO-603: bracket and round actions
+
+- Started `BIO-603-bracket-round-actions` from merged main `d66b95d` with the
+  previous bracket reads in place and independent BIO-505/701 PRs open.
+- Added scoped staff pool selection, manual draw and sequential round start.
+  The scheduler and API share the draw; current deadlines and map hashes are
+  checked before pins. Draw records exclusions and never starts a round.
+  Start checks idempotency, current authorization and pinned integrity; it
+  cannot requeue a paused round. Read projections show recorded game win counts.
+- All 85 Django tests passed (six new action tests, 9.221 s). System and
+  migration-drift checks passed. Selected scheduler/flow/map/service integration
+  mode passed all 164 tests in 79.846 s with temporary real-game outputs.
+- Updated the API/README, Jira, coverage, CN-038 and shared memory. Existing
+  code and the three staff actions complete BIO-603. SRD-023 moves to DONE.
+  Organizer screens, raw engine points, production deployment, house bots
+  and cutoff draw are tracked separately. All nine backlog categories remain.

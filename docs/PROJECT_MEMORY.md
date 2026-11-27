@@ -73,7 +73,7 @@ remaining backlog after every task.
   ran 20 times each on 3.13 and 3.15, totaling 120 real matches. Unit mode
   skips integration cases; three engine-dependent tests need the project venv.
   These are Claude's recorded results, not a new four-version run by Codex.
-- Coverage currently records **18 DONE / 61 PARTIAL / 12 TODO / 0 DEFERRED**
+- Coverage currently records **19 DONE / 60 PARTIAL / 12 TODO / 0 DEFERRED**
   across **91** requirements. DONE denotes the documented library/tool scope,
   not owner acceptance or an independent security review. Counts and row-level
   gaps live in [REQUIREMENTS_COVERAGE.md](REQUIREMENTS_COVERAGE.md).
@@ -314,9 +314,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    curated biohelpers 1.0.0 are supported; more packages require review/pins,
    additional languages follow compatibility work, and arbitrary participant
    installs/custom runtimes remain unapproved.
-5. **Tournament operations and deletion:** remaining tournament/deadline/
-   bracket-generate/round-start HTTP actions and permission tests;
-   explicit map-pool selection; full results UI, engine score display and
+5. **Tournament operations and deletion:** remaining tournament and deadline
+   HTTP actions and permission tests; full results UI, engine point display and
    paused-job mutation controls; queued/
    cancelable account deletion, historical-roster removal without changed
    results, captain transfer/no successor (DEC-07), team delete/restore after
@@ -326,7 +325,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    correction policy and automatic notices remain. The Admin operations reader
    is implemented; additional action controls remain open. CN-034 delivers
    current-scope bracket and game result reads, including archived history. CN-035 adds confirmed archive for current
-   Admins and assigned Organizers.
+   Admins and assigned Organizers. CN-038 delivers staff map-pool selection,
+   bracket draw and sequential round-start actions.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; announcements, automatic notice
    calls after extension/override, affected-user
@@ -700,3 +700,18 @@ participant Operations guard, the Organizer inbox guard and a real failed
 login with its matching server request ID. The mock competition and sessions
 were disposable. Coverage statuses and all nine backlog categories remain.
 Complete usability/accessible-flow acceptance remains BIO-708.
+## CN-038 continuation evidence
+
+BIO-603 closes the bracket and round API from `d66b95d` on
+`BIO-603-bracket-round-actions`. Staff can select a stored pool, confirm a draw
+once the submission deadline passes and confirm a sequential round start.
+The draw uses the existing scheduler logic, verified roster, map pins and
+idempotent exclusion notices. Web uses configured `BIO_ENGINE_JAR` to verify
+its map catalogue; the worker owns execution. Round start cannot requeue a
+paused round. Results expose recorded game win counts by side.
+
+85 Django tests passed in 9.221 s. Django system and migration-drift checks
+passed. 164 selected library/service cases passed in 79.846 s with real engine
+games. SRD-023 advances to DONE on this branch. All nine backlog categories and
+91 requirement rows remain. Full results UI, raw engine point totals, recovery
+authority, house bots, and cutoff draws remain separately tracked.

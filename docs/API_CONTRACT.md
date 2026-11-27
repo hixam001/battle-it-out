@@ -625,12 +625,37 @@ this endpoint if no manual override is required.
 automatic byes, human-team bye priority; house-bot rules pending
 decision.
 
+The implemented route uses a trailing slash and exact JSON confirmation.
+It draws one open tournament after its stored submission deadline using the
+registered teams, pinned valid versions and its verified map pool. It returns
+`{bracket, excluded}` and preserves an existing draw on retry. Neither the
+manual request nor the automatic scheduler starts a round. Pending checks,
+an invalid map pool or lifecycle state return `409`. An unavailable server
+engine catalogue returns `503`.
+
 ### POST `/tournaments/{id}/rounds/{round_id}/start`
 
 **Purpose:** Start the next sequential round.\
 **Access:** assigned Organizer or Admin.\
 **Request:** `{"confirm":true,"idempotency_key":"..."}`\
 **Success:** round enters `running`; match jobs queued.
+
+The implemented route is `POST /tournaments/{id}/rounds/{round_number}/start/`.
+It requires session CSRF and the exact JSON confirmation and idempotency key
+above. The server rechecks staff access before replaying a saved response.
+Results contain `round_number`, `status` and `job_id` (`null` for a completed
+round). A later round whose predecessor is incomplete, a paused round or
+invalid pinned files return `409`. Repeating a start queues at most one job.
+
+### GET and PUT `/tournaments/{id}/map-pool/`
+
+Admin or explicitly assigned Organizer. GET returns `selected_id`, `version`
+and `items` containing the available immutable pool IDs, map names and engine
+versions. PUT requires session CSRF and exactly
+`{"map_pool_id":"...","expected_version":3}`. It selects an existing pool
+under the normal configuration deadline and optimistic version rules. The
+generated bracket retains its stored pool. A stale revision or locked
+tournament returns `409`.
 
 ### GET `/tournaments/{id}/bracket`
 
@@ -642,7 +667,8 @@ decision.
 returns `tournament_id` and a `bracket` object once a draw is stored. The bracket
 contains the recorded draw, registered playoff teams, map-pool ID when recorded,
 rounds, pairings, byes, game IDs/status, advancement and champion. The `bracket`
-field is `null` before a draw. Scores require additional engine result data.
+field is `null` before a draw. The series includes win counts by side based on
+the recorded game outcomes. Raw engine point totals require additional result data.
 
 ### GET `/matches/{match_id}`
 
@@ -655,7 +681,7 @@ identifiers; no source code.
 a game ID exposed by the bracket pairing's `series.games`. The response contains
 `tournament_id`, selected `match_id`, `round_number` and the enclosing `series`.
 The series reports the two pinned version IDs, maps, ordered game outcomes,
-winner/result type and recorded coin flip when applicable. A drawn/paused game
+winner/result type, win counts and recorded coin flip when applicable. A drawn/paused game
 without a decision has a `null` result. Engine scores, raw paths, diagnostics,
 and replay availability are outside this projection.
 

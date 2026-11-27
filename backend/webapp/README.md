@@ -92,6 +92,9 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET | `/matches/{match_id}/replay/` | Current-scope `.bc26` attachment from the private replay vault; hidden/missing 404, archived 410, unavailable 503 |
 | GET | `/tournaments/{id}/analytics/` | Team win rates/byes, series decisions, failures, maps, version results, round progress and median/p95 attempt time |
 | GET | `/tournaments/{id}/bracket/` | Current-scope recorded bracket, with `null` before draw, game IDs and progression |
+| GET/PUT | `/tournaments/{id}/map-pool/` | Staff list and optimistic selection of a stored map pool |
+| POST | `/tournaments/{id}/bracket/generate/` | Staff confirmed draw after the deadline; uses `BIO_ENGINE_JAR` for native map verification |
+| POST | `/tournaments/{id}/rounds/{round_number}/start/` | Staff confirmed and idempotent start through the shared worker queue |
 | GET | `/matches/{match_id}/` | Current-scope game and enclosing series result, including pinned version IDs and stored coin flip |
 | GET | `/tournaments/{id}/analytics.csv` | Authorized team CSV with formula escaping |
 | GET/POST | `/tournaments/{id}/teams/{team}/submissions/` | Team-private history with game references; captain-only upload using the stored official deadline; queues validation |
@@ -198,7 +201,7 @@ backend/.venvs/web/bin/python backend/webapp/manage.py check
 backend/.venvs/web/bin/python backend/webapp/manage.py test \
   backend.webapp.tests backend.webapp.tests_http backend.webapp.tests_notifications \
   backend.webapp.tests_replays backend.webapp.tests_results backend.webapp.tests_archive \
-  backend.webapp.tests_submission_reads
+  backend.webapp.tests_submission_reads backend.webapp.tests_round_actions
 backend/.venvs/py3.15/bin/python backend/run_tests.py
 backend/.venvs/py3.15/bin/python backend/run_tests.py --integration
 ```
@@ -228,6 +231,12 @@ separate work.
 `tests_results` checks recorded bracket/game data, archived history, current
 scope and safe tournament/match refusals. No persisted state is changed on a
 read. The bracket exposes individual game IDs as well as series IDs.
+
+Manual draw requires `BIO_ENGINE_JAR` set to the same installed engine JAR
+as the service runner. The web process reads and hashes the map resources.
+The service worker still runs every match. `tests_round_actions` covers
+map-pool selection, draw after deadline, role and CSRF checks, repeat starts
+and keeping paused rounds out of the round-start path.
 
 `tests_archive` verifies confirmation and session scope, on-disk vault purge,
 retained history, recovery from failed purge and a refusal before vault changes

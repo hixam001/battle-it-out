@@ -539,3 +539,20 @@ Decisions from the owner that change or narrow what the requirement documents (P
   exercise direct-link refusal, keyboard focus and the exact request ID in a
   failed login. Product-wide usability and accessibility acceptance remain
   BIO-708. Coverage statuses stay 17 DONE / 62 PARTIAL / 12 TODO on this base.
+## CN-038 — Complete bracket and round APIs (2026-11-26)
+
+- **BIO-603:** adds staff map-pool selection, confirmed single-tournament
+  draw, and idempotent sequential round start. Bracket and match read
+  projections include wins by side from recorded outcomes. Raw engine point
+  totals and complete results UI remain separate.
+- Manual draw shares the scheduler's deadline, verified roster, map catalogue,
+  pinning and exclusion-notice workflow. The tournament lock keeps deadline
+  changes out of the draw and reserves the lifecycle audit entry. Invalid map
+  hashes are checked before pinning. Only an explicit start queues a round.
+- The API uses the existing current Admin/explicit Organizer scope and CSRF.
+  Paused rounds require their operator workflow, and repeat starts share one
+  queue job. The web process reads maps from the configured engine JAR;
+  execution stays with the existing worker.
+- All 85 Django tests and system/migration-drift checks passed. The 164 selected
+  scheduler, flow, map and service integration cases passed with temporary
+  output and real engine games. SRD-023 advances to DONE.
