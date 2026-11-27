@@ -727,3 +727,15 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - All 130 Django tests passed with disposable PostgreSQL, system and migration
   checks. Public claims, verification and code delivery remain open. Requirement
   status counts are unchanged.
+
+## CN-051 — PostgreSQL readiness probe (2026-11-27)
+
+- **BIO-404:** public `GET`/`HEAD /api/v1/ready/` uses the web application's
+  PostgreSQL credentials for one read-only query on a dedicated connection.
+  The connection timeout is three seconds and the statement timeout is two
+  seconds. Success returns `ready`; operational failures return the redacted
+  `503` envelope. `/health/` continues to check process liveness.
+- All 139 Django tests passed on disposable PostgreSQL, with system and
+  migration checks. The probe recovered after a real connection refusal at
+  an unreachable Unix socket. The 18 HTTP boundary cases also pass without
+  PostgreSQL. Worker and production readiness remain open.

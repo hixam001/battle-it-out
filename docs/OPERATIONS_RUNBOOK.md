@@ -25,12 +25,17 @@ release, service account and config path before adopting them on a managed host.
      --config "$BIO_SERVICE_CONFIG" status
    curl --fail-with-body --silent --show-error \
      http://127.0.0.1:8000/api/v1/health/
+   curl --fail-with-body --silent --show-error \
+     http://127.0.0.1:8000/api/v1/ready/
    ```
 
 4. Compare queue, `open_incidents`, `unalerted_incidents`,
    `unalerted_failed_emails` and email counts with the previous sample.
-   HTTP `200` on health proves process liveness. Check a scoped console request
-   and the corresponding service logs for dependency failures. Zero counts
+   HTTP `200` on health proves process liveness. HTTP `200` on readiness shows
+   that the configured PostgreSQL connection can run a query. A readiness
+   `503` leaves liveness available and carries a request ID for correlation.
+   Check a scoped console request and the service logs for worker, engine and
+   legacy-store failures. Zero counts
    can mean the wrong data directory. Confirm Django's `BIO_DATA_DIR` matches
    the service config before acting.
 5. Where the systemd template is installed, use the actual instance name in

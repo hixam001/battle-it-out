@@ -9,12 +9,13 @@ import stat
 import time
 from datetime import UTC, datetime, timedelta
 from django.contrib.auth import authenticate, login, logout, get_user_model
-from django.db import transaction
+from django.db import connections, transaction
 from django.http import FileResponse, JsonResponse, HttpResponse
 from django.middleware.csrf import get_token
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
+from psycopg import OperationalError, connect
 from rest_framework.decorators import api_view, permission_classes, parser_classes, renderer_classes
 from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny
@@ -43,6 +44,20 @@ def private(body, status=200):
 def health(request):
     """Process liveness only: no accounts, database, legacy stores or engine work."""
     return JsonResponse({'status': 'ok'})
+
+
+@require_http_methods(['GET', 'HEAD'])
+def readiness(request):
+    """Probe PostgreSQL with the web service's credentials and a dedicated connection."""
+    params = connections['default'].get_connection_params()
+    options = params.get('options') or ''
+    params.update(connect_timeout=3, options=f'{options} -c statement_timeout=2000', autocommit=True)
+    try:
+        with connect(**params) as probe, probe.cursor() as cursor:
+            cursor.execute('SELECT 1')
+    except OperationalError:
+        return JsonResponse({}, status=503)
+    return JsonResponse({'status': 'ready'})
 
 
 @ensure_csrf_cookie

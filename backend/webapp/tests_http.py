@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 """Response-boundary regressions; all fixtures are test-only URLs."""
 import json
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
-from django.db import DatabaseError
+from django.db import DatabaseError, connections
 from django.http import Http404, JsonResponse
-from django.test import Client, SimpleTestCase, override_settings
+from django.test import Client, SimpleTestCase, TestCase, override_settings
 from django.urls import path
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import Throttled, ValidationError
@@ -124,6 +125,7 @@ class HTTPContract(SimpleTestCase):
 
     def test_django_and_drf_wrong_methods_preserve_allow(self):
         for url, method, allowed in (
+            ('/api/v1/ready/', 'post', 'HEAD'),
             ('/api/v1/auth/session/', 'post', 'GET'),
             ('/api/v1/dependencies/', 'post', 'GET'),
             ('/api/v1/auth/login/', 'get', 'POST'),
@@ -237,3 +239,37 @@ class HTTPContract(SimpleTestCase):
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.json()['error']['message'], 'Fixture explanation')
         self.assertNotIn('X-Request-ID', response)
+
+
+class PostgresReadiness(TestCase):
+    def test_ready_queries_postgresql_without_using_session_or_runtime(self):
+        with patch('backend.webapp.domain.runtime', side_effect=AssertionError('runtime touched')):
+            response = self.client.get('/api/v1/ready/')
+            head = self.client.head('/api/v1/ready/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'status': 'ready'})
+        self.assertEqual(response['Cache-Control'], 'private, no-store')
+        self.assertFalse(response.cookies)
+        self.assertEqual(head.status_code, 200)
+        self.assertEqual(head.content, b'')
+        self.assertNotEqual(head['X-Request-ID'], response['X-Request-ID'])
+
+    def test_unreachable_postgresql_returns_redacted_503_then_recovers(self):
+        db = connections['default']
+        with TemporaryDirectory() as empty_socket_dir:
+            params = {**db.get_connection_params(), 'host': empty_socket_dir}
+            with patch.object(db, 'get_connection_params', return_value=params):
+                response = self.client.get('/api/v1/ready/')
+                head = self.client.head('/api/v1/ready/')
+                health = self.client.get('/api/v1/health/')
+            self.assertNotIn(empty_socket_dir, response.content.decode())
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response['Cache-Control'], 'private, no-store')
+        error = response.json()['error']
+        self.assertEqual(error['code'], 'SERVICE_UNAVAILABLE')
+        self.assertEqual(error['details'], {})
+        self.assertEqual(error['request_id'], response['X-Request-ID'])
+        self.assertEqual(head.status_code, 503)
+        self.assertEqual(head.content, b'')
+        self.assertEqual(health.status_code, 200)
+        self.assertEqual(self.client.get('/api/v1/ready/').status_code, 200)

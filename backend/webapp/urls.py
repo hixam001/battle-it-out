@@ -12,6 +12,7 @@ from . import roster
 from . import match_logs
 urlpatterns = [
     path('api/v1/health/', V.health),
+    path('api/v1/ready/', V.readiness),
     path('api/v1/auth/session/', V.session), path('api/v1/auth/login/', V.login_view),
     path('api/v1/auth/logout/', V.logout_view),
     path('api/v1/tournaments/', tournament_lifecycle.tournaments),

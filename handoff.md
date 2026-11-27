@@ -969,3 +969,20 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   rights and old-code refusal. Updated the API and web guides, test plan,
   coverage evidence, Jira, CN-049 and project memory. All 91 requirement
   statuses and nine backlog categories remain. User replay files were preserved.
+
+### 2026-11-27 — BIO-404 PostgreSQL readiness
+
+- Started `BIO-404-postgres-readiness` from merged main at `4413b90` while
+  BIO-407 PR #58 was open against main. Added `/api/v1/ready/` in the Django
+  views and routes. The probe uses the configured PostgreSQL credentials and
+  a separate connection with three-second connect and two-second statement
+  timeouts. It returns a redacted `503` on operational failure. Liveness
+  continues to operate during database outages.
+- All 139 Django tests passed on disposable PostgreSQL in 15.884 s. System
+  and migration checks passed. The 18 standalone HTTP boundary cases passed.
+  The readiness tests cover healthy PostgreSQL, real connection refusal via a
+  temporary absent socket, HEAD and recovery after restoring the connection.
+- Updated the API, web guide, test plan, operator runbook, Jira, CN-051,
+  requirement evidence and project memory. All 91 requirement statuses and
+  nine backlog categories remain. Worker/engine readiness and production
+  monitoring remain open. Existing replays were preserved.

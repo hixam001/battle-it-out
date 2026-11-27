@@ -74,8 +74,13 @@ empty details, including when debug mode is enabled. Unexpected exceptions,
 including ordinary `ValueError`, stay server failures and reach Django logging.
 
 GET/HEAD `/health/` is public, returns `200 {"status":"ok"}`, and checks only
-web-process liveness. It does not access accounts, PostgreSQL, JSON stores or the
-engine; database/worker readiness and production health monitoring remain open.
+web-process liveness. GET/HEAD `/ready/` is public and probes the default
+PostgreSQL connection with the web application's credentials (BIO-404 / CN-051).
+It runs `SELECT 1` with a 3-second connection timeout and a 2-second statement
+timeout and returns `200 {"status":"ready"}` on success. PostgreSQL connection
+or query availability errors return a redacted `503 SERVICE_UNAVAILABLE`.
+Both paths use private/no-store and a fresh request ID. HEAD returns no body.
+Worker, engine, JSON-store and deployment readiness remain separate.
 The implemented `/auth/login/` takes JSON `username`/`password` (CN-028) and now
 returns `415` for unsupported request media types. CSRF refusals use the same
 JSON envelope without exposing origin/configuration diagnostics.
@@ -980,7 +985,7 @@ private access rules and request shapes are in the
 feature slice; older endpoint groups above remain proposed unless implemented.
 Canonical new paths use a trailing slash except `analytics.csv`.
 
-- GET/HEAD `/health/` implements process liveness; §1.1 records the shared error/request-ID behavior.
+- GET/HEAD `/health/` checks process liveness and `/ready/` probes PostgreSQL.
 - Session lifecycle: GET `/auth/session/`, POST `/auth/login/`, POST `/auth/logout/`.
 - GET `/tournaments/` lists current accessible records.
 - GET `/dependencies/` is public. It returns `items` with a `name`, exact
