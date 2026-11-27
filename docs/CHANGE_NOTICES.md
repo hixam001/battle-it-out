@@ -571,3 +571,20 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Scope:** biohelpers 1.0.0 is the only approved release. Catalogue additions
   need source review and a module collision check. BIO-REQ-21 remains PARTIAL
   for later languages and wider dependencies.
+## CN-040 — Submission upload contract (2026-11-27)
+
+- **BIO-504:** the tournament upload route checks current captain and team
+  scope, takes exactly one multipart bot.py or bounded Python bundle, and
+  uses the current official deadline. It calls the shared immutable
+  store-and-queue flow. Success keeps the existing 201 and version shape.
+- **Refusals:** malformed form or key returns 400, wrong request media type
+  returns 415, size/member ceilings return 413, and invalid filename, ZIP or
+  static bot check returns 422. A rejected single-file static check retains
+  its submission ID and findings in private history. A rejected version
+  never displaces the active version and never queues a trial.
+- **Verification:** 84 Django cases passed against disposable PostgreSQL with
+  system and migration checks. All 102 selected bundle/registry/tournament
+  flow integration tests passed with the real engine. The production
+  frontend build and all five Playwright cases passed.
+- **Coverage:** SRD-050 and SRD-054 are DONE for the upload contract. Totals
+  are 19 DONE / 60 PARTIAL / 12 TODO. The size limits remain interim.

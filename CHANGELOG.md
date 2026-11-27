@@ -10,6 +10,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 - **Exact dependency release pins (BIO-510; CN-039)** verify published source
   against a recorded SHA-256. Adding a new version preserves older snapshots
   and exports. The existing `biohelpers` 1.0.0 pin and bundle hashes are unchanged.
+- **Submission upload contract (BIO-504; CN-040)** requires exactly one
+  multipart file and reports unsupported request types, size limits and
+  static failures. The current tournament deadline governs uploads and
+  static failures retain their findings without replacing an active bot.
 
 - **Private replay download (BIO-605; CN-032):** authenticated `.bc26` attachment from the existing vault after current tournament authorization and digest verification. Archive denies new downloads for every role, and hidden replays share the missing response. The live match list now exposes the game ID for downloads.
 

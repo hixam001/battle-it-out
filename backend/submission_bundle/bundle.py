@@ -57,6 +57,10 @@ class Invalid(ValueError):
     pass
 
 
+class TooLarge(Invalid):
+    """An upload exceeds a compressed, expanded, or member-count ceiling."""
+
+
 def _release(name: str, version: object) -> CuratedRelease:
     if not isinstance(version, str) or (name, version) not in CATALOGUE:
         raise Invalid("only exact versions from the published curated catalogue are allowed")
@@ -91,14 +95,16 @@ def digest(files: dict[str, bytes]) -> str:
 def unpack(raw: bytes) -> dict[str, bytes]:
     """Never extract an archive onto disk or install participant dependencies."""
     if len(raw) > MAX_BYTES:
-        raise Invalid("ZIP exceeds the interim 256 KiB limit")
+        raise TooLarge("ZIP exceeds the interim 256 KiB limit")
     files = {}
     reserved = ENGINE_MODULES | _curated_modules()
     try:
         with zipfile.ZipFile(io.BytesIO(raw)) as archive:
             entries = archive.infolist()
-            if not 1 <= len(entries) <= MAX_FILES:
-                raise Invalid("a bundle needs 1–32 files")
+            if len(entries) > MAX_FILES:
+                raise TooLarge("a bundle can contain at most 32 input files")
+            if not entries:
+                raise Invalid("the bundle needs bot.py with turn()")
             for item in entries:
                 name = item.filename
                 kind = (item.external_attr >> 16) & 0o170000
@@ -107,7 +113,7 @@ def unpack(raw: bytes) -> dict[str, bytes]:
                         or name in reserved:
                     raise Invalid("use unique flat Python modules; links, reserved names and paths are forbidden")
                 if item.file_size > MAX_BYTES or sum(map(len, files.values())) + item.file_size > MAX_BYTES:
-                    raise Invalid("expanded bundle exceeds the interim 256 KiB limit")
+                    raise TooLarge("expanded bundle exceeds the interim 256 KiB limit")
                 with archive.open(item) as stream:
                     data = stream.read(MAX_BYTES + 1)
                 if len(data) != item.file_size or len(data) > MAX_BYTES:
@@ -135,8 +141,8 @@ def unpack(raw: bytes) -> dict[str, bytes]:
 
 
 def validate(files: dict[str, bytes]) -> None:
-    if not 2 <= len(files) <= MAX_FILES + 2 or sum(map(len, files.values())) > MAX_BYTES:
-        raise Invalid("bundle exceeds interim file/byte ceilings")
+    if len(files) > MAX_FILES + 2 or sum(map(len, files.values())) > MAX_BYTES:
+        raise TooLarge("bundle exceeds interim file/byte ceilings")
     try:
         manifest = json.loads(files[MANIFEST])
         modules = {name[:-3] for name in files if MODULE.fullmatch(name)}

@@ -48,15 +48,20 @@ class Flow:
 # ---------------------------------------------------------------------------------------------- uploads
 
 def upload(flow: Flow, actor: R.Actor | None, team_id: str, tournament_id: str, file_name: str, data: bytes, *,
-           idempotency_key: str, deadline_at: float, now: Callable[[], float] = time.time) -> dict:
-    """`registry.submit`, then queue the check of the new version. Returns the version view plus `check_job`
+           idempotency_key: str, deadline_at: float, now: Callable[[], float] = time.time,
+           bundle: bool = False) -> dict:
+    """Store a Python file or explicit bundle and queue the check of the new version.
+    Returns the version view plus `check_job`
     (the job id, or None when nothing needs checking: a statically invalid version).
 
     Retrying with the same idempotency key is safe at every point: the registry returns the same version and
     the queue returns the same live job (or makes one if the first call died before queueing).
     """
-    view = R.submit(flow.registry, actor, team_id, tournament_id, file_name, data,
-                    idempotency_key=idempotency_key, deadline_at=deadline_at, now=now)
+    options = {"idempotency_key": idempotency_key, "deadline_at": deadline_at, "now": now}
+    if bundle:
+        view = R.submit_bundle(flow.registry, actor, team_id, tournament_id, data, **options)
+    else:
+        view = R.submit(flow.registry, actor, team_id, tournament_id, file_name, data, **options)
     job = None
     if view["validation_status"] == R.VALIDATING:
         job = J.enqueue_check(flow.queue, view["id"], now=now)["id"]

@@ -553,25 +553,37 @@ deletion.
 
 ## 5. Bot submissions --- BIO-EPIC-05
 
-### POST `/teams/{team_id}/submissions`
+### POST `/tournaments/{id}/teams/{team_id}/submissions/`
 
-**Purpose:** Upload a new bot version.\
-**Access:** Team participant with submission permission; captain-only is
-`[DECIDE]`.\
-**Request:** multipart file named exactly `bot.py`; include idempotency
-key.\
-**Success `202`:**
+The registered team captain may upload one multipart `file` with the session
+CSRF token and an `Idempotency-Key` header. The file is either a UTF-8
+`bot.py` or a flat Python bundle ZIP. The server reads the current submission
+deadline from the tournament record.
+
+A successful upload returns `201` with the version record. The check runs
+asynchronously on the existing worker. A new version awaiting the check
+includes these fields.
 
 ``` json
 {
-  "submission_id": "sub_123",
+  "id": "team-a-v4",
   "version": 4,
-  "status": "validating"
+  "validation_status": "validating"
 }
 ```
 
-**Errors:** `400`, `403`, `409` deadline closed, `413`, `415`, `422`.
-Invalid upload must not replace current active version.
+- `400` for missing or duplicate fields and an invalid idempotency key.
+- `403` for a visible team without upload privileges, and `404` for hidden or
+  mismatched team/tournament scope.
+- `409` after the stored deadline or when the same key is used for a different
+  submission. A retry of an earlier accepted upload reuses its version.
+- `413` for the interim size or ZIP file-count limits, and `415` when the
+  request is outside multipart form data.
+- `422` for an unsupported filename, invalid ZIP or static bot validation
+  failure. A single-file bot that reaches the static check stays in
+  history with `error.details.submission_id` and `error.details.reasons`
+  including a stable code, actionable message and a line when available.
+  No check is queued for it. The active version is retained.
 
 ### GET `/teams/{team_id}/submissions`
 
