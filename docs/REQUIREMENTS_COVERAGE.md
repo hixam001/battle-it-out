@@ -18,8 +18,8 @@ It does **not** provide: users, roles, tournaments, brackets, byes, house bots, 
 | Status | Count | Meaning |
 |---|---|---|
 | DONE | 26 | built and tested here (library or tool level), nothing material missing |
-| PARTIAL | 53 | built in part; the gap column says what is still ours to develop |
-| TODO | 12 | not built; no code exists |
+| PARTIAL | 54 | built in part; the gap column says what is still ours to develop |
+| TODO | 11 | not built; no code exists |
 | DEFERRED | 0 | No whole requirement remains deferred; owner activated BIO-REQ-19–23 (CN-028) |
 | **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 65 of the 91 still need development work |
 
@@ -101,7 +101,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | BIO-REQ-12 | Tournament creation, approval, deadlines | None | **PARTIAL** | Scoped HTTP lifecycle, deadline and archive actions wrap `backend/tournaments/`. The scheduler draws at the submission deadline (CN-019/035/038/041/047) | Approval notices, full registration and staff screens, permanent cross-store deletion |
 | BIO-REQ-13 | Roster import, email and code validation | None | **PARTIAL** | `backend/registration/` (CN-020): roster, codes, claim and scoped Actor. Staff roster and team profile HTTP uses the official verified membership and captain (CN-044/045) | Public claim/account layer, code delivery and deletion lifecycle remain |
 | BIO-REQ-14 | Python submissions, validation and immutable versions; optional flat bundles (CN-028) | None | **PARTIAL** | Existing registry/trial/activation/deadline rules, complete bundle integrity, queued HTTP upload/history/download, actionable upload refusals, and React submissions panel (CN-016/028/040) | Final caps, retention, production persistence/deployment and remaining registration/account flows |
-| BIO-REQ-15 | Admin and Organizer tournament operations | None | **TODO** | BIO-EPIC-06 | - |
+| BIO-REQ-15 | Admin and Organizer tournament operations | None | **PARTIAL** | Scoped HTTP lifecycle, deadline actions, bracket controls and read-only Admin operations and audit (CN-028/038/041/042/047) | Complete staff console, incident recovery actions and full production operations |
 | BIO-REQ-16 | Email and dashboard notifications | None | **PARTIAL** | Feed/preferences/outbox and service wiring (CN-022/023/027); recipient API (CN-030) and inbox with read/unread and email controls (CN-031) | Staff recipients, real provider/channel, production deployment, announcements, automatic deadline/override notices and mandatory security-email policy |
 | BIO-REQ-17 | Participant dashboard, bracket and results views, replay access | Partly (desktop replay client only) | **PARTIAL** | React feature console (CN-028); tournament dashboard with status/deadlines/latest notices and private inbox (CN-031); real-session browser checks | Full bracket/replay player, tournament/registration operations and production deployment |
 | BIO-REQ-18 | Team and account deletion lifecycle and retention | None | **TODO** | BIO-EPIC-06 | - |

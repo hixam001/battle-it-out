@@ -928,6 +928,10 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   738 passes and 48 expected integration skips. Loopback and bubblewrap needed
   permission outside the shell sandbox. Existing replays were preserved.
 - Updated the API contract, Jira, CN-047, coverage and project memory. SRD-030
-  through SRD-033 move to DONE for the local HTTP contract. Coverage is 26 DONE,
-  53 PARTIAL and 12 TODO. All nine backlog categories remain, with 44 Jira
+  through SRD-033 move to DONE for the local HTTP contract. BIO-REQ-15 moves
+  from TODO to PARTIAL for the tested operations. Coverage is 26 DONE,
+  54 PARTIAL and 11 TODO. All nine backlog categories remain, with 44 Jira
   tasks still open after this implementation.
+- All 137 Django tests passed with the Python code from PRs #55–57 applied
+  together in a disposable checkout, with system and migration checks. The PRs
+  remain individually based on main. Shared documentation appends overlap.
