@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 """Admin deadline changes with durable participant notices."""
-from datetime import datetime
-
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework.decorators import api_view, parser_classes
@@ -13,7 +11,7 @@ from backend.registration import registration as G
 from backend.submission_registry import registry as R
 from backend.tournaments import tournaments as T
 from . import domain as D
-from .views import body_fields, private
+from .views import body_fields, private, timestamp
 
 
 def _admin(user, tid):
@@ -21,19 +19,6 @@ def _admin(user, tid):
     if actor.role != 'admin':
         raise PermissionDenied('An Admin session is required.')
     return actor
-
-
-def _timestamp(value):
-    message = 'new_deadline must be an ISO 8601 timestamp with a timezone.'
-    if not isinstance(value, str) or len(value) > 64:
-        raise ValidationError(message)
-    try:
-        parsed = datetime.fromisoformat(value)
-        if parsed.tzinfo is None:
-            raise ValueError()
-        return parsed.timestamp()
-    except (ValueError, OverflowError, OSError) as exc:
-        raise ValidationError(message) from exc
 
 
 def _require_unpinned(rt, tid):
@@ -52,7 +37,7 @@ def _delivery_request(rt, tid, key, *, require_unpinned):
 def _extend(rt, admin, tid, data, key):
     notice_request = _delivery_request(rt, tid, key, require_unpinned=True)
     return T.extend_deadline(rt.tournaments, admin, tid, data['deadline_type'],
-                             _timestamp(data['new_deadline']), data['reason'],
+                             timestamp(data['new_deadline'], 'new_deadline'), data['reason'],
                              confirm=True, notice_request=notice_request)
 
 

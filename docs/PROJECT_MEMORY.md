@@ -3,7 +3,7 @@ id: battle-it-out-project-memory
 type: project
 status: active
 created: 2026-11-26
-updated: 2026-11-26
+updated: 2026-11-27
 confidence: high
 source: Claude project memory and sessions, repository sources, and GitHub PR status
 tags:
@@ -22,6 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-601 / CN-047 implements local HTTP tournament lifecycle with current
+  staff scope, explicit Organizer creator assignment, version-checked edits
+  and approval transitions, and manual registration opening. Approval notices
+  and staff UI remain open. The branch keeps 44 of the previously tracked 45
+  Jira items open.
 - On 2026-11-27, PRs #44–54 landed individually on main. The latest
   handoff records the combined verification and 45 remaining Jira items.
 - On 2026-11-26, PRs #39–43 integrate the participant
@@ -103,15 +108,15 @@ remaining backlog after every task.
   ran 20 times each on 3.13 and 3.15, totaling 120 real matches. Unit mode
   skips integration cases; three engine-dependent tests need the project venv.
   These are Claude's recorded results, not a new four-version run by Codex.
-- Coverage currently records **22 DONE / 57 PARTIAL / 12 TODO / 0 DEFERRED**
+- Coverage currently records **26 DONE / 53 PARTIAL / 12 TODO / 0 DEFERRED**
   across **91** requirements. DONE denotes the documented library/tool scope,
   not owner acceptance or an independent security review. Counts and row-level
   gaps live in [REQUIREMENTS_COVERAGE.md](REQUIREMENTS_COVERAGE.md).
 - The platform now has a tested **Django/DRF/PostgreSQL feature API and
   React website**, plus the existing execution libraries/JSON stores and service
   commands. No production service/website is deployed. Full core registration,
-  account recovery, tournament-management API/screens and legacy-store migration
-  remain unimplemented; feature implementation is not launch acceptance.
+  account recovery, tournament-management screens and legacy-store migration
+  remain open. The local tournament lifecycle API is in CN-047.
 
 ## Product and owner agreements
 
@@ -351,9 +356,9 @@ with current code and the coverage matrix; nothing here is closed by intake.
    (BIO-510). More packages require source and module collision review and pins,
    additional languages follow compatibility work, and arbitrary participant
    installs/custom runtimes remain unapproved.
-5. **Tournament operations and deletion:** remaining tournament lifecycle
-   HTTP actions and permission tests; full results UI, engine point display and
-   paused-job mutation controls; queued/
+5. **Tournament operations and deletion:** approval and rejection notices,
+   management screens and cross-store deletion; full results UI, engine point
+   display and paused-job mutation controls; queued/
    cancelable account deletion, historical-roster removal without changed
    results, captain transfer/no successor (DEC-07), team delete/restore after
    archive, permanent tournament deletion across every legacy/new package with
@@ -363,7 +368,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    is implemented; additional action controls remain open. CN-034 delivers
    current-scope bracket and game result reads, including archived history. CN-035 adds confirmed archive for current
    Admins and assigned Organizers. CN-038 delivers staff map-pool selection,
-   bracket draw and sequential round-start actions.
+   bracket draw and sequential round-start actions. CN-047 adds draft creation,
+   detail, edit, submit, approve, reject and open registration over HTTP.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; announcements,
    Organizer approval/rejection and dispute notices; mandatory security
