@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Global audit screen (BIO-707; CN-058)** lets Admins page through
+  scoped audit events and find retained records by tournament ID.
+
 - **Staff announcement screen (BIO-607; CN-057)** lets Admins and assigned
   Organizers publish to the selected tournament's verified roster and see
   the dashboard and email-queue counts.

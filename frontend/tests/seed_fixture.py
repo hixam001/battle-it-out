@@ -86,6 +86,10 @@ def main():
                                    'An Organizer-created fixture for the approval queue.',
                                    fixture.now + 7200, fixture.now + 10800, idempotency_key=tid)
                 tournaments.submit_for_approval(fixture.rt.tournaments, organizer, tid)
+            tournaments.create(fixture.rt.tournaments, ADM, 'retired-fixture', 'Retired fixture', '',
+                               fixture.now + 7200, fixture.now + 10800, idempotency_key='retired-fixture')
+            tournaments.delete(fixture.rt.tournaments, ADM, 'retired-fixture',
+                               'Private approval-suite deletion reason', confirm=True)
             for i in range(1, 24):
                 cup = 'cup' if i <= 22 else 'historical'
                 title = f'Fixture notice {i:02d}' if i <= 22 else 'Historical fixture notice'

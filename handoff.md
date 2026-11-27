@@ -1139,3 +1139,22 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   and project memory. All 91 statuses, nine backlog categories and 43
   open Jira items remain. Additional notice sources, recipient provisioning
   and production delivery still need work.
+
+### 2026-11-27 — BIO-707 global audit screen
+
+- PR #65 merged into main at `4c19c20`. Started
+  `BIO-707-global-audit-screen` from that commit. Added the Admin-only
+  global audit route and a link from Operations. The screen uses bounded
+  offset pages and accepts exact tournament IDs, including deleted ones.
+- Expandable event details show the existing allowlisted projection.
+  The feed can shift between pages as new events arrive. There were no
+  API or schema changes.
+- The production build and all 18 Playwright tests (32.5 s) passed on
+  disposable Django and PostgreSQL. The audit test checks both paging
+  directions, a retained deletion event, redaction and participant
+  refusal. The first run used the wrong test role for the datalist input
+  and was corrected to use its combobox role.
+- Updated the Admin and frontend guides, test plan, Jira, CN-058,
+  changelog, coverage and memory. All 91 statuses, nine backlog
+  categories and 43 open Jira items remain. Other Admin mutation
+  controls and permanent audit persistence remain open.

@@ -395,6 +395,12 @@ The browser test drops the HTTP response after the disposable API publishes
 an announcement. The unchanged retry keeps the same key and counts. The
 verified participant sees one copy and cannot open the staff form.
 
+### Global audit screen (BIO-707 / CN-058)
+
+Playwright pages through real audit results, filters by a deleted
+tournament ID, expands its retained action and verifies that the
+participant route refuses access and raw audit reasons stay private.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

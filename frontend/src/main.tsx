@@ -7,6 +7,7 @@ import { BracketResults, MatchResult, Replay } from "./results";
 import { Approvals } from "./approvals";
 import { Organizer } from "./organizer";
 import { AnnouncementForm } from "./announcements";
+import { GlobalAudit } from "./audit";
 import "./style.css";
 
 type User = { id: number; username: string; admin: boolean };
@@ -398,6 +399,7 @@ const consoleLinks = [
   { page: "disputes", href: "/#disputes", label: "Match disputes", icon: "☷" },
   { page: "operations", href: "/#operations", label: "Operations", icon: "⚙" },
   { page: "approvals", href: "/admin/approvals", label: "Approvals", icon: "✓" },
+  { page: "audit", href: "/admin/audit", label: "Audit log", icon: "☷" },
   { page: "organizer", href: "/organizer", label: "Manage tournaments", icon: "▤" },
   { page: "announce", href: "/announcements/new", label: "Post announcement", icon: "◈" },
 ] as const;
@@ -637,9 +639,9 @@ function Console({ user, route, navigate, logout }: {
   }, [refreshTournament]);
   const scopedBracket = page === "bracket" && id;
   const cup = cups.find((c) => c.id === (scopedBracket || selected));
-  const showTournament = !["notifications", "operations", "approvals", "organizer", "match", "replay"].includes(page);
+  const showTournament = !["notifications", "operations", "approvals", "audit", "organizer", "match", "replay"].includes(page);
   const canOpen = (target: ConsolePage) => {
-    if (target === "operations" || target === "approvals") return user.admin;
+    if (["operations", "approvals", "audit"].includes(target)) return user.admin;
     if (target === "announce") return user.admin || role === "organizer" || loading;
     if (target === "organizer") return role === "organizer" || (loading && !user.admin);
     if (target === "notifications") return !user.admin && role !== "organizer";
@@ -709,6 +711,7 @@ function Console({ user, route, navigate, logout }: {
             <p role="alert">{page === "operations"
               ? "Admin access is required to open Operations."
               : page === "approvals" ? "Admin access is required to review tournaments."
+              : page === "audit" ? "Admin access is required to open the global audit log."
               : page === "organizer" ? "Organizer access is required to manage tournaments."
               : page === "announce" ? "Tournament staff access is required to post announcements."
               : page === "team" ? "My team is available to participant accounts."
@@ -724,6 +727,8 @@ function Console({ user, route, navigate, logout }: {
           <Approvals tournaments={cups} loading={loading} loadError={error} refreshQueue={refreshTournament}
             onReview={(review) => setCups((items) => items.map((cup) => cup.id === review.id
               ? { ...cup, status: review.status } : cup))} />
+        ) : page === "audit" ? (
+          <GlobalAudit tournaments={cups} />
         ) : page === "organizer" ? (
           loading ? <p role="status">Loading Organizer access…</p> :
             <Organizer key={id ?? "list"} id={id} userId={user.id} tournaments={cups}
@@ -1466,7 +1471,9 @@ function Operations() {
         )}
       </section>
       <section className="panel">
-        <h2>Recent audit events</h2>
+        <div className="panel-toolbar">
+          <h2>Recent audit events</h2><a href="/admin/audit">Open global audit log</a>
+        </div>
         {data.audit.length ? (
           data.audit.map((a: any, i: number) => (
             <div className="map-row" key={i}>

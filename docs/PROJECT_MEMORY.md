@@ -22,6 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-707 / CN-058 adds the global audit screen. The production build
+  and all 18 Playwright tests passed. PR #65 merged into main at
+  `4c19c20`.
 - BIO-607 / CN-057 adds the staff announcement screen. The production
   build and all 17 Playwright tests passed. PR #64 merged into main at
   `300b9d7`.
@@ -406,6 +409,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    detail, edit, submit, approve, reject and open registration over HTTP.
    CN-055 adds the Admin approval queue. CN-056 adds the Organizer list,
    draft creation/edit, approval workflow and manual registration opening.
+   CN-058 adds the paginated global audit screen for Admins.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; Organizer approval/rejection
    and dispute notices; mandatory security
@@ -915,3 +919,18 @@ disposable state. The browser dropped a successful response, retried and
 verified one copy in the recipient's inbox. All 91 statuses, nine backlog
 categories and 43 open Jira items remain. Staff recipients, automatic
 approval and dispute notices, production delivery and SQL migration remain.
+
+## CN-058 continuation evidence
+
+BIO-707 starts from merged main at `4c19c20` on
+`BIO-707-global-audit-screen`. Admins page the existing global feed and
+filter by exact tournament ID, including retired records. The screen
+uses the server's projected metadata and admits no participant access.
+Offset pages follow the live feed and can shift as events are appended.
+
+The production build and all 18 Playwright tests passed (32.5 s) against
+disposable services. The browser check exercises forward/back pagination,
+retained deletion history, metadata disclosure and role refusal. All 91
+statuses, nine backlog categories and 43 open Jira items remain. Admin
+deadline, invitation and incident actions and permanent audit migration
+remain open.

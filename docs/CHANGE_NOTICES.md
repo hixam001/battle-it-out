@@ -820,3 +820,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - An unchanged retry after a lost response uses the same idempotency
   key and returns the original counts. The production build and all 17
   Playwright tests passed on disposable state.
+
+## CN-058 — Admin global audit screen (2026-11-27)
+
+- **BIO-707:** The Admin console displays the existing global audit feed
+  with pagination, exact tournament ID filtering and expandable projected
+  details. The filter accepts IDs of deleted tournaments.
+- The production build and all 18 Playwright tests passed. The browser
+  verifies retained deletion history, role refusal and exclusion of the
+  stored free-form reason.
