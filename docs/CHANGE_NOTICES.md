@@ -928,3 +928,11 @@ Decisions from the owner that change or narrow what the requirement documents (P
   enabled. The existing API applies recipient scope and session CSRF.
 - The production build and all 28 Playwright tests passed, including
   keyboard use, cross-view persistence and the linked-participant guard.
+
+## CN-070 — Dedicated sign-in (2026-11-28)
+
+- **BIO-702:** `/login` uses the existing session form for provisioned
+  accounts. The landing guide links to it. Successful sign-in opens the
+  dashboard, while protected links preserve their destination.
+- The production build and all 28 Playwright tests passed. The browser
+  checks the public link, the redirect and the request ID for a failed login.

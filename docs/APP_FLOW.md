@@ -387,7 +387,7 @@ Authenticated Web App (later phase)
   ---------------------------------------------------------------------------------------------------------------------------
   Route                                     Access          Purpose                Main UI/actions     Key states
   ----------------------------------------- --------------- ---------------------- ------------------- ----------------------
-  `/login`                                  Public          Authenticate           Email/password,     Idle, invalid
+  `/login`                                  Public          Authenticate           Username/password,  Idle, invalid
                                                                                    login               credentials, rate
                                                                                                        limited
 
@@ -479,6 +479,10 @@ Authenticated Web App (later phase)
 Account settings provides the email preference for linked participants.
 The deletion request and cancellation described in FLOW-07 are tracked in
 BIO-608.
+
+The session form at `/login` uses the provisioned username and password.
+A successful direct sign-in opens the dashboard. Sign-in from a protected
+page returns to that page.
 
 -   **IF** an Organizer creates a tournament, **THEN** it remains
     unavailable for registration until Admin approval.

@@ -1358,3 +1358,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   backlog categories and 42 tracked Jira items remain. The dedicated login
   address can use the existing session form. Registration, verification
   and deletion stay open.
+
+### 2026-11-28 — BIO-702 Dedicated sign-in
+
+- Confirmed PR #77 merged into `main` at `dcd6278`. Started
+  `BIO-702-dedicated-sign-in` from the fetched commit.
+- The landing guide links to the dedicated `/login` session form.
+  Successful sign-in and already authenticated visits open the dashboard.
+  Sign-in on protected pages continues to open the original destination.
+  The existing username/password and session CSRF contract applies.
+- The production build and all 28 Playwright tests passed (48.5 s).
+  The browser checks the public link, the dashboard redirect, an existing
+  session, invalid credentials with the request ID, and protected links.
+  Desktop and mobile renders used disposable data.
+- Updated user and frontend guides, flow and API specs, test plan, Jira,
+  CN-070, changelog, coverage and memory. All 91 statuses, nine backlog
+  categories and 42 tracked Jira items remain. Public signup, verification
+  and deletion stay open. A console view for the existing structured match
+  logs is ready for the next results PR.

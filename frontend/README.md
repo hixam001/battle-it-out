@@ -17,7 +17,7 @@ npm run build --prefix frontend
 Start Django on `127.0.0.1:8000` and Vite on `127.0.0.1:5173`; Vite proxies `/api`
 on the same origin. All service/data directories must be outside `frontend/`.
 Production static assets are generated into ignored `frontend/dist/`. Serve
-`index.html` for `/dashboard`, `/notifications`, `/account/settings`, `/participant/team` and
+`index.html` for `/login`, `/dashboard`, `/notifications`, `/account/settings`, `/participant/team` and
 `/participant/submissions`, `/bracket`,
 `/participant/tournaments/{id}/bracket`, `/matches/{id}` and
 `/matches/{id}/replay`, `/admin`, `/admin/approvals`, `/admin/audit`,
@@ -111,7 +111,8 @@ a pending maintenance retry and links to the retained bracket.
 message to the selected tournament's verified roster. The form reports
 inbox and email-queue counts and retries unchanged text with the same key.
 
-Direct console links preserve the destination through sign-in. Operations is
+The landing page links to `/login`, which opens the dashboard after sign-in.
+Direct console links preserve their destination through sign-in. Operations is
 Admin-only, and the personal inbox uses participant scope. The API remains
 authoritative for account and tournament access. The shared API client preserves
 error codes, details and server request IDs. A visible request ID gives support

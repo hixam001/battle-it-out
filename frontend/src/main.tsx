@@ -375,9 +375,7 @@ function Landing({ open }: { open: () => void }) {
             Sign in with the account provisioned for your tournament. Contact
             your Organizer if you need an invitation or account access.
           </p>
-          <button className="primary" onClick={open}>
-            Open competition console
-          </button>
+          <a className="primary" href="/login">Sign in</a>
         </section>
       </main>
       <footer className="public-footer">
@@ -466,7 +464,8 @@ function App() {
   const [user, setUser] = useState<User | null>(null),
     [checking, setChecking] = useState(true),
     [address, setAddress] = useState(() => location.pathname + location.hash);
-  const route = currentRoute(address);
+  const signIn = address.replace(/\/$/, "") === "/login";
+  const route: ConsoleRoute | null = signIn ? { page: "dashboard" } : currentRoute(address);
   const [error, setError] = useState("");
   useEffect(() => {
     const onLocation = () => setAddress(location.pathname + location.hash);
@@ -490,6 +489,12 @@ function App() {
       )
       .finally(() => setChecking(false));
   }, []);
+  useEffect(() => {
+    if (signIn && user) {
+      history.replaceState(null, "", "/dashboard");
+      setAddress("/dashboard");
+    }
+  }, [signIn, user]);
   const open = () => {
     location.hash = "console";
     window.scrollTo(0, 0);

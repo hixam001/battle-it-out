@@ -479,6 +479,14 @@ email preference by keyboard, confirms persisted state in the inbox and
 verifies that a dashboard notice is still present. An unlinked account sees an access
 message. Staff sessions reach the guard before a preferences request.
 
+### Dedicated sign-in (BIO-702 / CN-070)
+
+The browser opens sign-in from the public guide, uses a provisioned account
+and reaches the dashboard. Revisiting `/login` with an active session also
+opens the dashboard. Invalid credentials keep the sign-in form and display
+the matching API request ID. The suite continues to exercise protected
+deep links through sign-in.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.
