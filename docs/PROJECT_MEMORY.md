@@ -70,6 +70,9 @@ remaining backlog after every task.
   Admin global audit over existing event stores. Verified participants see
   their teams' audit and public tournament events. Admins can filter
   retained deletion audit by tournament ID.
+- CN-043 completes the local BIO-509 bundle export. Stable ZIP metadata and
+  optional dependency declarations allow a 32-file bundle to be uploaded
+  again with its original hash when it has no dependencies.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -329,7 +332,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    upload/history/source/bundle delivery and queued checks now exist and use the
    official stored deadline/current roster Actor. BIO-504 defines multipart,
    size and actionable static-error responses. Interim caps are 256 KiB and
-   500 versions/team; bundle input ceiling is 32 files. Native flat modules and
+   500 versions/team; the 32-file bundle ceiling is verified on export and
+   re-upload (BIO-509). Native flat modules and
    curated biohelpers 1.0.0 are supported with exact release/digest verification
    (BIO-510). More packages require source and module collision review and pins,
    additional languages follow compatibility work, and arbitrary participant
@@ -707,6 +711,7 @@ All 85 Django tests and Django system/migration checks passed. Registry and
 bundle unit mode ran 70 cases with 67 passes and three integration skips.
 SRD-057 is DONE; 18 DONE / 61 PARTIAL / 12 TODO / 0 DEFERRED across 91 rows.
 The full backlog remains above. BIO-506 extends the HTTP privacy checks across the submission routes. Production retention remains open.
+
 ## CN-037 continuation evidence
 
 BIO-701 completes the existing web foundation from `d66b95d` on
@@ -721,6 +726,7 @@ participant Operations guard, the Organizer inbox guard and a real failed
 login with its matching server request ID. The mock competition and sessions
 were disposable. Coverage statuses and all nine backlog categories remain.
 Complete usability/accessible-flow acceptance remains BIO-708.
+
 ## CN-038 continuation evidence
 
 BIO-603 closes the bracket and round API from `d66b95d` on

@@ -810,8 +810,8 @@ slice needs no idempotency-key receipt. Every response uses CN-029's fresh
 request ID and `private, no-store`; errors use the shared envelope. No SQL/JSON
 cross-store transaction or full notification database migration is claimed.
 The [participant inbox](../frontend/README.md) uses these endpoints (CN-031).
-Announcements, automatic extension/override notices, real email providers and
-mandatory security-email policy remain open.
+Deadline changes publish participant notices (CN-041). Announcement authoring,
+real email providers and mandatory security-email policy remain open.
 
 ### GET `/tournaments/{id}/audit-logs/` and GET `/admin/audit-logs/`
 

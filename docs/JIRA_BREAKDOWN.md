@@ -131,7 +131,7 @@ issues were created. Existing execution/production gates remain open.
 
 | Key | Active scope / implementation | Remaining work |
 |---|---|---|
-| BIO-509 | Native flat Python bundle validation, immutable complete hashes, trial/activation/pins and HTTP upload/download | Final limits, production acceptance and additional-language compatibility follow-up |
+| BIO-509 | **Implemented (CN-028/043):** native flat Python bundle validation, immutable hashes, trial/activation/pins and reproducible authorized upload/download, including the 32-file boundary | Final limits, deployment acceptance and later language compatibility are tracked separately |
 | BIO-510 | **Implemented (CN-039):** reviewed digest per exact release, public catalogue, verified snapshot and reproducible export | Future package selection and review are follow-up work under CN-028 |
 | BIO-612 | Team-private match disputes, comments, staff review, versions/idempotency and PostgreSQL audit/history | Appeals/reopening/outcome correction policy and notifications |
 | BIO-613 | Read-only Admin operations/incidents/dead-job/audit console | Additional mutation controls and resume authority policies |

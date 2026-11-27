@@ -83,6 +83,29 @@ class Bundles(unittest.TestCase):
                 B.unpack(archive({**FILES, 'requirements.json': requirements}))
         with self.assertRaises(B.Invalid):
             B.unpack(archive({**FILES, 'biohelpers.py': B.HELPERS}))
+
+    def test_export_has_stable_members_and_zip_metadata(self):
+        files = B.unpack(archive(FILES))
+        exported = B.export(files)
+        self.assertEqual(exported, B.export(dict(reversed(list(files.items())))))
+        with zipfile.ZipFile(io.BytesIO(exported)) as bundle:
+            self.assertEqual(bundle.namelist(), ['bot.py', 'requirements.json', 'strategy.py'])
+            self.assertEqual(bundle.read('requirements.json'), b'{"biohelpers":"1.0.0"}')
+            for member in bundle.infolist():
+                self.assertEqual(member.date_time, (1980, 1, 1, 0, 0, 0))
+        self.assertEqual(B.unpack(exported), files)
+
+    def test_full_file_count_bundle_can_be_exported_and_uploaded_again(self):
+        submitted = {'bot.py': b'def turn():\n    pass\n'}
+        submitted.update({f'helper{index}.py': b'value = 1\n' for index in range(B.MAX_FILES - 1)})
+        first = self.upload(submitted)
+        exported = R.download_bundle(self.registry, CAPTAIN, first['id'])
+        with zipfile.ZipFile(io.BytesIO(exported)) as bundle:
+            self.assertEqual(set(bundle.namelist()), set(submitted))
+        restored = R.submit_bundle(self.registry, CAPTAIN, 'ta', 'cup', exported, idempotency_key='restored',
+                                   deadline_at=time.time() + 1000)
+        self.assertEqual(restored['content_hash'], first['content_hash'])
+
     def test_hostile_archives_do_not_write_paths(self):
         cases = [ {**FILES, '../escape.py': b'x=1'}, {**FILES, 'nested/a.py': b'x=1'},
                   {**FILES, 'math.py': b'x=1'}, {'helper.py': b'x=1'},

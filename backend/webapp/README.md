@@ -228,7 +228,8 @@ backend/.venvs/web/bin/python backend/webapp/manage.py check
 backend/.venvs/web/bin/python backend/webapp/manage.py test \
   backend.webapp.tests backend.webapp.tests_http backend.webapp.tests_notifications \
   backend.webapp.tests_replays backend.webapp.tests_results backend.webapp.tests_archive \
-  backend.webapp.tests_submission_reads backend.webapp.tests_round_actions
+  backend.webapp.tests_submission_reads backend.webapp.tests_round_actions \
+  backend.webapp.tests_deadlines backend.webapp.tests_audit
 backend/.venvs/py3.15/bin/python backend/run_tests.py
 backend/.venvs/py3.15/bin/python backend/run_tests.py --integration
 ```

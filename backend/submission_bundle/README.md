@@ -49,8 +49,12 @@ Verdicts bind the complete digest, latest-valid activation stays unchanged, and
 pin/start/download integrity checks cover every helper and dependency.
 
 `registry.submit_bundle` is the explicit entry; `download_bundle` checks scope
-and returns a reproducible ZIP. A bundle cannot be mislabeled as a single-file
-source download with a package-wide hash. Staff reads are audited. The HTTP
+and returns a reproducible ZIP with sorted members and fixed metadata.
+The export includes `requirements.json` when the bundle declares a dependency.
+That preserves the original exact pins while allowing a bundle with 32 Python
+files and zero dependencies to be uploaded again within the same file limit.
+A bundle cannot be mislabeled as a single-file source download with a
+package-wide hash. Staff reads are audited. The HTTP
 upload endpoint queues the existing two-sided check; worker behavior is the
 same as for single-file bots.
 

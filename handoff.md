@@ -706,6 +706,7 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   retention remain in the backlog. SRD-057 moves to DONE for 18 DONE /
   61 PARTIAL / 12 TODO across 91 requirements. Continued on independent
   frontend foundation work (BIO-701) from merged main.
+
 ### 2026-11-26 — BIO-701: frontend foundation
 
 - Started from merged `origin/main` `d66b95d` on
@@ -722,6 +723,7 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   CN-037 and project memory. BIO-701 closes for the current console.
   All 91 requirement statuses and the nine backlog categories remain.
   Full usability/accessibility acceptance is tracked under BIO-708.
+
 ### 2026-11-26 — BIO-603: bracket and round actions
 
 - Started `BIO-603-bracket-round-actions` from merged main `d66b95d` with the
@@ -738,6 +740,7 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   code and the three staff actions complete BIO-603. SRD-023 moves to DONE.
   Organizer screens, raw engine points, production deployment, house bots
   and cutoff draw are tracked separately. All nine backlog categories remain.
+
 ### 2026-11-27 — BIO-510: exact curated dependency releases
 
 - Started BIO-510-curated-dependency-pins from fetched origin/main at d66b95d
@@ -757,6 +760,7 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   CN-039 and project memory. All 91 requirement statuses and nine backlog
   categories remain. An additional module name needs a collision review
   against previously accepted local modules. No new package was added.
+
 ### 2026-11-27 — BIO-504: submission upload contract
 
 - Started BIO-504-upload-contract from fetched origin/main at d66b95d while
@@ -777,6 +781,7 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   changelog, CN-040 and project memory. SRD-050 and SRD-054 are DONE for the
   upload contract. All 91 rows and nine backlog categories remain. The
   product size limits and deployed edge request limits remain open.
+
 ### 2026-11-27 — BIO-602: deadline actions and participant notices
 
 - Started BIO-602-deadline-notices from fetched origin/main at d66b95d with
@@ -800,6 +805,7 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated the API and service guides, runbook, Jira, test plan, changelog,
   CN-041, coverage and memory. All 91 statuses and nine backlog categories
   remain. Email production delivery, Admin screens and DEC-08 remain open.
+
 ### 2026-11-27 — BIO-610: role-scoped audit feeds
 
 - Cut BIO-610-scoped-audit-log from fetched origin/main at d66b95d.
@@ -817,3 +823,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   Jira, changelog, CN-042 and project memory. All 91 statuses and nine
   backlog categories remain. Production audit migration, series/incident
   coverage and the dedicated Admin screen remain.
+
+### 2026-11-27 — BIO-509: reproducible Python bundle downloads
+
+- Started BIO-509-reproducible-bundle-exports from fetched origin/main at
+  d66b95d. Read the project memory and handoff, and the CN-028 bundle,
+  data-model, upload and verification contracts.
+- Updated authorized ZIP export to write stable ordered members and metadata.
+  The canonical requirements file is included when dependencies are declared.
+  Omitting it for dependency-free bundles preserves the 32-file limit on
+  re-upload. Existing stored manifests and content hashes stay compatible.
+- All 72 selected bundle/registry cases passed in 30.468 s with the real
+  engine. The unit matrix found 72 cases on each of Python 3.12–3.15, with
+  69 passes and three expected integration skips each. Tests use temporary
+  state and outputs.
+- Updated Jira, the bundle guide, test plan, requirement coverage, changelog,
+  CN-043 and project memory. All 91 requirement statuses and nine backlog
+  categories remain. The final cap, production acceptance and later
+  language work stay open.

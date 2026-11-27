@@ -524,6 +524,7 @@ Decisions from the owner that change or narrow what the requirement documents (P
   including six new submission-read cases. System and migration-drift checks
   passed. Registry and bundle unit mode ran 70 tests, with 67 passed and three
   real-game skips. SRD-057 advances to DONE.
+
 ## CN-037 — Frontend routing and error foundation (2026-11-26)
 
 - **BIO-701:** completed the current console foundation. The shared API client
@@ -539,6 +540,7 @@ Decisions from the owner that change or narrow what the requirement documents (P
   exercise direct-link refusal, keyboard focus and the exact request ID in a
   failed login. Product-wide usability and accessibility acceptance remain
   BIO-708. Coverage statuses stay 17 DONE / 62 PARTIAL / 12 TODO on this base.
+
 ## CN-038 — Complete bracket and round APIs (2026-11-26)
 
 - **BIO-603:** adds staff map-pool selection, confirmed single-tournament
@@ -556,6 +558,7 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - All 85 Django tests and system/migration-drift checks passed. The 164 selected
   scheduler, flow, map and service integration cases passed with temporary
   output and real engine games. SRD-023 advances to DONE.
+
 ## CN-039 — Exact curated dependency releases (2026-11-27)
 
 - **BIO-510:** the catalogue records the reviewed SHA-256 for each approved
@@ -571,6 +574,7 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Scope:** biohelpers 1.0.0 is the only approved release. Catalogue additions
   need source review and a module collision check. BIO-REQ-21 remains PARTIAL
   for later languages and wider dependencies.
+
 ## CN-040 — Submission upload contract (2026-11-27)
 
 - **BIO-504:** the tournament upload route checks current captain and team
@@ -588,6 +592,7 @@ Decisions from the owner that change or narrow what the requirement documents (P
   frontend build and all five Playwright cases passed.
 - **Coverage:** SRD-050 and SRD-054 are DONE for the upload contract. Totals
   are 19 DONE / 60 PARTIAL / 12 TODO. The size limits remain interim.
+
 ## CN-041 — Admin deadline actions and participant notices (2026-11-27)
 
 - **BIO-602:** current Admins can extend either deadline and override a locked
@@ -607,6 +612,7 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Coverage:** evidence advances for SRD-034/035/037. The 91 statuses are
   unchanged. Provider delivery, production deployment, Admin controls and
   the separate configuration-freeze decision remain open.
+
 ## CN-042 — Scoped and global audit feeds (2026-11-27)
 
 - **BIO-610:** role-scoped tournament and Admin global read endpoints with
@@ -621,3 +627,16 @@ Decisions from the owner that change or narrow what the requirement documents (P
   six audit cases. System and migration checks passed. Coverage statuses
   stay unchanged. Permanent consolidated storage, series/incident audit
   integration and a dedicated Admin screen remain open.
+
+## CN-043 — Reproducible native Python bundle export (2026-11-27)
+
+- **BIO-509:** bundle exports use sorted members and fixed timestamps and
+  regular-file permissions. They include the pinned dependency manifest only
+  when needed. A bundle containing 32 Python files with no dependencies can
+  round-trip without exceeding the upload file count or changing its hash.
+- **Checks:** all 72 bundle/registry tests passed with real-engine coverage.
+  Unit mode found 72 tests on each of Python 3.12–3.15 and passed 69 with
+  three expected real-engine skips per version.
+- **Coverage:** SRD-004 and BIO-REQ-21 stay PARTIAL for the final caps,
+  production acceptance and later languages. The local BIO-509 bundle
+  implementation and export are complete.
