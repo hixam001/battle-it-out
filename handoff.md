@@ -912,6 +912,46 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   on main in numerical order, using the verified conflict resolutions.
   Forty-five tracked Jira items remain.
 
+### 2026-11-27 — BIO-601 tournament lifecycle API
+
+- Started `BIO-601-tournament-lifecycle-api` from fetched main at `2ff7bcd`.
+  The new Django lifecycle module exposes draft creation and scoped detail,
+  edits, creator submit/resubmit, Admin review and manual registration opening.
+  `backend/tournaments/tournaments.py` checks the transition version under
+  the same store lock as its audit. The collection keeps the console response.
+- Creation requires `Idempotency-Key`. A stable generated ID allows the same
+  request to recover from an interrupted PostgreSQL assignment commit. An
+  Organizer assignment is explicit and audited; a revocation blocks replay.
+  Final approval notification delivery and management UI remain open.
+- All 132 Django cases passed with system and migration-drift checks using
+  disposable PostgreSQL. Python 3.15 backend unit mode found 786 tests, with
+  738 passes and 48 expected integration skips. Loopback and bubblewrap needed
+  permission outside the shell sandbox. Existing replays were preserved.
+- Updated the API contract, Jira, CN-047, coverage and project memory. SRD-030
+  through SRD-033 move to DONE for the local HTTP contract. BIO-REQ-15 moves
+  from TODO to PARTIAL for the tested operations. Coverage is 26 DONE,
+  54 PARTIAL and 11 TODO. All nine backlog categories remain, with 44 Jira
+  tasks still open after this implementation.
+- All 137 Django tests passed with the Python code from PRs #55–57 applied
+  together in a disposable checkout, with system and migration checks. The PRs
+  remain individually based on main. Shared documentation appends overlap.
+
+### 2026-11-27 — BIO-407 official series and match incident audit
+
+- Started `BIO-407-match-audit-history` from fetched main at `2ff7bcd` while
+  BIO-601 PR #55 was open against main. `backend/webapp/audit.py` now reads
+  official bracket-linked series history and match-worker incidents. Team
+  and Organizer scopes apply to series. Admin incident openings and resolutions
+  have separate IDs and use typed fields, with game scope from stored pairings.
+- All 129 Django tests passed on disposable PostgreSQL, including actual
+  library-generated coin flip and pause/resume records, cross-tournament
+  filters, and a verified participant without a series. System and migration
+  checks passed. Tests used disposable state and no engine match was run.
+- Updated the API, Jira, coverage evidence, CN-048 and project memory. All
+  status counts and nine backlog categories remain. BIO-407 still needs the
+  permanent legacy audit migration, queue/replay incident sources and full
+  deletion and recovery verification.
+
 ### 2026-11-27 — BIO-502 staff invitation code API
 
 - Started `BIO-502-staff-invitation-codes` from fetched main at `2ff7bcd`

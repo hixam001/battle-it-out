@@ -7,7 +7,7 @@ import os
 import re
 import stat
 import time
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.db import transaction
 from django.http import FileResponse, JsonResponse, HttpResponse
@@ -95,17 +95,6 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return private({'status': 'logged_out'})
-
-
-@api_view(['GET'])
-def tournaments(request):
-    who = D.actor(request.user)
-    rt = D.runtime()
-    records = rt.tournaments.store.snapshot()['tournaments'].values()
-    return private({'items': [{**{k: r[k] for k in ('id', 'name', 'description', 'status', 'deadlines')},
-                               'teams': sorted(who.team_ids & set(G.registered_teams(rt.registration, r['id'])))}
-                              for r in records if r['status'] != 'deleted' and (who.role == 'admin' or r['id'] in who.tournament_ids)],
-                    'role': who.role})
 
 
 @api_view(['GET'])
@@ -230,6 +219,19 @@ def body_fields(request, allowed, required):
     if not isinstance(request.data, dict) or set(request.data) - set(allowed) or set(required) - set(request.data):
         raise ValidationError('Missing or unsupported fields.')
     return request.data
+
+
+def timestamp(value, field):
+    message = f'{field} must be an ISO 8601 timestamp with a timezone.'
+    if not isinstance(value, str) or len(value) > 64:
+        raise ValidationError(message)
+    try:
+        parsed = datetime.fromisoformat(value)
+        if parsed.tzinfo is None:
+            raise ValueError()
+        return parsed.astimezone(UTC).timestamp()
+    except (ValueError, OverflowError, OSError) as exc:
+        raise ValidationError(message) from exc
 
 
 @api_view(['GET'])
