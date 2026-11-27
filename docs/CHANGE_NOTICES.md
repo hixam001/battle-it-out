@@ -640,3 +640,16 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Coverage:** SRD-004 and BIO-REQ-21 stay PARTIAL for the final caps,
   production acceptance and later languages. The local BIO-509 bundle
   implementation and export are complete.
+## CN-044 — Official roster API (2026-11-27)
+
+- **BIO-501:** Admins and currently assigned Organizers can read the roster
+  and report, import bounded UTF-8 CSV or JSON, and correct unclaimed
+  entries with an expected version. The existing CN-020 roster defaults
+  apply. Claim and deadline locks are enforced by the roster library.
+- **Persistence:** same-key retries return the original import summary.
+  A different payload under the same key conflicts. The roster changes,
+  receipt and audit commit together. Rejections identify rows without
+  echoing their data.
+- **Checks:** 84 Django cases passed with disposable PostgreSQL and system
+  and migration checks. All 149 targeted registration and tournament cases
+  passed. SRD-038 moves to DONE for the local roster contract.

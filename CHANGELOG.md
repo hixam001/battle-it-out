@@ -24,6 +24,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 - **Reproducible Python bundle downloads (BIO-509; CN-043)** use stable ZIP
   metadata. A bundle at the 32-file limit with no dependencies can be
   uploaded again with the same content hash.
+- **Official roster API (BIO-501; CN-044)** lets Admins and assigned
+  Organizers import CSV or JSON, correct unclaimed entries with a version
+  check, and read the private roster and exclusion report.
 
 - **Private replay download (BIO-605; CN-032):** authenticated `.bc26` attachment from the existing vault after current tournament authorization and digest verification. Archive denies new downloads for every role, and hidden replays share the missing response. The live match list now exposes the game ID for downloads.
 

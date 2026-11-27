@@ -88,6 +88,9 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET | `/tournaments/` | Only current accessible tournaments and own teams |
 | POST | `/tournaments/{id}/archive/` | Admin/assigned Organizer, exact JSON `{"confirm":true}` and CSRF; completed/archived only, purge status in response |
 | POST | `/tournaments/{id}/extend-deadline/`, `/tournaments/{id}/emergency-override/` | Current Admin only, CSRF, confirmation, reason and idempotency key; returns affected account count and notice status |
+| GET | `/tournaments/{id}/roster/`, `/tournaments/{id}/roster/report/` | Admin/assigned Organizer only, official roster and exclusion report |
+| POST | `/tournaments/{id}/roster/import/` | Staff-only bounded CSV or JSON, session CSRF and idempotency key |
+| PATCH | `/tournaments/{id}/roster/{entry_id}/` | Current staff, exact roster entry version and registration lock |
 | GET | `/dependencies/` | Public curated dependency names, versions and hashes |
 | GET | `/tournaments/{id}/live/` | Authoritative match metadata and allowlisted numeric latest boards; authorization on every poll; archived returns 410 |
 | GET | `/matches/{match_id}/replay/` | Current-scope `.bc26` attachment from the private replay vault; hidden/missing 404, archived 410, unavailable 503 |

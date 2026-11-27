@@ -6,6 +6,7 @@ from . import views as V
 from . import tournament_archive
 from . import deadlines
 from . import audit
+from . import roster
 urlpatterns = [
     path('api/v1/health/', V.health),
     path('api/v1/auth/session/', V.session), path('api/v1/auth/login/', V.login_view),
@@ -26,6 +27,10 @@ urlpatterns = [
     path('api/v1/tournaments/<str:tid>/extend-deadline/', deadlines.extend_deadline),
     path('api/v1/tournaments/<str:tid>/emergency-override/', deadlines.emergency_override),
     path('api/v1/tournaments/<str:tid>/audit-logs/', audit.tournament_audit),
+    path('api/v1/tournaments/<str:tid>/roster/', roster.roster),
+    path('api/v1/tournaments/<str:tid>/roster/import/', roster.import_roster),
+    path('api/v1/tournaments/<str:tid>/roster/report/', roster.report),
+    path('api/v1/tournaments/<str:tid>/roster/<str:entry_id>/', roster.correct_entry),
     path('api/v1/tournaments/<str:tid>/disputes/', V.disputes),
     path('api/v1/tournaments/<str:tid>/disputes/<uuid:did>/', V.dispute_detail),
     path('api/v1/tournaments/<str:tid>/bracket/', results.bracket),

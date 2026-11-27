@@ -73,6 +73,9 @@ remaining backlog after every task.
 - CN-043 completes the local BIO-509 bundle export. Stable ZIP metadata and
   optional dependency declarations allow a 32-file bundle to be uploaded
   again with its original hash when it has no dependencies.
+- CN-044 completes the BIO-501 roster API. Admins and assigned Organizers
+  can import bounded CSV/JSON, correct unclaimed entries with a version
+  check, and retrieve the roster and exclusion report.
 - On 2026-11-26 the checkout initially had clean `main` at `839cda7` (PR #31),
   while Claude's last session and newest memory described CN-025 / PR #32.
   GitHub confirmed [PR #32](https://github.com/hixam001/battle-it-out/pull/32)
@@ -92,7 +95,7 @@ remaining backlog after every task.
   ran 20 times each on 3.13 and 3.15, totaling 120 real matches. Unit mode
   skips integration cases; three engine-dependent tests need the project venv.
   These are Claude's recorded results, not a new four-version run by Codex.
-- Coverage currently records **21 DONE / 58 PARTIAL / 12 TODO / 0 DEFERRED**
+- Coverage currently records **22 DONE / 57 PARTIAL / 12 TODO / 0 DEFERRED**
   across **91** requirements. DONE denotes the documented library/tool scope,
   not owner acceptance or an independent security review. Counts and row-level
   gaps live in [REQUIREMENTS_COVERAGE.md](REQUIREMENTS_COVERAGE.md).
@@ -325,12 +328,13 @@ with current code and the coverage matrix; nothing here is closed by intake.
    suitability, per-round re-verification and production persistence remain.
    Other OSes, 3.16/free-threaded builds and CI remain unverified/unbuilt. New
    native bundle/live tests do not close any of these execution gates.
-4. **Registration/submissions:** roster/invitation/team/claim/verification
+4. **Registration/submissions:** invitation/team/claim/verification
    endpoints and code delivery; remaining registration API contracts; locked-entry
    Admin exception; team size/name/captain policy, source retention/deletion,
    approved upload/version/limiter caps and manual-activation decision. HTTP
    upload/history/source/bundle delivery and queued checks now exist and use the
-   official stored deadline/current roster Actor. BIO-504 defines multipart,
+   official stored deadline/current roster Actor. CN-044 adds scoped staff
+   roster reads, import, correction and exclusions. BIO-504 defines multipart,
    size and actionable static-error responses. Interim caps are 256 KiB and
    500 versions/team; the 32-file bundle ceiling is verified on export and
    re-upload (BIO-509). Native flat modules and

@@ -841,3 +841,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   CN-043 and project memory. All 91 requirement statuses and nine backlog
   categories remain. The final cap, production acceptance and later
   language work stay open.
+### 2026-11-27 — BIO-501: official roster endpoints
+
+- Cut BIO-501-roster-endpoints from fetched origin/main at d66b95d. Read
+  project memory, latest handoff and the roster, scope, date and test
+  requirements. Reused the CN-020 CSV/JSON formats and interim limits.
+- Added current-staff roster and report reads, exact multipart CSV or
+  bounded JSON import, and optimistic correction with existing registration
+  locks. The registration transaction stores the import receipt and audit
+  together. The response reports rejected row numbers and safe reasons.
+- All 84 Django tests passed against disposable PostgreSQL in 8.545 s,
+  including five roster HTTP cases. System and migration checks and all
+  149 targeted roster/tournament unit cases passed. The final parser uses
+  the 1 MiB route limit before JSON decoding so oversized CSV and JSON
+  both return 413.
+- Updated the web guide, API contract, Jira, coverage, test plan,
+  changelog, CN-044 and project memory. All nine backlog categories and
+  91 requirement rows remain. SRD-038 is DONE. The owner has yet to
+  finalize the format defaults and any correction exception after claim.

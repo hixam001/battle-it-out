@@ -151,6 +151,11 @@ email/team/member number/role. - Unused codes expire at close; extension
 preserves them until new deadline. - Incomplete registrations are
 excluded at deadline. - Only Admin can revoke/replace compromised code.
 
+**Roster HTTP checks (BIO-501 / CN-044)** cover CSV/JSON imports, partial
+row rejection, identical-key retry, live Organizer scope and revocation,
+CSRF, optimistic corrections, a locked claim, and exclusions after the
+stored registration deadline.
+
 ### TC-07 --- Permissions, privacy, audit, and deletion
 
 **Jira:** BIO-EPIC-04 / BIO-EPIC-05 / BIO-EPIC-06\
