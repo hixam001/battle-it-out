@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-606 / CN-066 adds the shared staff archive panel and replay purge
+  receipts. The production build and all 26 Playwright tests passed.
 - BIO-707 / CN-065 adds Admin tournament listing, draft creation, versioned
   settings, direct approval of Admin drafts and manual registration opening.
+  PR #73 merged into `main` at `9f83f3c`.
 - BIO-502 / CN-064 adds first invitation issuance to the Admin and
   Organizer consoles. The production build and all 24 Playwright tests
   passed. PR #72 merged into main at `8765fbd`.
@@ -436,7 +439,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    the Admin extension and emergency override forms with notice receipts.
    CN-062 adds the Organizer map selection, draw and round-start console.
    CN-065 adds Admin tournament listing, draft creation, settings and
-   registration opening. Staff archive controls remain open.
+   registration opening. CN-066 adds confirmed staff archive, vault purge
+   receipts and a link to retained results.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; Organizer approval/rejection
    and dispute notices; mandatory security
@@ -461,7 +465,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
-   archive and incident controls, browser replay playback and remaining
+   incident controls, browser replay playback and remaining
    Admin mutation screens. Public landing and the private
    live/analytics/submission/dispute/operations console now exist. CN-053 adds
    direct team and submission routes, bracket standing and validation details.
@@ -1062,3 +1066,19 @@ the Python 3.15 backend unit run passed. The unit run had 738 passes and
 direct approval, registration, role refusal and desktop/mobile rendering.
 All 91 requirement statuses, nine backlog categories and 42 tracked Jira
 items remain. Staff archive controls are the next ready lifecycle slice.
+
+## CN-066 continuation evidence
+
+BIO-606 starts from merged main at `9f83f3c` on
+`BIO-606-staff-archive-controls`. The Admin and assigned Organizer consoles
+share a confirmation form for completed tournaments. Archive reports vault
+purge completion or pending retry. Archived tournaments link to results
+and allow purge verification through the same scoped API.
+
+The production build and all 26 Playwright tests passed (52.8 s). The
+Admin test downloads a disposable replay and verifies the archived result
+and download state. The Organizer test verifies scope, simulates the
+pending receipt and checks purge after reload. The on-disk failure and
+maintenance retry are covered by existing Django archive tests. Production
+scheduling, retention, backups and deletion remain. All 91 statuses, nine
+backlog categories and 42 tracked Jira items remain.

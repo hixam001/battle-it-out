@@ -1285,3 +1285,23 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   CN-065, changelog, coverage and memory. All 91 statuses, nine backlog
   categories and 42 open Jira items remain. Staff archive controls are ready
   for the next PR. Incident mutations still need their authority policy.
+
+### 2026-11-28 — BIO-606 Staff archive controls
+
+- Confirmed PR #73 merged into `main` at `9f83f3c`. Started
+  `BIO-606-staff-archive-controls` from the fetched commit.
+- The shared tournament management component adds explicit archive
+  confirmation, replay vault purge receipts and a link to retained
+  bracket results. Current Admin and Organizer scope comes from the
+  existing API. Archived tournaments can check the purge again.
+- The production build and all 26 Playwright tests passed (52.8 s).
+  The Admin browser case verifies retained results and the disappearance
+  of a disposable replay after archiving. The Organizer case covers an
+  unassigned denial, simulated pending receipt and purge check after
+  reload. Desktop and mobile panels were inspected. Existing replays
+  were preserved.
+- Updated the Admin, user and frontend guides, flow, test plan, Jira,
+  CN-066, changelog, coverage and memory. All 91 statuses, nine backlog
+  categories and 42 tracked Jira items remain. Production retention and
+  permanent deletion stay open. Admin roster and team views can reuse
+  the existing staff endpoints.

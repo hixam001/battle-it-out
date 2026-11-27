@@ -80,6 +80,10 @@ def main():
             replays.register_replay(fixture.rt.vault, 'tied-fixture', match_id, replay_source, None)
             replay_source.unlink()
             organizer = registry.Actor(str(FeatureAPI.org.pk), 'organizer')
+            fixture.make_cup('organizer-archive', fixture.now - 3000, fixture.now - 1000)
+            with fixture.rt.tournaments.store.transaction() as data:
+                data['tournaments']['organizer-archive']['status'] = tournaments.COMPLETED
+            OrganizerAssignment.objects.create(user=FeatureAPI.org, tournament_id='organizer-archive')
             OrganizerAssignment.objects.create(user=FeatureAPI.org, tournament_id='organizer-draft')
             tournaments.create(fixture.rt.tournaments, organizer, 'organizer-draft', 'Unsubmitted Organizer fixture',
                                '', fixture.now + 7200, fixture.now + 10800, idempotency_key='organizer-draft')

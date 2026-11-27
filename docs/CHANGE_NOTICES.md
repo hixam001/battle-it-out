@@ -894,3 +894,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
   backend still checks the transition against the current record.
 - The production build, Playwright and Django suites, Django system and
   migration checks, and Python 3.15 backend unit mode passed.
+
+## CN-066 — Staff archive controls (2026-11-28)
+
+- **BIO-606:** Admins and assigned Organizers can confirm archive from
+  completed tournament settings. The console reports replay vault purge
+  status, offers a check after archive and links to retained results.
+- The production build and all 26 Playwright tests passed. The Admin
+  test uses a disposable replay. The Organizer test covers scope and
+  the pending-purge receipt with successful verification after reload.

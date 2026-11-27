@@ -265,10 +265,14 @@ provides mandatory reason. 4. System removes active team
 profile/management access; historical results and audit logs remain. 5.
 Admin may restore team while tournament still exists.
 
-**Tournament archive:** 1. Authorized staff archives completed
-tournament. 2. System deletes replay binaries and records purge
-completion. 3. Results, brackets, standings, and match history remain
-visible to authenticated authorized users.
+**Tournament archive**
+
+1. An Admin or assigned Organizer opens a completed tournament in tournament
+   management and confirms archive and replay removal.
+2. The system closes replay access and reports vault purge completion or a
+   pending maintenance retry.
+3. Results, brackets, standings and match history remain visible to
+   authorized users.
 
 **Permanent tournament deletion:** 1. Admin opens destructive action. 2.
 UI clearly lists irreversible impact. 3. Admin confirms and enters

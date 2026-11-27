@@ -184,6 +184,10 @@ function ManagedTournament({ id, userId, admin, listPath, onChange }: {
             {record.status === "approved" && <button className="primary" disabled={stale || busy}
               onClick={() => transition("open-registration", "Registration is open.")}>Open registration</button>}
           </section>
+          {["completed", "archived"].includes(record.status) && (
+            <TournamentArchive id={record.id} archived={record.status === "archived"}
+              onArchived={() => update({ ...record, status: "archived" }, "")} />
+          )}
           {editable.includes(record.status) && <section className="panel">
             <h2>Edit tournament</h2>
             <TournamentForm key={record.version} record={record} disabled={stale || busy} conflict={() => setStale(true)}
@@ -192,6 +196,56 @@ function ManagedTournament({ id, userId, admin, listPath, onChange }: {
         </>
       )}
     </>
+  );
+}
+
+function TournamentArchive({ id, archived, onArchived }: { id: string; archived: boolean; onArchived: () => void }) {
+  const [confirmed, setConfirmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [purged, setPurged] = useState<boolean>();
+  const [error, setError] = useState("");
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy || (!archived && !confirmed)) return;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await api<{ replays_deleted: boolean }>(apiPath(id) + "archive/", {
+        method: "POST", body: JSON.stringify({ confirm: true }),
+      });
+      setPurged(result.replays_deleted);
+      setConfirmed(false);
+      if (!archived) onArchived();
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="panel" aria-label="Tournament archive">
+      <h2>Tournament archive</h2>
+      {!archived && <p>Archiving permanently removes replay files from the replay vault. Results, brackets,
+        standings and match history remain available to authorized accounts.</p>}
+      {purged !== undefined && <p role="status">
+        {purged ? "Tournament archived. Replay files were removed from the vault."
+          : "Tournament archived. Replay access is closed. Maintenance will retry file removal."}
+      </p>}
+      {archived && <p><a href={`/participant/tournaments/${encodeURIComponent(id)}/bracket`}>View retained results</a></p>}
+      {error && <p className="error" role="alert">{error}</p>}
+      {purged !== true && <form onSubmit={submit}>
+        {!archived && <label className="review-confirm">
+          <input type="checkbox" checked={confirmed} disabled={busy}
+            onChange={(event) => setConfirmed(event.target.checked)} />
+          Confirm archive and replay removal
+        </label>}
+        <button className={archived ? "text-button" : "primary"} disabled={busy || (!archived && !confirmed)} type="submit">
+          {busy ? (archived ? "Checking…" : "Archiving…") : archived ? "Check replay purge" : "Archive tournament"}
+        </button>
+      </form>}
+    </section>
   );
 }
 

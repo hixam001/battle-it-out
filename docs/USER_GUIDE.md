@@ -115,7 +115,10 @@ source reads. Captains upload and activate through validation.
 
 Use **Match disputes** to review comments and record resolutions for assigned
 tournaments. An Admin handles approvals, deadline extensions and emergency
-overrides. Confirmed archive is available through its scoped API.
+overrides. To archive a completed tournament, open it under **Manage
+tournaments**, confirm replay removal and select **Archive tournament**.
+The receipt reports the replay vault purge state. Results, brackets,
+standings and match history stay available to authorized accounts.
 Follow the event's authorized
 operator process for actions outside the current console.
 

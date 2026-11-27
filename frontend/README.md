@@ -98,6 +98,10 @@ queues each ready round separately.
 **View teams** shows verified rosters, bracket standing, history, validation
 findings and audited source downloads in assigned tournaments.
 
+Admins and assigned Organizers can confirm archive from a completed
+tournament's management page. The archive panel reports replay removal or
+a pending maintenance retry and links to the retained bracket.
+
 **Post announcement** lets current tournament staff publish a headline and
 message to the selected tournament's verified roster. The form reports
 inbox and email-queue counts and retries unchanged text with the same key.

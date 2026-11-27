@@ -115,6 +115,12 @@ You do not decide ties. Normal ties use one tie-break map, finals use three in o
 
 ## 6. Archive, deletion and restore
 
+Open a completed tournament from **Manage tournaments** and review
+**Tournament archive**. Confirm replay removal and select **Archive
+tournament**. The receipt reports whether the vault purge finished or
+maintenance will retry it. After archiving, you can check the purge or open
+the retained results from the same panel.
+
 | Action | Who | Requires | Effect | Reversible? |
 |---|---|---|---|---|
 | **Archive** a tournament | Admin or assigned Organizer | Confirmation | **Replay files are deleted** for everyone, you included. Results, brackets, standings, and match history remain visible to signed-in users | **No** (replays cannot be recovered) |
