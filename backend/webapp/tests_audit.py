@@ -5,10 +5,14 @@ from datetime import datetime
 from django.test import Client, TestCase
 from rest_framework.test import APIClient
 
+from backend.match_orchestrator import bracket as B, orchestrator as O, tiebreak as TB
+from backend.match_orchestrator.tests.test_bracket import MAPS, teams
+from backend.match_orchestrator.tests.test_tiebreak import COIN, PLATFORM, won
 from backend.notifications import notifications as N
+from backend.registration import registration as G
 from backend.tournaments import tournaments as T
 from . import tests as fixtures
-from .models import AuditEvent, Dispute, OrganizerAssignment
+from .models import AuditEvent, Dispute, Identity, OrganizerAssignment
 
 
 SCOPED = '/api/v1/tournaments/cup/audit-logs/'
@@ -27,6 +31,7 @@ class AuditAPI(TestCase):
         self.addCleanup(fixture.doCleanups)
         self.rt = fixture.rt
         fixture.make_cup('other-cup', fixture.now + 3000, fixture.now + 5000)
+        self.clock = fixture.clock
         self.own = Dispute.objects.create(tournament_id='cup', series_id=fixture.sid, team_id='ta',
                                            opened_by=self.a, title='Own case', description='Private details')
         self.foreign = Dispute.objects.create(tournament_id='cup', series_id=fixture.sid, team_id='tb',
@@ -58,7 +63,7 @@ class AuditAPI(TestCase):
         items = result.json()['items']
         self.assertEqual(self.details(items, 'submission_id'), {'ta-v1'})
         self.assertEqual(self.details(items, 'dispute_id'), {str(self.own.pk)})
-        self.assertEqual({item['source'] for item in items}, {'web', 'submissions', 'tournament'})
+        self.assertEqual({item['source'] for item in items}, {'web', 'submissions', 'tournament', 'series'})
         self.assertEqual({item['action'] for item in items if item['source'] == 'tournament'},
                          {'open_registration'})
         self.assertTrue(all('actor_id' not in item for item in items))
@@ -72,7 +77,7 @@ class AuditAPI(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         items = response.json()['items']
         self.assertEqual({item['source'] for item in items},
-                         {'tournament', 'registration', 'submissions', 'notifications', 'web'})
+                         {'tournament', 'registration', 'submissions', 'notifications', 'web', 'series'})
         self.assertEqual(self.details(items, 'dispute_id'), {str(self.own.pk), str(self.foreign.pk)})
         self.assertEqual(self.details(items, 'submission_id'), {'ta-v1', 'tb-v1'})
         self.assertNotIn('organizer_assigned', {item['action'] for item in items})
@@ -118,9 +123,67 @@ class AuditAPI(TestCase):
         self.assertEqual(self.get(self.admin, SCOPED, tournament_id='other-cup').status_code, 400)
 
     def test_reads_leave_stores_and_audit_append_only(self):
-        before = self.rt.tournaments.store.snapshot(), self.rt.flow.registry.store.snapshot(), AuditEvent.objects.count()
+        before = (self.rt.tournaments.store.snapshot(), self.rt.flow.registry.store.snapshot(),
+                  self.rt.flow.store.snapshot(), AuditEvent.objects.count())
         self.assertEqual(self.get(self.admin, GLOBAL).status_code, 200)
         response = self.api.post(GLOBAL, {'action': 'delete'}, format='json')
         self.assertEqual(response.status_code, 405)
         self.assertEqual((self.rt.tournaments.store.snapshot(), self.rt.flow.registry.store.snapshot(),
-                          AuditEvent.objects.count()), before)
+                          self.rt.flow.store.snapshot(), AuditEvent.objects.count()), before)
+
+    def test_registered_team_without_a_pairing_sees_no_other_series_history(self):
+        registration = self.rt.registration
+        rows = [{'email': 'new-team@uni.edu', 'team_key': 'new-team', 'team_name': 'New Team',
+                 'member_number': 1, 'role': 'captain'}]
+        G.import_roster(registration, fixtures.ADM, 'cup', rows, now=self.clock)
+        code, = G.issue_codes(registration, fixtures.ADM, 'cup', now=self.clock)['issued']
+        G.claim(registration, 'cup', 'new-team@uni.edu', code['code'], 'roster-other', now=self.clock)
+        G.confirm_email(registration, 'cup', 'roster-other', now=self.clock)
+        Identity.objects.create(user=self.outsider, role='participant', roster_user_id='roster-other')
+        result = self.get(self.outsider)
+        self.assertEqual(result.status_code, 200, result.content)
+        items = result.json()['items']
+        self.assertIn('open_registration', {item['action'] for item in items})
+        self.assertNotIn('series', {item['source'] for item in items})
+
+    def test_official_series_coin_flip_and_incident_lifecycle_in_audit(self):
+        store = self.rt.flow.store
+        B.create_bracket(store, 'second-bracket', teams(2), MAPS, max_attempts=1)
+        with store.transaction() as state:
+            state['brackets']['second-bracket']['tournament_id'] = 'other-cup'
+        B.start_round(store, 'second-bracket', 1, 'operator')
+        paused = B.run_round(store, 'second-bracket', 1, lambda ctx: PLATFORM, sleep=lambda seconds: None)
+        self.assertEqual(paused['status'], B.PAUSED)
+        sid = B.series_id('second-bracket', 1, 0)
+        match_id = TB.game_id(sid, 0)
+        global_items = self.get(self.admin, GLOBAL, tournament_id='other-cup').json()['items']
+        opened, = [item for item in global_items if item['source'] == 'incident']
+        self.assertEqual(opened['action'], 'incident_opened')
+        self.assertEqual(opened['detail']['match_id'], match_id)
+        self.assertEqual(opened['detail']['attempt_count'], 1)
+        self.assertNotIn('incident', {item['source'] for item in self.get(self.admin).json()['items']})
+
+        O.resume_paused(store, match_id, 'operator')
+        complete = B.run_round(store, 'second-bracket', 1, lambda ctx: won('B', COIN), coin=lambda: 'A')
+        self.assertEqual(complete['status'], B.COMPLETED)
+        flip = TB.get_series(store, sid)['coin_flip']
+        result = self.get(self.admin, GLOBAL, tournament_id='other-cup')
+        items = result.json()['items']
+        incidents = [item for item in items if item['source'] == 'incident']
+        self.assertEqual(incidents[1], opened)
+        self.assertEqual(incidents[0]['action'], 'incident_resolved')
+        self.assertEqual(incidents[0]['actor_id'], 'operator')
+        event, = [item for item in items if item['action'] == 'coin_flip']
+        self.assertEqual(event['detail']['coin_flip_id'], flip['id'])
+        self.assertEqual(event['detail']['winner_team'], flip['result_team'])
+        self.assertNotIn('/x/', result.content.decode())
+        self.assertNotIn('last failure', result.content.decode())
+
+        OrganizerAssignment.objects.create(user=self.org, tournament_id='other-cup')
+        scoped = SCOPED.replace('/cup/', '/other-cup/')
+        organizer_items = self.get(self.org, scoped).json()['items']
+        self.assertIn('coin_flip', {item['action'] for item in organizer_items})
+        self.assertNotIn('incident', {item['source'] for item in organizer_items})
+        T.delete(self.rt.tournaments, fixtures.ADM, 'other-cup', 'Delete fixture', confirm=True)
+        retained = self.get(self.admin, GLOBAL, tournament_id='other-cup').json()['items']
+        self.assertIn(event, retained)
