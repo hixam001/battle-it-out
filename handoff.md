@@ -1249,3 +1249,20 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   categories remain. Local BIO-706 screens are complete, leaving 42
   tracked Jira items open. Initial issuance, deletion and formal
   acceptance are tracked under BIO-502, BIO-609 and BIO-708.
+
+### 2026-11-27 — BIO-502 staff first invitation issuance
+
+- PR #71 merged into main at `5e4247f`. Started
+  `BIO-502-staff-initial-invitation-issuance` from that commit. Added
+  selection of eligible unregistered entries to the Organizer roster
+  and Admin invitation pages. The existing API still decides eligibility.
+- The successful response shows the new values paired with official
+  roster emails. The receipt can be dismissed. The list contains code
+  metadata only. No API or schema change was needed.
+- The production build and all 24 Playwright tests (39.1 s) passed.
+  The test covers both staff roles, an already-issued entry, receipt
+  dismissal and metadata. All codes and accounts were disposable.
+- Updated the API, Admin, user and frontend guides, test plan, Jira,
+  CN-064, changelog, coverage and memory. All 91 statuses, nine backlog
+  categories and 42 open Jira items remain. Public claim, verification
+  and automated delivery remain open.

@@ -752,3 +752,35 @@ test("Organizer views assigned teams and downloads verified source with audit", 
   await expect(page.getByText("This tournament is unavailable.")).toBeVisible();
   await expect(page.getByRole("link", { name: /Download v/ })).toHaveCount(0);
 });
+
+test("Organizer and Admin issue only eligible first codes through scoped console views", async ({ page, useSession }) => {
+  await useSession(page, "organizer");
+  await page.goto("/organizer/tournaments/issue-fixture/roster");
+  const issuance = page.getByRole("region", { name: "Issue first invitation codes" });
+  await expect(issuance.getByRole("checkbox", { name: "already-issued@uni.edu" })).toHaveCount(0);
+  await issuance.getByRole("checkbox", { name: "first-ready@uni.edu" }).check();
+  await issuance.getByRole("button", { name: "Issue selected codes" }).click();
+  const receipt = issuance.getByRole("region", { name: "Initial invitation receipt" });
+  await expect(receipt.getByRole("status")).toHaveText("Issued 1. Skipped 0.");
+  const codeRow = receipt.getByRole("row").filter({
+    has: page.getByRole("rowheader", { name: "first-ready@uni.edu", exact: true }),
+  });
+  const code = (await codeRow.locator("code").textContent())!;
+  expect(code).toMatch(/^[A-Z0-9-]+$/);
+  await expect(issuance.getByRole("checkbox", { name: "first-ready@uni.edu" })).toHaveCount(0);
+  const path = "/api/v1/tournaments/issue-fixture/invitation-codes/";
+  const metadata = await (await page.request.get(path)).json();
+  expect(JSON.stringify(metadata)).not.toContain(code);
+  await receipt.getByRole("button", { name: "Dismiss issuance receipt" }).click();
+  await expect(page.getByText(code, { exact: true })).toHaveCount(0);
+
+  await useSession(page, "admin");
+  await page.goto("/admin/invitations");
+  await page.getByLabel("Tournament", { exact: true }).selectOption("issue-fixture");
+  await issuance.getByRole("checkbox", { name: "second-ready@uni.edu" }).check();
+  await issuance.getByRole("button", { name: "Issue selected codes" }).click();
+  await expect(receipt.getByRole("status")).toHaveText("Issued 1. Skipped 0.");
+  await expect(issuance.getByText("No roster entries are eligible for first issuance.")).toBeVisible();
+  const finalList = (await (await page.request.get(path)).json()).items;
+  expect(finalList).toHaveLength(3);
+});

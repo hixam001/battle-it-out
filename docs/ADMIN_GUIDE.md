@@ -69,7 +69,10 @@ dashboard notices have been published or are pending automatic retry.
 
 ## 4. Invitation codes and roster issues
 
-- Initial codes are issued by an Admin or the assigned Organizer. **Only you** can revoke or replace a code.
+- On **Invitation codes**, select eligible roster participants and choose
+  **Issue selected codes**. The receipt pairs each new code with its official
+  email. Share those codes privately. Assigned Organizers can also issue
+  initial codes. **Only an Admin** can revoke or replace a code.
 - **Lost or compromised code:** open **Invitation codes**, select the
   tournament and manage the matching code ID. Revoke the code to disable it,
   or replace it while the roster entry is eligible. Either action needs a

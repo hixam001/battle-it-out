@@ -99,6 +99,16 @@ def main():
                  'member_number': 1, 'role': 'captain'},
             ])
             registration.issue_codes(fixture.rt.registration, ADM, 'invite-fixture')
+            fixture.make_cup('issue-fixture', fixture.now + 3600, fixture.now + 7200)
+            OrganizerAssignment.objects.create(user=FeatureAPI.org, tournament_id='issue-fixture')
+            registration.import_roster(fixture.rt.registration, ADM, 'issue-fixture', [
+                {'email': f'{name}@uni.edu', 'team_key': f'issue-{name}', 'team_name': name,
+                 'member_number': 1, 'role': 'captain'}
+                for name in ('first-ready', 'second-ready', 'already-issued')
+            ])
+            issued_entry = next(entry for entry in registration.list_roster(fixture.rt.registration, ADM, 'issue-fixture')
+                                if entry['email'] == 'already-issued@uni.edu')
+            registration.issue_codes(fixture.rt.registration, ADM, 'issue-fixture', [issued_entry['id']])
             fixture.make_cup('roster-fixture', fixture.now + 3600, fixture.now + 7200)
             fixture.register('roster-fixture', [('a', 'registered-roster-team')])
             OrganizerAssignment.objects.create(user=FeatureAPI.org, tournament_id='roster-fixture')

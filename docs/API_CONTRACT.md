@@ -579,7 +579,8 @@ an approved future deadline. The `200` response returns `issued` (each with
 `entry_id`, `code_id` and `code`) and `skipped` (each with `entry_id` and
 `reason`). A repeated issue returns skips for already-issued entries. The
 service stores hashes, and only the first successful issuance response
-contains the plaintext code.
+contains the plaintext code. The Admin and assigned Organizer consoles
+use this endpoint to issue codes for a selected group (CN-064).
 
 ### POST `/tournaments/{id}/invitation-codes/{code_id}/revoke/`
 
