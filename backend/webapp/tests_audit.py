@@ -5,12 +5,13 @@ from datetime import datetime
 from django.test import Client, TestCase
 from rest_framework.test import APIClient
 
-from backend.match_orchestrator import bracket as B, orchestrator as O, tiebreak as TB
+from backend.match_orchestrator import bracket as B, orchestrator as O, replays as P, tiebreak as TB
 from backend.match_orchestrator.tests.test_bracket import MAPS, teams
 from backend.match_orchestrator.tests.test_tiebreak import COIN, PLATFORM, won
 from backend.notifications import notifications as N
 from backend.registration import registration as G
 from backend.tournaments import tournaments as T
+from backend.work_queue import jobs as J
 from . import tests as fixtures
 from .models import AuditEvent, Dispute, Identity, OrganizerAssignment
 
@@ -187,3 +188,42 @@ class AuditAPI(TestCase):
         T.delete(self.rt.tournaments, fixtures.ADM, 'other-cup', 'Delete fixture', confirm=True)
         retained = self.get(self.admin, GLOBAL, tournament_id='other-cup').json()['items']
         self.assertIn(event, retained)
+
+    def test_queue_and_replay_incidents_have_safe_admin_scope(self):
+        queue = self.rt.flow.queue
+        round_job = J.enqueue_round(queue, 'cup', 1)
+        check_job = J.enqueue_check(queue, 'ta-v1')
+        detached_job = J.enqueue_check(queue, 'missing-version')
+        for job in (round_job, check_job, detached_job):
+            claim = J.claim_next(queue, 'fixture-worker')
+            self.assertEqual(claim.job_id, job['id'])
+            J.fail(queue, claim, 'private worker diagnostic', permanent=True)
+        J.revive(queue, check_job['id'], 'operator')
+
+        series, = self.rt.flow.store.snapshot()['series'].values()
+        game_id = series['games'][0]['match_id']
+        missing = self.rt.vault.root / 'missing-fixture.bc26'
+        self.assertIsNone(P.register_from_result(self.rt.vault, 'cup', game_id, {'replay': str(missing)}))
+
+        result = self.get(self.admin, GLOBAL, tournament_id='cup')
+        self.assertEqual(result.status_code, 200, result.content)
+        incidents = [event for event in result.json()['items'] if event['source'] == 'incident']
+        self.assertEqual(len(incidents), 4)
+        self.assertEqual(self.details(incidents, 'incident_source'), {'queue', 'replay'})
+        self.assertEqual(self.details(incidents, 'job_id'), {round_job['id'], check_job['id']})
+        self.assertEqual(self.details(incidents, 'job_kind'), {J.RUN_ROUND, J.CHECK_SUBMISSION})
+        self.assertEqual(self.details(incidents, 'match_id'), {game_id})
+        self.assertEqual(len({event['id'] for event in incidents}), 4)
+        resolved, = [event for event in incidents if event['action'] == 'incident_resolved']
+        self.assertEqual(resolved['detail']['job_id'], check_job['id'])
+        self.assertEqual(resolved['actor_id'], 'operator')
+        self.assertNotIn(b'private worker diagnostic', result.content)
+        self.assertNotIn(b'missing-fixture.bc26', result.content)
+
+        for user in (self.a, self.org):
+            self.assertNotIn('incident', {event['source'] for event in self.get(user).json()['items']})
+        foreign = self.get(self.admin, GLOBAL, tournament_id='other-cup').json()['items']
+        self.assertNotIn('incident', {event['source'] for event in foreign})
+        global_items = self.get(self.admin, GLOBAL).json()['items']
+        detached, = [item for item in global_items if item['detail'].get('job_id') == detached_job['id']]
+        self.assertIsNone(detached['tournament_id'])

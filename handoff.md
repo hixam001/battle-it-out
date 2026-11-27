@@ -969,3 +969,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   rights and old-code refusal. Updated the API and web guides, test plan,
   coverage evidence, Jira, CN-049 and project memory. All 91 requirement
   statuses and nine backlog categories remain. User replay files were preserved.
+
+### 2026-11-27 — BIO-407 queue and replay incident audit
+
+- The owner requested merging the prior batch. PRs #55–57 merged into main
+  with the documentation reconciled, ending at `4413b90`. All 91 coverage
+  rows and CN-047–049 are present. The earlier combined checkout passed 137
+  Django tests. This task started from the merged commit on
+  `BIO-407-queue-replay-audit`.
+- `backend/webapp/audit.py` now includes queue and replay incident openings
+  and resolutions for Admin. Queue scope comes from a stored submission or
+  bracket; replay scope is recorded in the vault. Unassigned incidents appear
+  only in the unfiltered Admin feed. Worker notes and paths are omitted.
+- All 138 Django cases passed on disposable PostgreSQL in 15.619 s, including
+  both job kinds, job revival, replay-unavailable, cross-tournament and role
+  scope. System and migration checks passed. Existing replays were preserved.
+- Updated Jira, API, coverage evidence, CN-050 and memory. Requirement counts
+  remain 26 DONE / 54 PARTIAL / 11 TODO; permanent audit persistence and its
+  retention/restore verification remain in the full backlog.

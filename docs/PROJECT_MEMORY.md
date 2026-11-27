@@ -27,6 +27,9 @@ remaining backlog after every task.
   and approval transitions, and manual registration opening. Approval notices
   and staff UI remain open. The branch keeps 44 of the previously tracked 45
   Jira items open.
+- PRs #55–57 merged to main at `4413b90`. Their combined Python changes passed
+  all 137 Django tests. The merge preserved CN-047–049, all 91 coverage rows
+  and the three task logs.
 - On 2026-11-27, PRs #44–54 landed individually on main. The latest
   handoff records the combined verification and 45 remaining Jira items.
 - On 2026-11-26, PRs #39–43 integrate the participant
@@ -324,9 +327,9 @@ with current code and the coverage matrix; nothing here is closed by intake.
    proposal remains open. Legacy creator fallback remains outside these scoped
    feature routes and must be replaced before the full role API is implemented.
    CN-042 reads current-role scoped audit across the existing stores. Permanent
-   migration remains open. CN-048 adds official series history and match-worker
-   incidents to the existing feeds. Queue and replay incidents, retention after
-   full purge and recovery evidence remain open.
+   migration remains open. CN-048 and CN-050 add official series history and
+   Admin-only match, queue and replay incidents to the existing feeds. Retention
+   after full purge and recovery evidence remain open.
 2. **Service operation:** deploy/supervise the CN-027/028 worker, maintenance,
    email, alert and web processes; approve/implement real email/Admin adapters;
    target-host restart/outage drills; pinned worker/container image and runtime
