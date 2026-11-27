@@ -5,7 +5,7 @@ import { Inbox, TournamentNotices } from "./notifications";
 import { Submissions, Team } from "./participant";
 import { BracketResults, MatchResult, Replay } from "./results";
 import { Approvals } from "./approvals";
-import { Organizer } from "./organizer";
+import { adminTournamentList, adminTournamentSettings, TournamentManagement } from "./tournament-management";
 import { AnnouncementForm } from "./announcements";
 import { GlobalAudit } from "./audit";
 import { DeadlineControls } from "./deadlines";
@@ -405,6 +405,7 @@ const consoleLinks = [
   { page: "operations", href: "/#operations", label: "Operations", icon: "⚙" },
   { page: "approvals", href: "/admin/approvals", label: "Approvals", icon: "✓" },
   { page: "audit", href: "/admin/audit", label: "Audit log", icon: "☷" },
+  { page: "admin-tournaments", href: adminTournamentList, label: "Manage tournaments", icon: "▤" },
   { page: "deadlines", href: "/admin/tournaments", label: "Deadline controls", icon: "◷" },
   { page: "invitations", href: "/admin/invitations", label: "Invitation codes", icon: "⌁" },
   { page: "organizer", href: "/organizer", label: "Manage tournaments", icon: "▤" },
@@ -412,7 +413,7 @@ const consoleLinks = [
 ] as const;
 type ConsolePage = (typeof consoleLinks)[number]["page"] | "match" | "replay"
   | "organizer-roster" | "organizer-rounds" | "organizer-teams";
-type ConsoleRoute = { page: ConsolePage; id?: string };
+type ConsoleRoute = { page: ConsolePage; id?: string; create?: boolean };
 const detailRoutes: [RegExp, ConsolePage][] = [
   [/^\/participant\/tournaments\/([^/#]+)\/bracket$/, "bracket"],
   [/^\/matches\/([^/#]+)\/replay$/, "replay"],
@@ -421,12 +422,14 @@ const detailRoutes: [RegExp, ConsolePage][] = [
   [/^\/organizer\/tournaments\/([^/#]+)\/rounds$/, "organizer-rounds"],
   [/^\/organizer\/tournaments\/([^/#]+)\/teams$/, "organizer-teams"],
   [/^\/organizer\/tournaments\/([^/#]+)$/, "organizer"],
+  [/^\/admin\/manage-tournaments\/([^/#]+)\/settings$/, "admin-tournaments"],
   [/^\/admin\/tournaments\/([^/#]+)$/, "deadlines"],
 ];
 
 function currentRoute(address: string): ConsoleRoute | null {
   const normalized = address.replace(/\/$/, "");
   if (normalized === "/#submissions") return { page: "submissions" };
+  if (normalized === `${adminTournamentList}/new`) return { page: "admin-tournaments", create: true };
   for (const [pattern, page] of detailRoutes) {
     const match = normalized.match(pattern);
     if (!match) continue;
@@ -654,9 +657,9 @@ function Console({ user, route, navigate, logout }: {
   const cup = cups.find((c) => c.id === (scopedTournament || selected));
   const organizerPage = page.startsWith("organizer");
   const showTournament = !organizerPage && !["notifications", "operations", "approvals", "audit",
-    "match", "replay"].includes(page);
+    "admin-tournaments", "match", "replay"].includes(page);
   const canOpen = (target: ConsolePage) => {
-    if (["operations", "approvals", "audit", "deadlines", "invitations"].includes(target)) return user.admin;
+    if (["operations", "approvals", "audit", "admin-tournaments", "deadlines", "invitations"].includes(target)) return user.admin;
     if (target === "announce") return user.admin || role === "organizer" || loading;
     if (target.startsWith("organizer")) {
       return role === "organizer" || (loading && !user.admin);
@@ -729,6 +732,7 @@ function Console({ user, route, navigate, logout }: {
               ? "Admin access is required to open Operations."
               : page === "approvals" ? "Admin access is required to review tournaments."
               : page === "audit" ? "Admin access is required to open the global audit log."
+              : page === "admin-tournaments" ? "Admin access is required to manage tournaments here."
               : page === "deadlines" ? "Admin access is required to change deadlines and locked settings."
               : page === "invitations" ? "Admin access is required to manage invitation codes."
               : organizerPage ? "Organizer access is required to manage tournaments."
@@ -748,10 +752,11 @@ function Console({ user, route, navigate, logout }: {
               ? { ...cup, status: review.status } : cup))} />
         ) : page === "audit" ? (
           <GlobalAudit tournaments={cups} />
-        ) : page === "organizer" ? (
-          loading ? <p role="status">Loading Organizer access…</p> :
-            <Organizer key={id ?? "list"} id={id} userId={user.id} tournaments={cups}
-              navigate={navigate} onChange={applyTournament} />
+        ) : page === "organizer" || page === "admin-tournaments" ? (
+          loading ? <p role="status">Loading tournaments…</p> :
+            <TournamentManagement key={`${page}/${id ?? ""}/${Boolean(route.create)}`} id={id} userId={user.id}
+              admin={page === "admin-tournaments"} create={Boolean(route.create || (page === "organizer" && id === "new"))}
+              tournaments={cups} loadError={error} navigate={navigate} onChange={applyTournament} />
         ) : page === "organizer-roster" ? (
           loading ? <p role="status">Loading Organizer access…</p> :
             <Roster key={id} tournament={cups.find((record) => record.id === id)} />
@@ -775,7 +780,8 @@ function Console({ user, route, navigate, logout }: {
               {!error && <p>No tournaments are available to your account.</p>}
             </section>
         ) : page === "deadlines" ? (
-          cup ? <DeadlineControls key={cup.id} tournament={cup} refresh={refreshTournament} /> :
+          cup ? <DeadlineControls key={cup.id} tournament={cup} refresh={refreshTournament}
+            settingsPath={adminTournamentSettings(cup.id)} /> :
             <section className="empty"><h1>Deadline controls</h1>
               {!error && <p>{scopedTournament ? "This tournament is unavailable." : "No tournaments are available."}</p>}
             </section>

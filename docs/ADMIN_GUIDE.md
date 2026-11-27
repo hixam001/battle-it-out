@@ -38,7 +38,16 @@ The Admin has **global** access and is the only role that can:
 - Every important change writes an **immutable audit event** and, where required, a notification to affected participants.
 - Admin power is still limited by the product's privacy rules: the Admin cannot recover deleted replays, and other teams' source code is never exposed to participants.
 
-## 2. Approving tournaments
+## 2. Creating and approving tournaments
+
+Open **Manage tournaments** to list tournaments and create an Admin draft
+with its own registration and submission deadlines. Open a tournament to
+edit available settings, approve an Admin-created draft with confirmation,
+or open registration after approval. If another staff member saved a change,
+refresh the tournament before retrying. The detail page links to **Deadline
+controls** for extensions and locked-setting overrides.
+
+For Organizer submissions, use the approval queue.
 
 1. Open **Approvals** (`/admin/approvals`) and select a pending tournament.
 2. Review name, description, deadlines, and configuration.

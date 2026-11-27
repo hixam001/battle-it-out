@@ -9,7 +9,9 @@ type Pool = { id: string };
 const extend = "extend-deadline";
 const override = "emergency-override";
 
-export function DeadlineControls({ tournament, refresh }: { tournament: Tournament; refresh: () => Promise<void> }) {
+export function DeadlineControls({ tournament, refresh, settingsPath }: {
+  tournament: Tournament; refresh: () => Promise<void>; settingsPath: string;
+}) {
   const [chosen, setChosen] = useState<Action>(extend);
   const canExtend = ["approved", "registration_open"].includes(tournament.status);
   const preDraw = canExtend;
@@ -20,7 +22,10 @@ export function DeadlineControls({ tournament, refresh }: { tournament: Tourname
 
   return (
     <>
-      <div className="workspace-heading"><div><p className="eyebrow">{tournament.name}</p><h1>Deadline controls</h1></div></div>
+      <div className="workspace-heading">
+        <div><p className="eyebrow">{tournament.name}</p><h1>Deadline controls</h1></div>
+        <a href={settingsPath}>Tournament settings</a>
+      </div>
       <section className="panel tournament-overview">
         <h2>Current deadlines</h2>
         <dl>

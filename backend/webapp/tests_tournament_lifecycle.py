@@ -133,6 +133,7 @@ class TournamentLifecycleAPI(TestCase):
         admin = self.session(self.admin)
         draft = self.create(admin)
         path = f"{self.collection}{draft['id']}/"
+        self.assertEqual(draft['created_by_role'], 'admin')
         self.assertFalse(OrganizerAssignment.objects.exists())
         self.change(admin, path+'approve/', 1, T.APPROVED, confirm=True)
         with self.store.transaction() as state:

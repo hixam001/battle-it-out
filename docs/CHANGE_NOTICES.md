@@ -883,3 +883,14 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - The production build and all 24 Playwright tests passed. The browser
   covers both staff roles, exclusion of already-issued entries and no
   plaintext in the subsequent metadata list.
+
+## CN-065 — Admin tournament management (2026-11-27)
+
+- **BIO-707:** Admins can list tournaments, create and edit drafts, confirm
+  direct approval of an Admin-created draft and open registration separately.
+  Settings use the existing version check and link to deadline controls.
+- Staff tournament detail includes the stored creator role so the console
+  can show the direct approval control only for an eligible draft. The
+  backend still checks the transition against the current record.
+- The production build, Playwright and Django suites, Django system and
+  migration checks, and Python 3.15 backend unit mode passed.

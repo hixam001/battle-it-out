@@ -231,8 +231,8 @@ def _view(rec: dict, actor: R.Actor | None) -> dict:
     out["registration_deadline"] = rec["deadlines"][REGISTRATION]
     out["submission_deadline"] = rec["deadlines"][SUBMISSION]
     if actor is not None and actor.role in ("admin", "organizer"):
-        out.update({k: rec[k] for k in ("created_by", "created_at", "approved_by", "approved_at", "rejection_reason",
-                                        "archived_at", "deleted_at")})
+        out.update({k: rec[k] for k in ("created_by", "created_by_role", "created_at", "approved_by", "approved_at",
+                                        "rejection_reason", "archived_at", "deleted_at")})
     return copy.deepcopy(out)
 
 

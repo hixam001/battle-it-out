@@ -6,6 +6,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Admin tournament management (BIO-707, CN-065)** lists tournaments,
+  creates and edits drafts, and supports confirmed approval of Admin drafts
+  and a separate action to open registration.
+
 - **First invitation issuance (BIO-502; CN-064)** lets current Admins and
   assigned Organizers issue codes for selected eligible roster entries
   and read the one-time receipt.

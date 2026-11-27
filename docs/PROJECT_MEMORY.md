@@ -22,9 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-707 / CN-065 adds Admin tournament listing, draft creation, versioned
+  settings, direct approval of Admin drafts and manual registration opening.
 - BIO-502 / CN-064 adds first invitation issuance to the Admin and
   Organizer consoles. The production build and all 24 Playwright tests
-  passed. PR #71 merged into main at `5e4247f`.
+  passed. PR #72 merged into main at `8765fbd`.
 - BIO-706 / CN-063 adds the Organizer team directory and audited source
   download, completing the local BIO-706 screens. The production build
   and all 23 Playwright tests passed. PR #70 merged at `77ee8da`.
@@ -433,6 +435,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    CN-058 adds the paginated global audit screen for Admins. CN-059 adds
    the Admin extension and emergency override forms with notice receipts.
    CN-062 adds the Organizer map selection, draw and round-start console.
+   CN-065 adds Admin tournament listing, draft creation, settings and
+   registration opening. Staff archive controls remain open.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; Organizer approval/rejection
    and dispute notices; mandatory security
@@ -457,8 +461,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
-   Admin tournament creation and incident controls, browser replay
-   playback and Admin mutation screens. Public landing and the private
+   archive and incident controls, browser replay playback and remaining
+   Admin mutation screens. Public landing and the private
    live/analytics/submission/dispute/operations console now exist. CN-053 adds
    direct team and submission routes, bracket standing and validation details.
    CN-063 adds the equivalent assigned Organizer team and source view.
@@ -1042,3 +1046,19 @@ The production build and all 24 Playwright tests passed (39.1 s),
 including both staff roles and no plaintext in the subsequent list.
 All 91 statuses, nine backlog categories and 42 open Jira items remain.
 Public claims, verification and automated delivery remain open.
+
+## CN-065 continuation evidence
+
+BIO-707 starts from merged main at `8765fbd` on
+`BIO-707-admin-tournament-management`. The Admin console shares the
+tournament form and version checks with Organizer management, uses direct
+confirmed approval for Admin-created drafts, and opens registration in a
+separate action. Staff detail exposes the persisted creator role for this
+control. Existing deadline addresses are linked from settings.
+
+The production build, 147 Django tests, migration and system checks, and
+the Python 3.15 backend unit run passed. The unit run had 738 passes and
+48 expected integration skips. The 25-case browser suite covers stale edits,
+direct approval, registration, role refusal and desktop/mobile rendering.
+All 91 requirement statuses, nine backlog categories and 42 tracked Jira
+items remain. Staff archive controls are the next ready lifecycle slice.

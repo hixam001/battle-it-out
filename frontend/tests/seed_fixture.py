@@ -80,6 +80,9 @@ def main():
             replays.register_replay(fixture.rt.vault, 'tied-fixture', match_id, replay_source, None)
             replay_source.unlink()
             organizer = registry.Actor(str(FeatureAPI.org.pk), 'organizer')
+            OrganizerAssignment.objects.create(user=FeatureAPI.org, tournament_id='organizer-draft')
+            tournaments.create(fixture.rt.tournaments, organizer, 'organizer-draft', 'Unsubmitted Organizer fixture',
+                               '', fixture.now + 7200, fixture.now + 10800, idempotency_key='organizer-draft')
             for suffix in ('approve', 'reject', 'changed'):
                 tid = f'approval-{suffix}'
                 OrganizerAssignment.objects.create(user=FeatureAPI.org, tournament_id=tid)

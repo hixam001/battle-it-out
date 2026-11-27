@@ -1266,3 +1266,22 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   CN-064, changelog, coverage and memory. All 91 statuses, nine backlog
   categories and 42 open Jira items remain. Public claim, verification
   and automated delivery remain open.
+
+### 2026-11-27 — BIO-707 Admin tournament management
+
+- Confirmed PR #72 merged into `main` at `8765fbd`. Started
+  `BIO-707-admin-tournament-management` from the fetched commit.
+- The Admin console shares tournament listing, draft creation and versioned
+  settings components with the Organizer console. The existing lifecycle API
+  directly approves an Admin-created draft after confirmation and opens
+  registration in a separate action. Staff detail includes the persisted
+  creator role. Existing deadline routes link to and from settings.
+- The production build, 25 Playwright tests, 147 Django tests, Django system
+  and migration-drift checks passed. Python 3.15 backend unit mode passed
+  738 cases with 48 expected integration skips. The test reruns used loopback
+  permissions and explicit Django module labels. The browser used disposable
+  services, and existing replays were preserved.
+- Updated the Admin and frontend guides, API and flow specs, test plan, Jira,
+  CN-065, changelog, coverage and memory. All 91 statuses, nine backlog
+  categories and 42 open Jira items remain. Staff archive controls are ready
+  for the next PR. Incident mutations still need their authority policy.
