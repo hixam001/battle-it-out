@@ -539,3 +539,32 @@ test("Organizer publishes one announcement despite a lost response", async ({ pa
   await expect(page.getByRole("alert")).toHaveText("Tournament staff access is required to post announcements.");
   await expect(page.getByRole("button", { name: "Publish announcement" })).toHaveCount(0);
 });
+
+test("Admin paginates global audit and filters retained events for a deleted tournament", async ({ page, useSession }) => {
+  await useSession(page, "admin");
+  await page.goto("/admin/audit");
+  const table = page.getByRole("table", { name: "Global audit events" });
+  const pages = page.getByRole("navigation", { name: "Audit pages" });
+  await expect(table).toBeVisible();
+  await pages.getByRole("button", { name: "Next" }).click();
+  await expect(pages.getByText("Page 2", { exact: true })).toBeVisible();
+  await expect(table).toBeVisible();
+  await pages.getByRole("button", { name: "Previous" }).click();
+  await expect(pages.getByText("Page 1", { exact: true })).toBeVisible();
+
+  await page.getByRole("combobox", { name: "Tournament ID" }).fill("retired-fixture");
+  await page.getByRole("button", { name: "Apply filter" }).click();
+  const deleted = table.getByRole("row").filter({ has: page.getByRole("rowheader", { name: "delete", exact: true }) });
+  await expect(deleted.getByRole("cell", { name: "retired-fixture", exact: true })).toBeVisible();
+  await deleted.locator("summary").click();
+  await expect(deleted.getByText("deleted", { exact: true })).toBeVisible();
+  await expect(table.getByText("Private approval-suite deletion reason")).toHaveCount(0);
+  await expect(pages.getByRole("button", { name: "Next" })).toBeDisabled();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  await useSession(page, "captain-a");
+  await page.goto("/admin/audit");
+  await expect(page.getByRole("alert")).toHaveText("Admin access is required to open the global audit log.");
+  await expect(table).toHaveCount(0);
+});

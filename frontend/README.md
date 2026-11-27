@@ -20,7 +20,7 @@ Production static assets are generated into ignored `frontend/dist/`. Serve
 `index.html` for `/dashboard`, `/notifications`, `/participant/team` and
 `/participant/submissions`, `/bracket`,
 `/participant/tournaments/{id}/bracket`, `/matches/{id}` and
-`/matches/{id}/replay`, `/admin/approvals`, `/organizer`,
+`/matches/{id}/replay`, `/admin/approvals`, `/admin/audit`, `/organizer`,
 `/organizer/tournaments/new`, `/organizer/tournaments/{id}` and
 `/announcements/new`; retain the same-origin
 `/api` route to Django. Hosting,
@@ -69,6 +69,8 @@ Playback uses the Battlecode client.
 Admins can review pending Organizer tournaments through **Approvals**.
 The queue reuses the server's confirmation, required rejection reasons
 and version checks. Open registration separately after approval.
+**Audit log** pages through role-filtered events and accepts an exact
+tournament ID, including one whose tournament has been deleted.
 
 Organizers use **Manage tournaments** to create drafts, revise assigned
 tournaments, send them for approval and open registration upon approval.
