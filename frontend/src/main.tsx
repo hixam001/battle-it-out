@@ -13,6 +13,7 @@ import { InvitationControls } from "./invitations";
 import { Roster } from "./roster";
 import { RoundControls } from "./rounds";
 import { StaffTeams } from "./staff-teams";
+import { Operations } from "./operations";
 import "./style.css";
 
 type User = { id: number; username: string; admin: boolean };
@@ -402,7 +403,7 @@ const consoleLinks = [
   { page: "team", href: "/participant/team", label: "My team", icon: "◇" },
   { page: "submissions", href: "/participant/submissions", label: "Bot submissions", icon: "⌘" },
   { page: "disputes", href: "/#disputes", label: "Match disputes", icon: "☷" },
-  { page: "operations", href: "/#operations", label: "Operations", icon: "⚙" },
+  { page: "operations", href: "/admin", label: "Operations", icon: "⚙" },
   { page: "approvals", href: "/admin/approvals", label: "Approvals", icon: "✓" },
   { page: "audit", href: "/admin/audit", label: "Audit log", icon: "☷" },
   { page: "admin-tournaments", href: adminTournamentList, label: "Manage tournaments", icon: "▤" },
@@ -431,6 +432,7 @@ const detailRoutes: [RegExp, ConsolePage][] = [
 function currentRoute(address: string): ConsoleRoute | null {
   const normalized = address.replace(/\/$/, "");
   if (normalized === "/#submissions") return { page: "submissions" };
+  if (normalized === "/#operations") return { page: "operations" };
   if (normalized === `${adminTournamentList}/new`) return { page: "admin-tournaments", create: true };
   for (const [pattern, page] of detailRoutes) {
     const match = normalized.match(pattern);
@@ -1464,77 +1466,6 @@ function Disputes({ cup, role }: { cup: Cup; role: string }) {
           )}
         </section>
       </div>
-    </>
-  );
-}
-function Operations() {
-  const [data, setData] = useState<any>(null),
-    [error, setError] = useState("");
-  useEffect(() => {
-    api("/admin/operations/")
-      .then(setData)
-      .catch((e) => setError(e.message));
-  }, []);
-  if (error)
-    return (
-      <p className="error" role="alert">
-        {error}
-      </p>
-    );
-  if (!data) return <p role="status">Loading service state…</p>;
-  return (
-    <>
-      <div className="workspace-heading">
-        <div>
-          <p className="eyebrow">ADMIN / SERVICE HEALTH</p>
-          <h1>Eyes on the operation.</h1>
-        </div>
-      </div>
-      <div className="stats">
-        {[
-          ["Open incidents", data.status.open_incidents],
-          ["Unalerted incidents", data.status.unalerted_incidents],
-          ["Failed emails awaiting alert", data.status.unalerted_failed_emails],
-          ["Dead jobs", data.dead_jobs.length],
-        ].map(([l, v]) => (
-          <div key={l}>
-            <span>{l}</span>
-            <strong>{v}</strong>
-          </div>
-        ))}
-      </div>
-      <section className="panel">
-        <h2>Open incidents</h2>
-        {data.incidents.length ? (
-          data.incidents.map((i: any) => (
-            <div className="map-row" key={i.id}>
-              <strong>{label(i.incident_type)}</strong>
-              <span>
-                {i.source} · {i.match_id || i.job_id || i.tournament_id || i.id}
-              </span>
-            </div>
-          ))
-        ) : (
-          <p>No open incidents.</p>
-        )}
-      </section>
-      <section className="panel">
-        <div className="panel-toolbar">
-          <h2>Recent audit events</h2><a href="/admin/audit">Open global audit log</a>
-        </div>
-        {data.audit.length ? (
-          data.audit.map((a: any, i: number) => (
-            <div className="map-row" key={i}>
-              <strong>{label(a.action)}</strong>
-              <span>
-                {a.tournament_id} · {new Date(a.created_at).toLocaleString()}
-              </span>
-            </div>
-          ))
-        ) : (
-          <p>No web audit events recorded.</p>
-        )}
-      </section>
     </>
   );
 }

@@ -140,16 +140,24 @@ test("participant signs in, sees recorded analytics and opens a match dispute", 
   expect(errors).toEqual([]);
 });
 
-test("Admin sees operational health and participants cannot call it", async ({
+test("Admin sees paused-match incidents, dead jobs and recent audit", async ({
   page,
   useSession,
 }) => {
   await useSession(page, "admin");
   await page.goto("/#console");
   await page.getByRole("link", { name: "Operations", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Eyes on the operation." }),
-  ).toBeVisible();
+  await expect(page).toHaveURL("/admin");
+  await expect(page.getByRole("heading", { name: "Operations", exact: true })).toBeVisible();
+  const match = page.getByRole("table", { name: "Open incidents" }).getByRole("row", { name: /paused-fixture-match/ });
+  await expect(match.getByRole("rowheader")).toHaveText("retry cap reached");
+  await expect(match.getByRole("cell", { name: "1", exact: true })).toBeVisible();
+  await expect(match.getByRole("cell", { name: "Pending", exact: true })).toBeVisible();
+  const job = page.getByRole("table", { name: "Dead jobs" }).getByRole("row", { name: /run round/ });
+  await expect(job.getByRole("cell", { name: "1", exact: true })).toBeVisible();
+  const refresh = page.waitForResponse((response) => new URL(response.url()).pathname === "/api/v1/admin/operations/");
+  await page.getByRole("button", { name: "Refresh operations" }).click();
+  expect((await refresh).ok()).toBe(true);
   await expect(
     page.getByRole("heading", { name: "Recent audit events" }),
   ).toBeVisible();
@@ -157,6 +165,9 @@ test("Admin sees operational health and participants cannot call it", async ({
     path: test.info().outputPath("operations-desktop.png"),
     fullPage: true,
   });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("operations-mobile.png"), fullPage: true });
 });
 
 test("participant sees tournament notices and manages a private inbox on mobile", async ({ page, browser }) => {
@@ -256,6 +267,8 @@ test("private console opens by keyboard and guards a direct Operations link", as
   await expect(page).toHaveURL(/#operations$/);
   await page.getByRole("link", { name: "Open Dashboard" }).click();
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await page.goto("/admin");
+  await expect(page.getByRole("alert")).toHaveText("Admin access is required to open Operations.");
   expect(adminRequests).toEqual([]);
 });
 

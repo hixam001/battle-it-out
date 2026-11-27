@@ -20,7 +20,7 @@ Production static assets are generated into ignored `frontend/dist/`. Serve
 `index.html` for `/dashboard`, `/notifications`, `/participant/team` and
 `/participant/submissions`, `/bracket`,
 `/participant/tournaments/{id}/bracket`, `/matches/{id}` and
-`/matches/{id}/replay`, `/admin/approvals`, `/admin/audit`,
+`/matches/{id}/replay`, `/admin`, `/admin/approvals`, `/admin/audit`,
 `/admin/manage-tournaments`, `/admin/manage-tournaments/new`,
 `/admin/manage-tournaments/{id}/settings`, `/admin/manage-tournaments/{id}/roster`,
 `/admin/manage-tournaments/{id}/teams`,
@@ -49,8 +49,10 @@ maintenance removes the retained live snapshots.
 Analytics includes team/round/map summaries, version performance, coin flips,
 forfeits, platform failures, observed median/p95 attempt duration and team CSV.
 Dispute comments and status changes use optimistic revisions and idempotency;
-reviews never automatically alter a result. Operations is a read-only Admin
-reader, leaving existing incident/resume authority decisions open.
+reviews never automatically alter a result. **Operations** shows open
+incident references, attempt and alert state, dead job IDs and failure counts,
+and recent audit events. Admins can refresh the snapshot. The prior
+`/#operations` address still opens the page.
 
 The dashboard shows the selected tournament's status, both deadlines in your
 browser timezone, and its three latest personal notices. The linked-participant

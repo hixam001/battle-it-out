@@ -99,6 +99,12 @@ and audited source downloads.
 
 ## 5. Operating a tournament and handling incidents
 
+Open **Operations** (`/admin`) to see open incidents and dead jobs.
+Incident rows show the affected reference, attempt count when recorded,
+and alert timestamp or pending state. Dead jobs show the job ID, type
+and failure count. Select **Refresh operations** after checking the
+service state.
+
 ### 5.1 Before each round (Recommended checklist)
 
 1. Every eligible team has an active, valid bot version; the bracket is generated; maps and the execution profile are set.

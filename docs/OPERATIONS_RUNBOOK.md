@@ -12,7 +12,7 @@ release, service account and config path before adopting them on a managed host.
    API request ID when available. Use the protected incident record for logs
    and identifiers. Keep credentials, source, roster records and provider
    payloads out of shared incident messages.
-2. Sign in with the platform Admin account and open **Operations** in the
+2. Sign in with the platform Admin account and open **Operations** (`/admin`) in the
    competition console. Review worker and delivery counts, open incidents,
    dead jobs and recent feature audit events. The page reads the current
    state. Refresh it after a service intervention.
