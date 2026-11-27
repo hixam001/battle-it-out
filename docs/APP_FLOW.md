@@ -446,9 +446,17 @@ Authenticated Web App (later phase)
   `/admin/approvals`                        Admin           Review Organizer       Approve/reject with Pending, approved,
                                                             tournaments            reason              rejected
 
-  `/admin/tournaments/{id}`                 Admin           Full tournament        Settings,           Active, locked,
-                                                            management             deadlines,          archived
-                                                                                   overrides           
+  `/admin/manage-tournaments`              Admin           All tournaments        Open/create         Empty, draft, active,
+                                                                                   tournament          archived
+
+  `/admin/manage-tournaments/new`          Admin           Create draft           Tournament form     Draft, validation
+                                                                                                       error
+
+  `/admin/manage-tournaments/{id}/settings` Admin          Tournament settings    Edit, approve,      Draft, approved,
+                                                                                   open registration   registration open
+
+  `/admin/tournaments/{id}`                 Admin           Deadline controls      Extend deadlines,   Active, locked,
+                                                                                   override settings   archived
 
   `/admin/invitations`                      Admin           Revoke/replace         Revoke, replace     Active, consumed,
                                                             compromised codes                          expired, revoked

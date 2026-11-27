@@ -552,7 +552,10 @@ textarea {
 }
 .sidebar nav {
   display: grid;
+  align-content: start;
   gap: 0.5rem;
+  min-height: 0;
+  overflow-y: auto;
 }
 .sidebar nav a {
   display: flex;

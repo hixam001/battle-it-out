@@ -9,6 +9,7 @@ type Tournament = Summary & {
   submission_deadline: string | null;
   rejection_reason: string | null;
   created_by: string;
+  created_by_role: "admin" | "organizer";
   version: number;
 };
 type Fields = { name: string; description: string; registration_deadline: string; submission_deadline: string };
@@ -17,7 +18,11 @@ type Apply = (record: Tournament) => void;
 const blank: Fields = { name: "", description: "", registration_deadline: "", submission_deadline: "" };
 const editable = ["draft", "rejected", "approved", "registration_open"];
 const formatStatus = (status: string) => status[0].toUpperCase() + status.slice(1).replaceAll("_", " ");
-const managePath = (id: string) => `/organizer/tournaments/${encodeURIComponent(id)}`;
+export const adminTournamentList = "/admin/manage-tournaments";
+const adminNewTournament = `${adminTournamentList}/new`;
+const organizerList = "/organizer";
+const organizerTournamentPath = (id: string) => `/organizer/tournaments/${encodeURIComponent(id)}`;
+export const adminTournamentSettings = (id: string) => `${adminTournamentList}/${encodeURIComponent(id)}/settings`;
 const apiPath = (id: string) => `/tournaments/${encodeURIComponent(id)}/`;
 
 function localInput(value: string | null) {
@@ -35,27 +40,33 @@ function settings(record: Tournament): Fields {
   };
 }
 
-export function Organizer({ id, userId, tournaments, navigate, onChange }: {
-  id?: string; userId: number; tournaments: Summary[]; navigate: (path: string) => void; onChange: Apply;
+export function TournamentManagement({ id, userId, admin, create, tournaments, navigate, onChange, loadError }: {
+  id?: string; userId: number; admin: boolean; create: boolean; tournaments: Summary[];
+  navigate: (path: string) => void; onChange: Apply; loadError: string;
 }) {
-  if (id === "new") {
+  const listPath = admin ? adminTournamentList : organizerList;
+  const managePath = admin ? adminTournamentSettings : organizerTournamentPath;
+  const listLabel = admin ? "All tournaments" : "Assigned tournaments";
+  if (create) {
     return (
       <>
-        <div className="workspace-heading"><h1>New tournament</h1><a href="/organizer">All tournaments</a></div>
+        <div className="workspace-heading"><h1>New tournament</h1><a href={listPath}>All tournaments</a></div>
         <section className="panel">
           <TournamentForm save={(record) => { onChange(record); navigate(managePath(record.id)); }} />
         </section>
       </>
     );
   }
-  if (id) return <ManagedTournament id={id} userId={userId} onChange={onChange} />;
+  if (id) return <ManagedTournament id={id} userId={userId} admin={admin} listPath={listPath} onChange={onChange} />;
   return (
     <>
-      <div className="workspace-heading"><h1>Manage tournaments</h1><a href={managePath("new")}>New tournament</a></div>
-      <section className="panel" aria-label="Assigned tournaments">
+      <div className="workspace-heading"><h1>Manage tournaments</h1>
+        <a href={admin ? adminNewTournament : managePath("new")}>New tournament</a></div>
+      {loadError && <p className="error" role="alert">{loadError}</p>}
+      <section className="panel" aria-label={listLabel}>
         {tournaments.length > 0 ? (
           <div className="table-wrap">
-            <table aria-label="Assigned tournaments">
+            <table aria-label={listLabel}>
               <thead><tr><th scope="col">Tournament</th><th scope="col">Status</th></tr></thead>
               <tbody>{tournaments.map((record) => (
                 <tr key={record.id}>
@@ -65,19 +76,22 @@ export function Organizer({ id, userId, tournaments, navigate, onChange }: {
               ))}</tbody>
             </table>
           </div>
-        ) : <p>No tournaments are assigned to this account.</p>}
+        ) : !loadError && <p>{admin ? "Create a tournament to get started." : "No tournaments are assigned to this account."}</p>}
       </section>
     </>
   );
 }
 
-function ManagedTournament({ id, userId, onChange }: { id: string; userId: number; onChange: Apply }) {
+function ManagedTournament({ id, userId, admin, listPath, onChange }: {
+  id: string; userId: number; admin: boolean; listPath: string; onChange: Apply;
+}) {
   const [record, setRecord] = useState<Tournament>();
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [revision, setRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [stale, setStale] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     api<Tournament>(apiPath(id), { signal: controller.signal })
@@ -91,6 +105,7 @@ function ManagedTournament({ id, userId, onChange }: { id: string; userId: numbe
     setError("");
     setMessage("");
     setStale(false);
+    setConfirmed(false);
     setRevision((value) => value + 1);
   }
 
@@ -98,33 +113,36 @@ function ManagedTournament({ id, userId, onChange }: { id: string; userId: numbe
     setRecord(tournament);
     onChange(tournament);
     setMessage(text);
+    setConfirmed(false);
   }
 
-  async function transition(action: "submit-for-approval" | "open-registration", success: string) {
-    if (!record || busy || stale) return;
+  async function transition(action: "submit-for-approval" | "approve" | "open-registration", success: string) {
+    if (!record || busy || stale || (action === "approve" && !confirmed)) return;
+    const body = { expected_version: record.version, ...(action === "approve" && { confirm: confirmed }) };
     setBusy(true);
     setError("");
     setMessage("");
     try {
       const response = await api<Tournament>(apiPath(id) + action + "/", {
         method: "POST",
-        body: JSON.stringify({ expected_version: record.version }),
+        body: JSON.stringify(body),
       });
       update(response, success);
     } catch (error) {
       setError((error as Error).message);
-      if (error instanceof ApiError && error.status === 409) setStale(true);
+      if (error instanceof ApiError && [403, 404, 409].includes(error.status)) setStale(true);
     } finally {
       setBusy(false);
     }
   }
 
-  const canSubmit = record?.created_by === String(userId) && ["draft", "rejected"].includes(record.status);
+  const canSubmit = !admin && record?.created_by === String(userId) && ["draft", "rejected"].includes(record.status);
+  const canApprove = admin && record?.status === "draft" && record.created_by_role === "admin";
   return (
     <>
       <div className="workspace-heading">
         <h1>{record?.name ?? "Tournament settings"}</h1>
-        <a href="/organizer">All tournaments</a>
+        <a href={listPath}>All tournaments</a>
       </div>
       {error && <p className="error" role="alert">{error}</p>}
       {message && <p className="success" role="status">{message}</p>}
@@ -136,13 +154,16 @@ function ManagedTournament({ id, userId, onChange }: { id: string; userId: numbe
               <h2>Tournament status</h2>
               <button className="text-button" onClick={refresh} disabled={busy}>Refresh tournament</button>
             </div>
-            <p><a href={managePath(record.id) + "/roster"}>Manage roster</a>{" · "}
-              <a href={managePath(record.id) + "/rounds"}>Manage rounds</a>{" · "}
-              <a href={managePath(record.id) + "/teams"}>View teams</a></p>
+            {admin ? <p><a href={`/admin/tournaments/${encodeURIComponent(record.id)}`}>Deadline controls</a></p> : (
+              <p><a href={organizerTournamentPath(record.id) + "/roster"}>Manage roster</a>{" · "}
+                <a href={organizerTournamentPath(record.id) + "/rounds"}>Manage rounds</a>{" · "}
+                <a href={organizerTournamentPath(record.id) + "/teams"}>View teams</a></p>
+            )}
             <p role="status">{formatStatus(record.status)}</p>
             {!editable.includes(record.status) && record.description && <p>{record.description}</p>}
             {record.status === "rejected" && <p><strong>Rejection reason:</strong> {record.rejection_reason}</p>}
-            {record.status === "pending_approval" && <p>The Admin is reviewing this version.</p>}
+            {record.status === "pending_approval" && (admin ? <p><a href="/admin/approvals">Open approval queue</a></p>
+              : <p>The Admin is reviewing this version.</p>)}
             <dl>
               <div><dt>Registration deadline</dt><dd>{formatDeadline(record.registration_deadline)}</dd></div>
               <div><dt>Submission deadline</dt><dd>{formatDeadline(record.submission_deadline)}</dd></div>
@@ -151,6 +172,15 @@ function ManagedTournament({ id, userId, onChange }: { id: string; userId: numbe
               onClick={() => transition("submit-for-approval", "Submitted for Admin approval.")}>
               {record.status === "rejected" ? "Resubmit for approval" : "Submit for approval"}
             </button>}
+            {canApprove && <>
+              <label className="review-confirm">
+                <input type="checkbox" checked={confirmed} disabled={stale || busy}
+                  onChange={(event) => setConfirmed(event.target.checked)} />
+                Confirm tournament approval
+              </label>
+              <button className="primary" disabled={!confirmed || stale || busy}
+                onClick={() => transition("approve", "Tournament approved.")}>Approve tournament</button>
+            </>}
             {record.status === "approved" && <button className="primary" disabled={stale || busy}
               onClick={() => transition("open-registration", "Registration is open.")}>Open registration</button>}
           </section>

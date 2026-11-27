@@ -784,3 +784,77 @@ test("Organizer and Admin issue only eligible first codes through scoped console
   const finalList = (await (await page.request.get(path)).json()).items;
   expect(finalList).toHaveLength(3);
 });
+
+test("Admin creates, edits, directly approves and opens a tournament", async ({ page, useSession }) => {
+  const list = "/admin/manage-tournaments";
+  await useSession(page, "admin");
+  await page.goto("/admin/approvals");
+  await page.getByRole("link", { name: "Manage tournaments", exact: true }).click();
+  await expect(page.getByRole("table", { name: "All tournaments" })).toBeVisible();
+  await page.getByRole("link", { name: "Unsubmitted Organizer fixture" }).click();
+  await expect(page.getByRole("heading", { name: "Unsubmitted Organizer fixture" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Edit tournament" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Approve tournament" })).toHaveCount(0);
+
+  await page.getByRole("link", { name: "All tournaments" }).click();
+  await page.getByRole("link", { name: "New tournament", exact: true }).click();
+  await expect(page).toHaveURL(`${list}/new`);
+  await page.getByLabel("Tournament name").fill("Admin browser fixture");
+  const deadlines = await page.evaluate(() => [2, 3].map((days) => {
+    const date = new Date(Date.now() + days * 86_400_000);
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  }));
+  await page.getByLabel("Registration deadline").fill(deadlines[0]);
+  await page.getByLabel("Submission deadline").fill(deadlines[1]);
+  await page.getByRole("button", { name: "Create draft" }).click();
+  await expect(page.getByRole("heading", { name: "Admin browser fixture" })).toBeVisible();
+  const settings = new URL(page.url()).pathname;
+  const id = settings.split("/").at(-2)!;
+  const path = `/api/v1/tournaments/${id}/`;
+  const draft = await (await page.request.get(path)).json();
+  expect(draft).toMatchObject({ status: "draft", created_by_role: "admin" });
+  const csrf = (await (await page.request.get("/api/v1/auth/session/")).json()).csrf;
+  expect((await page.request.patch(path, {
+    headers: { "X-CSRFToken": csrf },
+    data: { expected_version: draft.version, description: "Concurrent fixture edit." },
+  })).ok()).toBe(true);
+
+  const description = page.getByRole("textbox", { name: "Description", exact: true });
+  await description.fill("Stale fixture edit.");
+  const save = page.getByRole("button", { name: "Save settings" });
+  await save.click();
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(save).toBeDisabled();
+  await page.getByRole("button", { name: "Refresh tournament" }).click();
+  await expect(description).toHaveValue("Concurrent fixture edit.");
+  await description.fill("Reviewed fixture settings.");
+  await save.click();
+  await expect(page.getByText("Tournament settings saved.")).toBeVisible();
+
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await expect(page.getByRole("button", { name: "Sign out" })).toBeInViewport();
+  await page.screenshot({ path: test.info().outputPath("admin-settings-desktop.png"), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("admin-settings-mobile.png"), fullPage: true });
+  const approve = page.getByRole("button", { name: "Approve tournament" });
+  await expect(approve).toBeDisabled();
+  await page.getByLabel("Confirm tournament approval").check();
+  await approve.click();
+  await expect(page.getByText("Tournament approved.")).toBeVisible();
+  await page.getByRole("button", { name: "Open registration" }).click();
+  await expect(page.getByText("Registration is open.")).toBeVisible();
+  expect(await (await page.request.get(path)).json()).toMatchObject({
+    status: "registration_open", description: "Reviewed fixture settings.",
+  });
+  await page.getByRole("link", { name: "Deadline controls", exact: true }).last().click();
+  await expect(page).toHaveURL(`/admin/tournaments/${id}`);
+  await page.getByRole("link", { name: "Tournament settings", exact: true }).click();
+  await expect(page).toHaveURL(settings);
+
+  await useSession(page, "organizer");
+  await page.goto(`${list}/new`);
+  await expect(page.getByRole("alert")).toHaveText("Admin access is required to manage tournaments here.");
+  await expect(page.getByRole("button", { name: "Create draft" })).toHaveCount(0);
+});

@@ -405,9 +405,10 @@ to the caller's verified teams. Global pagination remains part of BIO-404.
 
 **Purpose:** Tournament detail.\
 **Access:** scoped authenticated user.\
-**Success:** settings, status and version. Staff also see approval and
-rejection metadata. Participant detail is limited to the tournaments they
-have joined once registration opens, including archived tournaments.
+**Success:** settings, status and version. Staff also see the creator role
+(`created_by_role`) and approval and rejection metadata. Participant detail
+is limited to tournaments they have joined once registration opens, including
+archived tournaments.
 
 ### PATCH `/tournaments/{tournament_id}`
 

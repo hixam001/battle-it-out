@@ -442,6 +442,13 @@ first codes for selected eligible entries. Previously issued entries stay
 out of the selection. Codes can be dismissed and stay out of the metadata
 listing.
 
+### Admin tournament management (BIO-707 / CN-065)
+
+Playwright creates an Admin draft, resolves a stale settings conflict,
+confirms direct approval, opens registration separately and follows the
+deadline controls link. An unsubmitted Organizer draft has no direct
+approval control. Organizer sessions cannot open the Admin creation form.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.
