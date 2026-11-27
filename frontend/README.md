@@ -22,7 +22,8 @@ Production static assets are generated into ignored `frontend/dist/`. Serve
 `/participant/tournaments/{id}/bracket`, `/matches/{id}` and
 `/matches/{id}/replay`, `/admin/approvals`, `/admin/audit`,
 `/admin/manage-tournaments`, `/admin/manage-tournaments/new`,
-`/admin/manage-tournaments/{id}/settings`,
+`/admin/manage-tournaments/{id}/settings`, `/admin/manage-tournaments/{id}/roster`,
+`/admin/manage-tournaments/{id}/teams`,
 `/admin/tournaments`, `/admin/tournaments/{id}`, `/admin/invitations`, `/organizer`,
 `/organizer/tournaments/new`, `/organizer/tournaments/{id}`,
 `/organizer/tournaments/{id}/roster`, `/organizer/tournaments/{id}/rounds`,
@@ -76,7 +77,8 @@ The queue reuses the server's confirmation, required rejection reasons
 and version checks. **Manage tournaments** lists all available tournaments,
 creates and edits drafts, directly approves Admin-created drafts after
 confirmation and opens registration as a separate action. It links each
-tournament to its deadline controls.
+tournament to its deadline controls, roster import and correction, and
+the team directory with validation history and audited source downloads.
 **Audit log** pages through role-filtered events and accepts an exact
 tournament ID, including one whose tournament has been deleted.
 **Deadline controls** shows the current deadlines and supports confirmed

@@ -458,6 +458,13 @@ replay before archive, verifies its link disappears after archive, and opens
 the retained match result. The Django archive suite tests on-disk purge
 failure and maintenance recovery.
 
+### Admin roster and teams (BIO-707 / CN-067)
+
+The browser opens Admin roster and team views from tournament settings,
+imports a disposable roster entry and checks a verified team profile, source
+bytes and the Admin download audit event. An Organizer opening the Admin
+URLs receives an access error before the page requests scoped data.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

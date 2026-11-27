@@ -22,12 +22,12 @@ type ImportReceipt = {
   created: number; updated: number; unchanged: number; rejected: { row: number; reason: string }[];
 };
 
-export function Roster({ tournament }: { tournament?: Tournament }) {
+export function Roster({ tournament, backPath }: { tournament?: Tournament; backPath: string }) {
   if (!tournament) return <section className="empty"><h1>Official roster</h1><p>This tournament is unavailable.</p></section>;
-  return <TournamentRoster tournament={tournament} />;
+  return <TournamentRoster tournament={tournament} backPath={backPath} />;
 }
 
-function TournamentRoster({ tournament }: { tournament: Tournament }) {
+function TournamentRoster({ tournament, backPath }: { tournament: Tournament; backPath: string }) {
   const path = `/tournaments/${encodeURIComponent(tournament.id)}/roster/`;
   const [records, setRecords] = useState<{ items: Entry[]; report: Report }>();
   const [error, setError] = useState("");
@@ -58,7 +58,7 @@ function TournamentRoster({ tournament }: { tournament: Tournament }) {
     <>
       <div className="workspace-heading">
         <div><p className="eyebrow">{tournament.name}</p><h1>Official roster</h1></div>
-        <a href={`/organizer/tournaments/${encodeURIComponent(tournament.id)}`}>Back to tournament</a>
+        <a href={backPath}>Back to tournament</a>
       </div>
       {error ? <p className="error" role="alert">{error}</p> :
         !records || !report ? <p role="status">Loading roster…</p> : (

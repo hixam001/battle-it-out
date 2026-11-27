@@ -21,8 +21,9 @@ const formatStatus = (status: string) => status[0].toUpperCase() + status.slice(
 export const adminTournamentList = "/admin/manage-tournaments";
 const adminNewTournament = `${adminTournamentList}/new`;
 const organizerList = "/organizer";
-const organizerTournamentPath = (id: string) => `/organizer/tournaments/${encodeURIComponent(id)}`;
-export const adminTournamentSettings = (id: string) => `${adminTournamentList}/${encodeURIComponent(id)}/settings`;
+export const organizerTournamentPath = (id: string) => `/organizer/tournaments/${encodeURIComponent(id)}`;
+const adminTournamentPath = (id: string) => `${adminTournamentList}/${encodeURIComponent(id)}`;
+export const adminTournamentSettings = (id: string) => `${adminTournamentPath(id)}/settings`;
 const apiPath = (id: string) => `/tournaments/${encodeURIComponent(id)}/`;
 
 function localInput(value: string | null) {
@@ -138,6 +139,7 @@ function ManagedTournament({ id, userId, admin, listPath, onChange }: {
 
   const canSubmit = !admin && record?.created_by === String(userId) && ["draft", "rejected"].includes(record.status);
   const canApprove = admin && record?.status === "draft" && record.created_by_role === "admin";
+  const tournamentPath = admin ? adminTournamentPath(id) : organizerTournamentPath(id);
   return (
     <>
       <div className="workspace-heading">
@@ -154,11 +156,10 @@ function ManagedTournament({ id, userId, admin, listPath, onChange }: {
               <h2>Tournament status</h2>
               <button className="text-button" onClick={refresh} disabled={busy}>Refresh tournament</button>
             </div>
-            {admin ? <p><a href={`/admin/tournaments/${encodeURIComponent(record.id)}`}>Deadline controls</a></p> : (
-              <p><a href={organizerTournamentPath(record.id) + "/roster"}>Manage roster</a>{" · "}
-                <a href={organizerTournamentPath(record.id) + "/rounds"}>Manage rounds</a>{" · "}
-                <a href={organizerTournamentPath(record.id) + "/teams"}>View teams</a></p>
-            )}
+            <p><a href={tournamentPath + "/roster"}>Manage roster</a>{" · "}
+              <a href={tournamentPath + "/teams"}>View teams</a>{" · "}
+              {admin ? <a href={`/admin/tournaments/${encodeURIComponent(id)}`}>Deadline controls</a>
+                : <a href={tournamentPath + "/rounds"}>Manage rounds</a>}</p>
             <p role="status">{formatStatus(record.status)}</p>
             {!editable.includes(record.status) && record.description && <p>{record.description}</p>}
             {record.status === "rejected" && <p><strong>Rejection reason:</strong> {record.rejection_reason}</p>}

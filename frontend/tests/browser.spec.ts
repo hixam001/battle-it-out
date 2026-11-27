@@ -534,6 +534,58 @@ test("Organizer routes enforce role and tournament assignment", async ({ page, u
   await expect(page.getByRole("button", { name: "Create draft" })).toHaveCount(0);
 });
 
+test("Admin imports a tournament roster, views a verified team and downloads audited source", async ({ page, useSession }) => {
+  const base = "/admin/manage-tournaments";
+  await useSession(page, "admin");
+  await page.goto(`${base}/invite-fixture/settings`);
+  await page.getByRole("link", { name: "Manage roster" }).click();
+  await expect(page).toHaveURL(`${base}/invite-fixture/roster`);
+  await page.getByLabel("Roster file", { exact: true }).setInputFiles({
+    name: "admin-roster.csv", mimeType: "text/csv",
+    buffer: Buffer.from("email,team_key,team_name,member_number,role\nadmin-fixture@uni.edu,admin-import,Admin Import,1,captain\n"),
+  });
+  await page.getByRole("button", { name: "Import roster", exact: true }).click();
+  await expect(page.getByRole("table", { name: "Official roster entries" })
+    .getByRole("rowheader", { name: "admin-fixture@uni.edu" })).toBeVisible();
+  await page.getByRole("link", { name: "Back to tournament" }).click();
+  await expect(page).toHaveURL(`${base}/invite-fixture/settings`);
+
+  await page.goto(`${base}/cup/settings`);
+  await page.getByRole("link", { name: "View teams" }).click();
+  await expect(page).toHaveURL(`${base}/cup/teams`);
+  await page.getByRole("combobox", { name: "Team", exact: true }).selectOption("ta");
+  await expect(page.getByRole("table", { name: "Verified team members" }).getByText("Captain")).toBeVisible();
+  await expect(page.getByText("a@uni.edu")).toHaveCount(0);
+  await expect(page.getByLabel("Python bot or bundle")).toHaveCount(0);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await page.screenshot({ path: test.info().outputPath("admin-team-desktop.png"), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("admin-team-mobile.png"), fullPage: true });
+  const downloadEvent = page.waitForEvent("download");
+  await page.getByRole("link", { name: "Download v1", exact: true }).click();
+  const download = await downloadEvent;
+  expect(await readFile(await download.path(), "utf8")).toBe("def turn():\n    pass\n");
+  const audit = await page.request.get("/api/v1/tournaments/cup/audit-logs/?limit=200");
+  expect(audit.ok()).toBe(true);
+  expect((await audit.json()).items).toContainEqual(expect.objectContaining({
+    source: "submissions", action: "download", detail: expect.objectContaining({ submission_id: "ta-v1", role: "admin" }),
+  }));
+  await page.getByRole("link", { name: "Back to tournament" }).click();
+  await expect(page).toHaveURL(`${base}/cup/settings`);
+
+  await useSession(page, "organizer");
+  const scopedReads: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.startsWith("/api/v1/tournaments/cup/")) scopedReads.push(request.url());
+  });
+  for (const screen of ["roster", "teams"]) {
+    await page.goto(`${base}/cup/${screen}`);
+    await expect(page.getByRole("alert")).toHaveText("Admin access is required to manage tournaments here.");
+  }
+  expect(scopedReads).toEqual([]);
+});
+
 test("Organizer publishes one announcement despite a lost response", async ({ page, useSession }) => {
   await useSession(page, "organizer");
   await page.goto("/announcements/new");

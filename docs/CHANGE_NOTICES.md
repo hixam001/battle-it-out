@@ -903,3 +903,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - The production build and all 26 Playwright tests passed. The Admin
   test uses a disposable replay. The Organizer test covers scope and
   the pending-purge receipt with successful verification after reload.
+
+## CN-067 — Admin roster and teams (2026-11-28)
+
+- **BIO-707:** Admin tournament settings link to the official roster and
+  team directory. The shared staff views support import, correction,
+  verified profiles, validation history and audited source delivery.
+- The production build and all 27 Playwright tests passed on disposable
+  services. The browser verified import and source bytes, the Admin audit
+  event and the guard on the new Admin routes.

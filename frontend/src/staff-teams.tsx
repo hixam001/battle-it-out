@@ -5,12 +5,12 @@ import { ReadOnlySubmissions, TeamRoster } from "./participant";
 type Tournament = { id: string; name: string; status: string; deadlines: { submission: number } };
 type RosterTeam = { team_key: string; team_name: string };
 
-export function OrganizerTeams({ tournament }: { tournament?: Tournament }) {
+export function StaffTeams({ tournament, backPath }: { tournament?: Tournament; backPath: string }) {
   if (!tournament) return <section className="empty"><h1>Tournament teams</h1><p>This tournament is unavailable.</p></section>;
-  return <TeamDirectory tournament={tournament} />;
+  return <TeamDirectory tournament={tournament} backPath={backPath} />;
 }
 
-function TeamDirectory({ tournament }: { tournament: Tournament }) {
+function TeamDirectory({ tournament, backPath }: { tournament: Tournament; backPath: string }) {
   const id = encodeURIComponent(tournament.id);
   const [teams, setTeams] = useState<Map<string, string>>();
   const [selected, setSelected] = useState("");
@@ -41,7 +41,7 @@ function TeamDirectory({ tournament }: { tournament: Tournament }) {
     <>
       <div className="workspace-heading">
         <div><p className="eyebrow">{tournament.name}</p><h1>Tournament teams</h1></div>
-        <a href={`/organizer/tournaments/${id}`}>Back to tournament</a>
+        <a href={backPath}>Back to tournament</a>
       </div>
       <section className="panel" aria-label="Team directory">
         <button className="text-button" onClick={() => setRevision((value) => value + 1)}>Refresh team list</button>
