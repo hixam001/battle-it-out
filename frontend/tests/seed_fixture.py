@@ -92,6 +92,12 @@ def main():
                                'Private approval-suite deletion reason', confirm=True)
             fixture.make_cup('deadline-fixture', fixture.now - 3600, fixture.now - 1800)
             fixture.register('deadline-fixture', [('a', 'deadline-a'), ('b', 'deadline-b')])
+            fixture.make_cup('invite-fixture', fixture.now + 3600, fixture.now + 7200)
+            registration.import_roster(fixture.rt.registration, ADM, 'invite-fixture', [
+                {'email': 'unclaimed@uni.edu', 'team_key': 'invite-team', 'team_name': 'Invitation Fixture',
+                 'member_number': 1, 'role': 'captain'},
+            ])
+            registration.issue_codes(fixture.rt.registration, ADM, 'invite-fixture')
             for i in range(1, 24):
                 cup = 'cup' if i <= 22 else 'historical'
                 title = f'Fixture notice {i:02d}' if i <= 22 else 'Historical fixture notice'

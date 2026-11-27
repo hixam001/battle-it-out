@@ -22,6 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-707 / CN-060 adds Admin invitation controls. The production build
+  and all 20 Playwright tests passed. PR #67 merged into main at
+  `711c289`.
 - BIO-707 / CN-059 adds Admin deadline controls. The production build,
   all 19 Playwright tests and all 147 Django tests passed. Backend unit
   mode had 738 passes and 48 expected skips. PR #66 merged into main at
@@ -387,6 +390,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    official stored deadline/current roster Actor. CN-044 adds scoped staff
    roster reads, import, correction and exclusions. CN-045 adds team profiles.
    CN-049 adds staff invitation code metadata and issue/revoke/replace endpoints.
+   CN-060 adds Admin console listing, revocation and replacement.
    Plaintext codes appear only in successful issuance or replacement responses.
    BIO-504 defines multipart,
    size and actionable static-error responses. Interim caps are 256 KiB and
@@ -439,7 +443,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
-   Admin tournament creation, invitation and incident controls, Organizer roster and
+   Admin tournament creation and incident controls, Organizer roster and
    round management, browser replay
    playback and Admin mutation screens. Public landing and the private
    live/analytics/submission/dispute/operations console now exist. CN-053 adds
@@ -955,3 +959,17 @@ checks. Python 3.15 unit mode found 786 tests, with 738 passes and 48
 expected integration skips. All 91 statuses, nine backlog categories and
 43 open Jira items remain. Admin invitation and incident controls and
 formal acceptance remain.
+
+## CN-060 continuation evidence
+
+BIO-707 starts from merged main at `711c289` on
+`BIO-707-admin-invitation-controls`. The console lists invitation metadata
+and submits confirmed revocation or replacement with a reason through the
+existing Admin-only API. A new value is only held in the current browser
+view after a successful replacement.
+
+The production build and 20 Playwright tests passed (31.5 s), including both
+actions, dismissal and retention of safe list metadata, and Organizer
+refusal. All 91 statuses, nine backlog categories and 43 open Jira items
+remain. Staff initial issuance UI, public claim/verification, delivery,
+and Admin incident actions remain open.

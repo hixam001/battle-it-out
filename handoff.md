@@ -1178,3 +1178,20 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   changelog, coverage and memory. All 91 statuses, nine backlog categories
   and 43 open Jira items remain. Remaining Admin management, invitations,
   incident controls and formal acceptance stay open.
+
+### 2026-11-27 — BIO-707 Admin invitation controls
+
+- PR #67 merged into main at `711c289`. Started
+  `BIO-707-admin-invitation-controls` from that commit. Added the Admin
+  invitation route for listing metadata, revoking and replacing. Both
+  actions require a reason and confirmation through the existing API.
+- A replacement value is shown only after success and is cleared when
+  dismissed, refreshed or leaving the view. The list omits plaintext,
+  hashes and reasons. No API or schema changes were needed.
+- The production build and all 20 Playwright tests passed in 31.5 s on
+  disposable sessions, PostgreSQL and Django. The browser checks replacement,
+  revocation, metadata and role refusal. No real invitations were changed.
+- Updated Admin and frontend guides, test plan, Jira, CN-060, changelog,
+  coverage and memory. All 91 statuses, nine backlog categories and 43
+  open Jira items remain. Staff initial issuance UI, public registration,
+  delivery and remaining Admin operations are open.

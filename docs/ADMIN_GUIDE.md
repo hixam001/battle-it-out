@@ -70,7 +70,12 @@ dashboard notices have been published or are pending automatic retry.
 ## 4. Invitation codes and roster issues
 
 - Initial codes are issued by an Admin or the assigned Organizer. **Only you** can revoke or replace a code.
-- **Lost or compromised code:** revoke it (reason and confirmation), then issue a replacement. The old code becomes unusable. Code values are shown only to the issuer at issuance and are stored hashed.
+- **Lost or compromised code:** open **Invitation codes**, select the
+  tournament and manage the matching code ID. Revoke the code to disable it,
+  or replace it while the roster entry is eligible. Either action needs a
+  reason and confirmation. Replacement revokes the old code and displays the
+  new value until dismissed or the page changes. Share it privately with the
+  roster participant.
 - Invalid registration attempts do not consume codes. If a legitimate participant is stuck, check the roster entry (email spelling, normalization) with the Organizer before reissuing.
 - After a participant registers, their email, team, member number, and role are locked. A correction after registration is not allowed through the normal roster tool; any exception policy is `[DECIDE]`.
 - Code granularity (per participant, recommended, or per team) is `[DECIDE]`.
@@ -144,4 +149,4 @@ Highest impact first: Python patch version and OS matrix (DEC-03, tested: 3.15.2
 
 ## 10. Quick reference: Admin screens (planned)
 
-`/admin` global status and incidents · `/admin/approvals` approval queue · `/admin/tournaments/{id}` deadline extensions and locked-setting overrides · `/admin/invitations` planned revoke and replace controls · `/admin/audit` global audit log. Team restore, permanent deletion, and user/role assignment appear in the navigation map but have no route in the inventory yet.
+`/admin` global status and incidents · `/admin/approvals` approval queue · `/admin/tournaments/{id}` deadline extensions and locked-setting overrides · `/admin/invitations` revoke and replace invitation codes · `/admin/audit` global audit log. Team restore, permanent deletion, and user/role assignment appear in the navigation map but have no route in the inventory yet.

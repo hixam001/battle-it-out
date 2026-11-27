@@ -9,6 +9,7 @@ import { Organizer } from "./organizer";
 import { AnnouncementForm } from "./announcements";
 import { GlobalAudit } from "./audit";
 import { DeadlineControls } from "./deadlines";
+import { InvitationControls } from "./invitations";
 import "./style.css";
 
 type User = { id: number; username: string; admin: boolean };
@@ -402,6 +403,7 @@ const consoleLinks = [
   { page: "approvals", href: "/admin/approvals", label: "Approvals", icon: "✓" },
   { page: "audit", href: "/admin/audit", label: "Audit log", icon: "☷" },
   { page: "deadlines", href: "/admin/tournaments", label: "Deadline controls", icon: "◷" },
+  { page: "invitations", href: "/admin/invitations", label: "Invitation codes", icon: "⌁" },
   { page: "organizer", href: "/organizer", label: "Manage tournaments", icon: "▤" },
   { page: "announce", href: "/announcements/new", label: "Post announcement", icon: "◈" },
 ] as const;
@@ -644,7 +646,7 @@ function Console({ user, route, navigate, logout }: {
   const cup = cups.find((c) => c.id === (scopedTournament || selected));
   const showTournament = !["notifications", "operations", "approvals", "audit", "organizer", "match", "replay"].includes(page);
   const canOpen = (target: ConsolePage) => {
-    if (["operations", "approvals", "audit", "deadlines"].includes(target)) return user.admin;
+    if (["operations", "approvals", "audit", "deadlines", "invitations"].includes(target)) return user.admin;
     if (target === "announce") return user.admin || role === "organizer" || loading;
     if (target === "organizer") return role === "organizer" || (loading && !user.admin);
     if (target === "notifications") return !user.admin && role !== "organizer";
@@ -716,6 +718,7 @@ function Console({ user, route, navigate, logout }: {
               : page === "approvals" ? "Admin access is required to review tournaments."
               : page === "audit" ? "Admin access is required to open the global audit log."
               : page === "deadlines" ? "Admin access is required to change deadlines and locked settings."
+              : page === "invitations" ? "Admin access is required to manage invitation codes."
               : page === "organizer" ? "Organizer access is required to manage tournaments."
               : page === "announce" ? "Tournament staff access is required to post announcements."
               : page === "team" ? "My team is available to participant accounts."
@@ -754,6 +757,11 @@ function Console({ user, route, navigate, logout }: {
           cup ? <DeadlineControls key={cup.id} tournament={cup} refresh={refreshTournament} /> :
             <section className="empty"><h1>Deadline controls</h1>
               {!error && <p>{scopedTournament ? "This tournament is unavailable." : "No tournaments are available."}</p>}
+            </section>
+        ) : page === "invitations" ? (
+          cup ? <InvitationControls key={cup.id} tournament={cup} /> :
+            <section className="empty"><h1>Invitation codes</h1>
+              {!error && <p>No tournaments are available.</p>}
             </section>
         ) : page === "bracket" ? (
           cup ? <BracketResults key={cup.id} tournament={cup} /> :
