@@ -47,9 +47,13 @@ Tournament states: `draft -> pending_approval -> approved -> registration_open -
 
 ## 3. Deadlines and emergency overrides
 
+The [Admin API](API_CONTRACT.md#post-tournamentsidextend-deadline) records each
+confirmed change, reports the affected count and publishes the participant
+notices. The console controls are planned.
+
 | Situation | What to do | What happens |
 |---|---|---|
-| Registration or submission needs more time | **Extend** the relevant deadline (reason and confirmation required) | Affected participants get email and dashboard notifications. Unused invitation codes stay valid until the new registration deadline. Extending the submission deadline **reopens** submissions |
+| Registration or submission needs more time | **Extend** the relevant deadline (reason and confirmation required) | Affected accounts get dashboard notices and eligible email enters the delivery queue. Unused invitation codes follow the registration deadline. Extension reopens submissions before entry versions are pinned |
 | A setting must change after a deadline | Normally: extend the deadline first, then change the setting | The Organizer can then edit permitted settings |
 | An urgent change cannot wait for a deadline extension | **Emergency override** (reason and confirmation required) | The change applies without extending the deadline. Participants are notified with the changed setting, the reason, the time, and who authorized it. Fully audited |
 
@@ -98,7 +102,10 @@ You do not decide ties. Normal ties use one tie-break map, finals use three in o
 
 ## 7. Audit, notifications and privacy
 
-- **Audit logs** (`/admin/audit`): global, filterable, append-only, and never edited. Passwords, raw invitation codes and secrets are never stored in them. Organizers see their assigned tournaments' logs; participants see only entries relevant to their own team and tournament.
+- **Audit logs:** use the [global audit API](API_CONTRACT.md#get-tournamentsidaudit-logs-and-get-adminaudit-logs)
+  to read retained records, including deleted tournaments. The tournament
+  API returns the current role's view. The dedicated `/admin/audit` screen
+  is planned.
 - **Notifications:** dashboard notifications are mandatory and independent of email. Email delivery attempts and failures are recorded and retried. Email provider, templates, and which security emails are mandatory are `[DECIDE]`.
 - **Privacy:** other teams' source code stays private throughout. An Organizer assigned to a tournament may view and download that tournament's source; you may too.
 - **Roles and assignments:** the navigation map lists a screen for user, role, and Organizer assignment, but **`API_CONTRACT.md` currently defines no endpoints for it**. This is a gap to close before the backend epic (BIO-EPIC-04). Whether a user may hold several roles is `[DECIDE]`.

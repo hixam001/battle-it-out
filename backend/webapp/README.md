@@ -87,6 +87,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET/PATCH | `/me/notification-preferences/` | Shared worker email preference; dashboard always enabled |
 | GET | `/tournaments/` | Only current accessible tournaments and own teams |
 | POST | `/tournaments/{id}/archive/` | Admin/assigned Organizer, exact JSON `{"confirm":true}` and CSRF; completed/archived only, purge status in response |
+| POST | `/tournaments/{id}/extend-deadline/`, `/tournaments/{id}/emergency-override/` | Current Admin only, CSRF, confirmation, reason and idempotency key; returns affected account count and notice status |
 | GET | `/tournaments/{id}/roster/`, `/tournaments/{id}/roster/report/` | Admin/assigned Organizer only, official roster and exclusion report |
 | POST | `/tournaments/{id}/roster/import/` | Staff-only bounded CSV or JSON, session CSRF and idempotency key |
 | PATCH | `/tournaments/{id}/roster/{entry_id}/` | Current staff, exact roster entry version and registration lock |
@@ -95,13 +96,19 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET | `/matches/{match_id}/replay/` | Current-scope `.bc26` attachment from the private replay vault; hidden/missing 404, archived 410, unavailable 503 |
 | GET | `/tournaments/{id}/analytics/` | Team win rates/byes, series decisions, failures, maps, version results, round progress and median/p95 attempt time |
 | GET | `/tournaments/{id}/bracket/` | Current-scope recorded bracket, with `null` before draw, game IDs and progression |
+| GET/PUT | `/tournaments/{id}/map-pool/` | Staff list and optimistic selection of a stored map pool |
+| POST | `/tournaments/{id}/bracket/generate/` | Staff confirmed draw after the deadline; uses `BIO_ENGINE_JAR` for native map verification |
+| POST | `/tournaments/{id}/rounds/{round_number}/start/` | Staff confirmed and idempotent start through the shared worker queue |
 | GET | `/matches/{match_id}/` | Current-scope game and enclosing series result, including pinned version IDs and stored coin flip |
 | GET | `/tournaments/{id}/analytics.csv` | Authorized team CSV with formula escaping |
-| GET/POST | `/tournaments/{id}/teams/{team}/submissions/` | Authorized history; captain-only upload using the stored official deadline; queues validation |
+| GET/POST | `/tournaments/{id}/teams/{team}/submissions/` | Team-private history with game references; one multipart bot.py or bounded flat ZIP, current captain and stored deadline, idempotent queued validation |
+| GET | `/tournaments/{id}/submissions/{version}/validation/` | Current validation status and ordered check details for a visible version |
 | GET | `/tournaments/{id}/submissions/{version}/download/` | Authorized source/bundle; staff reads audited; private/no-store |
 | GET/POST | `/tournaments/{id}/disputes/` | Team-private dispute list/create tied to a real match |
 | GET/POST | `/tournaments/{id}/disputes/{uuid}/` | Team/staff comments and review transitions with optimistic revision |
 | GET | `/admin/operations/` | Admin-only counts, safe incident metadata, dead jobs and recent feature audit events |
+| GET | `/tournaments/{id}/audit-logs/` | Current tournament scope, role-specific redacted audit, bounded pages |
+| GET | `/admin/audit-logs/` | Admin-only audit with bounded pages and optional tournament filter, including deleted tournament history |
 
 Analytics never changes results. Engine coin-flip picks count as tied games;
 series coin flips count separately. Byes do not inflate played games or wins.
@@ -109,6 +116,30 @@ Missing runtime samples remain absent rather than invented zeroes. Attempt p95
 uses the nearest rank; median uses the ordinary sample median. Version IDs are
 match metadata; source bytes, host paths, provider errors and claim tokens are
 not part of analytics, live boards or the operations reader.
+
+## Submission upload (BIO-504 / CN-040)
+
+POST requires one `file` in multipart form data, a session CSRF token and
+`Idempotency-Key`. A supported upload creates a version and returns `201`.
+Static failures return `422` with an actionable message. A rejected
+single-file version that reaches the static check remains in history with its
+findings and never enters the queue. Invalid ZIPs and wrong filenames are
+refused before storage. Size or ZIP member ceilings return `413` under the
+interim limits. An Admin deadline extension is reflected on the next upload.
+See the [HTTP contract](../../docs/API_CONTRACT.md#5-bot-submissions----bio-epic-05)
+for response details.
+
+## Admin deadline changes (BIO-602 / CN-041)
+
+Extension takes an ISO 8601 timestamp with timezone and the deadline type
+`registration` or `submission`. Emergency override changes a locked name,
+description or map pool on a published tournament and records the reason.
+Both require `confirm:true`, session CSRF, a reason and an `Idempotency-Key`.
+They store audit, participant count and a pending notice alongside the change.
+The Admin response reports `published` or `pending`. Maintenance retries the
+same notice if the notification store or receipt write was interrupted.
+Published dashboard notices follow the shared recipient and email rules.
+See the [API contract](../../docs/API_CONTRACT.md#post-tournamentsidextend-deadline).
 
 ## Recipient notifications (BIO-607 / CN-030)
 
@@ -199,7 +230,9 @@ idempotency/concurrency and remaining core routes are still BIO-404 work.
 backend/.venvs/web/bin/python backend/webapp/manage.py check
 backend/.venvs/web/bin/python backend/webapp/manage.py test \
   backend.webapp.tests backend.webapp.tests_http backend.webapp.tests_notifications \
-  backend.webapp.tests_replays backend.webapp.tests_results backend.webapp.tests_archive
+  backend.webapp.tests_replays backend.webapp.tests_results backend.webapp.tests_archive \
+  backend.webapp.tests_submission_reads backend.webapp.tests_round_actions \
+  backend.webapp.tests_deadlines backend.webapp.tests_audit
 backend/.venvs/py3.15/bin/python backend/run_tests.py
 backend/.venvs/py3.15/bin/python backend/run_tests.py --integration
 ```
@@ -230,11 +263,22 @@ separate work.
 scope and safe tournament/match refusals. No persisted state is changed on a
 read. The bracket exposes individual game IDs as well as series IDs.
 
+Manual draw requires `BIO_ENGINE_JAR` set to the same installed engine JAR
+as the service runner. The web process reads and hashes the map resources.
+The service worker still runs every match. `tests_round_actions` covers
+map-pool selection, draw after deadline, role and CSRF checks, repeat starts
+and keeping paused rounds out of the round-start path.
+
 `tests_archive` verifies confirmation and session scope, on-disk vault purge,
 retained history, recovery from failed purge and a refusal before vault changes
 when the audit is full. An archived response can have `replays_deleted:false`.
 The archive already blocks replay access; the next maintenance pass retries
 the pending vault purge.
+
+`tests_submission_reads` checks the validation detail and history routes,
+official game references, empty histories and current permissions. Staff
+history and validation reads are audited in PostgreSQL. Staff source/bundle
+downloads retain the registry's existing audit and integrity checks.
 
 Pinned web versions are Django 6.1.3, DRF 3.18.3 and psycopg 3.3.9; the separate
 web environment preserves the bot environment pins. Django documents Python 3.15
