@@ -22,6 +22,8 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-706 / CN-061 adds the Organizer roster screen. The production build
+  and all 21 Playwright tests passed. PR #68 merged into main at `8271400`.
 - BIO-707 / CN-060 adds Admin invitation controls. The production build
   and all 20 Playwright tests passed. PR #67 merged into main at
   `711c289`.
@@ -388,7 +390,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    approved upload/version/limiter caps and manual-activation decision. HTTP
    upload/history/source/bundle delivery and queued checks now exist and use the
    official stored deadline/current roster Actor. CN-044 adds scoped staff
-   roster reads, import, correction and exclusions. CN-045 adds team profiles.
+   roster reads, import, correction and exclusions. CN-061 adds the Organizer
+   roster screen. CN-045 adds team profiles.
    CN-049 adds staff invitation code metadata and issue/revoke/replace endpoints.
    CN-060 adds Admin console listing, revocation and replacement.
    Plaintext codes appear only in successful issuance or replacement responses.
@@ -443,8 +446,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
-   Admin tournament creation and incident controls, Organizer roster and
-   round management, browser replay
+   Admin tournament creation and incident controls, Organizer round and team
+   management, browser replay
    playback and Admin mutation screens. Public landing and the private
    live/analytics/submission/dispute/operations console now exist. CN-053 adds
    direct team and submission routes, bracket standing and validation details.
@@ -973,3 +976,16 @@ actions, dismissal and retention of safe list metadata, and Organizer
 refusal. All 91 statuses, nine backlog categories and 43 open Jira items
 remain. Staff initial issuance UI, public claim/verification, delivery,
 and Admin incident actions remain open.
+
+## CN-061 continuation evidence
+
+BIO-706 starts from merged main at `8271400` on
+`BIO-706-organizer-roster-screen`. The scoped Organizer roster page
+shows registration and captain status, imports CSV or JSON, reports
+rejected rows and submits version-checked corrections. Locked entries and
+foreign tournament data stay protected by the existing API.
+
+The production build and all 21 Playwright cases passed (29.8 s), including
+both imports, correction, report and scope. All 91 statuses, nine backlog
+categories and 43 open Jira items remain. Initial invitation issuance in
+the console and dedicated round and team management remain open.

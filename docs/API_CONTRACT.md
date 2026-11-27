@@ -563,7 +563,8 @@ missing a roster or registered captain, and entry IDs excluded after the
 stored registration deadline. Both responses are private/no-store.
 
 These four BIO-501 routes use the existing roster and interim format rules
-(CN-020/044).
+(CN-020/044). The Organizer roster screen uses them for import, correction
+and reporting (CN-061).
 
 ### GET and POST `/tournaments/{id}/invitation-codes/`
 

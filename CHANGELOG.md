@@ -6,6 +6,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Organizer roster screen (BIO-706; CN-061)** imports CSV or JSON,
+  reports rejected rows, corrects unlocked entries and shows registration
+  progress and exclusions.
+
 - **Admin invitation controls (BIO-707; CN-060)** list invitation metadata,
   confirm revocation or replacement, and show the new code only after a
   successful replacement.

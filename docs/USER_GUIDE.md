@@ -94,6 +94,11 @@ the selected tournament, enter a headline and a plain-text message, then
 publish to its verified roster. The dashboard and queued-email counts
 appear after publication.
 
+From an assigned tournament, open **Manage roster** to view registration
+counts and the exclusion report. Import a UTF-8 CSV or a JSON file with a
+`rows` array. The import receipt identifies rejected rows. Use **Correct**
+on an unlocked entry while the tournament accepts roster changes.
+
 Use the account assigned to the tournament. **Match room** and **Analytics** are
 scoped to that assignment. In **Bot submissions**, use the team's registered
 ID to review its versions or download its submission. Captains upload and
@@ -101,11 +106,9 @@ activate through validation. Organizer source access is read-only.
 
 Use **Match disputes** to review comments and record resolutions for assigned
 tournaments. An Admin handles approvals, deadline extensions and emergency
-overrides. Roster import and corrections, invitation issuance and round starts
-are available through the underlying tournament workflow. Assigned Organizers
-can archive a completed event through the confirmed archive API. Dedicated
-Organizer screens for these operations are planned. Follow the event's
-authorized operator process for actions outside the current console.
+overrides. Initial invitation issuance, round start and confirmed archive
+are available through their scoped APIs. Follow the event's authorized
+operator process for actions outside the current console.
 
 ## 6. Troubleshooting
 

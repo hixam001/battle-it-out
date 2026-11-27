@@ -650,3 +650,42 @@ test("Admin replaces and revokes invitations with plaintext visible only after r
   await expect(page.getByRole("alert")).toHaveText("Admin access is required to manage invitation codes.");
   await expect(table).toHaveCount(0);
 });
+
+test("Organizer imports CSV and JSON rosters, corrects an unlocked row and sees the report", async ({ page, useSession }) => {
+  await useSession(page, "organizer");
+  await page.goto("/organizer/tournaments/roster-fixture");
+  await page.getByRole("link", { name: "Manage roster" }).click();
+  await expect(page.getByRole("heading", { name: "Official roster" })).toBeVisible();
+  const entries = page.getByRole("table", { name: "Official roster entries" });
+  const claimed = entries.getByRole("row").filter({ has: page.getByRole("rowheader", { name: "a@uni.edu", exact: true }) });
+  await expect(claimed.getByText("Locked", { exact: true })).toBeVisible();
+
+  const file = page.getByLabel("Roster file", { exact: true });
+  await file.setInputFiles({
+    name: "roster.csv", mimeType: "text/csv",
+    buffer: Buffer.from("email,team_key,team_name,member_number,role\n" +
+      "fixture-new@uni.edu,new-roster-team,New Fixture Team,1,captain\n" +
+      "fixture-invalid@uni.edu,invalid-roster-team,Invalid Fixture Team,1,coach\n"),
+  });
+  await page.getByRole("button", { name: "Import roster", exact: true }).click();
+  await expect(page.getByText("Created 1. Updated 0. Unchanged 0. Rejected 1.")).toBeVisible();
+  await expect(page.getByRole("list", { name: "Rejected roster rows" }).getByText(/^Row 2:/)).toBeVisible();
+  await expect(page.getByText("Teams awaiting a verified captain: new-roster-team.")).toBeVisible();
+  await page.getByRole("button", { name: "Correct fixture-new@uni.edu", exact: true }).click();
+  await page.getByRole("textbox", { name: "Official email", exact: true }).fill("fixture-corrected@uni.edu");
+  await page.getByRole("button", { name: "Save correction" }).click();
+  await expect(entries.getByRole("rowheader", { name: "fixture-corrected@uni.edu" })).toBeVisible();
+
+  await file.setInputFiles({
+    name: "roster.json", mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify({ rows: [
+      { email: "fixture-json@uni.edu", team_key: "json-roster-team", team_name: "JSON Fixture Team",
+        member_number: 1, role: "captain" },
+    ] })),
+  });
+  await page.getByRole("button", { name: "Import roster", exact: true }).click();
+  await expect(entries.getByRole("rowheader", { name: "fixture-json@uni.edu" })).toBeVisible();
+  await page.goto("/organizer/tournaments/invite-fixture/roster");
+  await expect(page.getByText("This tournament is unavailable.")).toBeVisible();
+  await expect(entries).toHaveCount(0);
+});

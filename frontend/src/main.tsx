@@ -10,6 +10,7 @@ import { AnnouncementForm } from "./announcements";
 import { GlobalAudit } from "./audit";
 import { DeadlineControls } from "./deadlines";
 import { InvitationControls } from "./invitations";
+import { Roster } from "./roster";
 import "./style.css";
 
 type User = { id: number; username: string; admin: boolean };
@@ -407,7 +408,7 @@ const consoleLinks = [
   { page: "organizer", href: "/organizer", label: "Manage tournaments", icon: "▤" },
   { page: "announce", href: "/announcements/new", label: "Post announcement", icon: "◈" },
 ] as const;
-type ConsolePage = (typeof consoleLinks)[number]["page"] | "match" | "replay";
+type ConsolePage = (typeof consoleLinks)[number]["page"] | "match" | "replay" | "organizer-roster";
 type ConsoleRoute = { page: ConsolePage; id?: string };
 
 function currentRoute(address: string): ConsoleRoute | null {
@@ -415,13 +416,14 @@ function currentRoute(address: string): ConsoleRoute | null {
   if (normalized === "/#submissions") return { page: "submissions" };
   const bracket = normalized.match(/^\/participant\/tournaments\/([^/#]+)\/bracket$/);
   const game = normalized.match(/^\/matches\/([^/#]+)(\/replay)?$/);
-  const organizer = normalized.match(/^\/organizer\/tournaments\/([^/#]+)$/);
+  const organizer = normalized.match(/^\/organizer\/tournaments\/([^/#]+)(\/roster)?$/);
   const adminTournament = normalized.match(/^\/admin\/tournaments\/([^/#]+)$/);
   const route = bracket ?? game ?? organizer ?? adminTournament;
   if (route) {
     try {
       return {
-        page: adminTournament ? "deadlines" : organizer ? "organizer" : bracket ? "bracket" : game?.[2] ? "replay" : "match",
+        page: adminTournament ? "deadlines" : organizer ? organizer[2] ? "organizer-roster" : "organizer"
+          : bracket ? "bracket" : game?.[2] ? "replay" : "match",
         id: decodeURIComponent(route[1]),
       };
     } catch {
@@ -644,11 +646,12 @@ function Console({ user, route, navigate, logout }: {
   }, [refreshTournament]);
   const scopedTournament = (page === "bracket" || page === "deadlines") && id;
   const cup = cups.find((c) => c.id === (scopedTournament || selected));
-  const showTournament = !["notifications", "operations", "approvals", "audit", "organizer", "match", "replay"].includes(page);
+  const showTournament = !["notifications", "operations", "approvals", "audit", "organizer", "organizer-roster",
+    "match", "replay"].includes(page);
   const canOpen = (target: ConsolePage) => {
     if (["operations", "approvals", "audit", "deadlines", "invitations"].includes(target)) return user.admin;
     if (target === "announce") return user.admin || role === "organizer" || loading;
-    if (target === "organizer") return role === "organizer" || (loading && !user.admin);
+    if (target === "organizer" || target === "organizer-roster") return role === "organizer" || (loading && !user.admin);
     if (target === "notifications") return !user.admin && role !== "organizer";
     if (target === "team") return role === "participant" || (loading && !user.admin);
     return true;
@@ -719,7 +722,7 @@ function Console({ user, route, navigate, logout }: {
               : page === "audit" ? "Admin access is required to open the global audit log."
               : page === "deadlines" ? "Admin access is required to change deadlines and locked settings."
               : page === "invitations" ? "Admin access is required to manage invitation codes."
-              : page === "organizer" ? "Organizer access is required to manage tournaments."
+              : page === "organizer" || page === "organizer-roster" ? "Organizer access is required to manage tournaments."
               : page === "announce" ? "Tournament staff access is required to post announcements."
               : page === "team" ? "My team is available to participant accounts."
               : "Notifications are available to linked participant accounts."}</p>
@@ -740,6 +743,9 @@ function Console({ user, route, navigate, logout }: {
           loading ? <p role="status">Loading Organizer access…</p> :
             <Organizer key={id ?? "list"} id={id} userId={user.id} tournaments={cups}
               navigate={navigate} onChange={applyTournament} />
+        ) : page === "organizer-roster" ? (
+          loading ? <p role="status">Loading Organizer access…</p> :
+            <Roster key={id} tournament={cups.find((record) => record.id === id)} />
         ) : page === "match" ? (
           id && <MatchResult key={id} matchId={id} />
         ) : page === "replay" ? (
