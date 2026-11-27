@@ -566,25 +566,37 @@ deletion.
 
 ## 5. Bot submissions --- BIO-EPIC-05
 
-### POST `/teams/{team_id}/submissions`
+### POST `/tournaments/{id}/teams/{team_id}/submissions/`
 
-**Purpose:** Upload a new bot version.\
-**Access:** Team participant with submission permission; captain-only is
-`[DECIDE]`.\
-**Request:** multipart file named exactly `bot.py`; include idempotency
-key.\
-**Success `202`:**
+The registered team captain may upload one multipart `file` with the session
+CSRF token and an `Idempotency-Key` header. The file is either a UTF-8
+`bot.py` or a flat Python bundle ZIP. The server reads the current submission
+deadline from the tournament record.
+
+A successful upload returns `201` with the version record. The check runs
+asynchronously on the existing worker. A new version awaiting the check
+includes these fields.
 
 ``` json
 {
-  "submission_id": "sub_123",
+  "id": "team-a-v4",
   "version": 4,
-  "status": "validating"
+  "validation_status": "validating"
 }
 ```
 
-**Errors:** `400`, `403`, `409` deadline closed, `413`, `415`, `422`.
-Invalid upload must not replace current active version.
+- `400` for missing or duplicate fields and an invalid idempotency key.
+- `403` for a visible team without upload privileges, and `404` for hidden or
+  mismatched team/tournament scope.
+- `409` after the stored deadline or when the same key is used for a different
+  submission. A retry of an earlier accepted upload reuses its version.
+- `413` for the interim size or ZIP file-count limits, and `415` when the
+  request is outside multipart form data.
+- `422` for an unsupported filename, invalid ZIP or static bot validation
+  failure. A single-file bot that reaches the static check stays in
+  history with `error.details.submission_id` and `error.details.reasons`
+  including a stable code, actionable message and a line when available.
+  No check is queued for it. The active version is retained.
 
 ### GET `/teams/{team_id}/submissions`
 
@@ -592,6 +604,12 @@ Invalid upload must not replace current active version.
 **Access:** team members, assigned Organizer, Admin.\
 **Success:** version, timestamp, validation status/reason, active flag,
 match usage references. Source access remains private.
+
+The implemented route is `GET /tournaments/{id}/teams/{team_id}/submissions/`.
+It returns `items` ordered by version, with `match_ids` for official games in
+the requested tournament that reference each version. A visible roster team
+with no uploads has an empty history. Staff history reads record a
+`submission_history_read` audit event.
 
 ### GET `/submissions/{submission_id}/download`
 
@@ -604,6 +622,15 @@ match usage references. Source access remains private.
 **Purpose:** Read validation outcome.\
 **Access:** owning team, assigned Organizer, Admin.\
 **Success:** structured checks and safe error messages.
+
+The implemented route is `GET /tournaments/{id}/submissions/{submission_id}/validation/`.
+It returns `id`, `tournament_id`, `team_id`, `version`, `is_active`,
+`validation_status`, `check_in_progress` and ordered `validations`. Each check
+has its stage, outcome, findings and recorded timestamps. Trial summaries can
+include side, judgment, outcome, classification, round and runtime. Staff
+reads record a `submission_validation_read` audit event. Source bytes and
+worker claims are excluded. Both reads use current session scope and the
+requested tournament. Unknown, foreign and hidden IDs share `404` errors.
 
 ### POST `/submissions/{submission_id}/activate`
 
@@ -623,12 +650,37 @@ this endpoint if no manual override is required.
 automatic byes, human-team bye priority; house-bot rules pending
 decision.
 
+The implemented route uses a trailing slash and exact JSON confirmation.
+It draws one open tournament after its stored submission deadline using the
+registered teams, pinned valid versions and its verified map pool. It returns
+`{bracket, excluded}` and preserves an existing draw on retry. Neither the
+manual request nor the automatic scheduler starts a round. Pending checks,
+an invalid map pool or lifecycle state return `409`. An unavailable server
+engine catalogue returns `503`.
+
 ### POST `/tournaments/{id}/rounds/{round_id}/start`
 
 **Purpose:** Start the next sequential round.\
 **Access:** assigned Organizer or Admin.\
 **Request:** `{"confirm":true,"idempotency_key":"..."}`\
 **Success:** round enters `running`; match jobs queued.
+
+The implemented route is `POST /tournaments/{id}/rounds/{round_number}/start/`.
+It requires session CSRF and the exact JSON confirmation and idempotency key
+above. The server rechecks staff access before replaying a saved response.
+Results contain `round_number`, `status` and `job_id` (`null` for a completed
+round). A later round whose predecessor is incomplete, a paused round or
+invalid pinned files return `409`. Repeating a start queues at most one job.
+
+### GET and PUT `/tournaments/{id}/map-pool/`
+
+Admin or explicitly assigned Organizer. GET returns `selected_id`, `version`
+and `items` containing the available immutable pool IDs, map names and engine
+versions. PUT requires session CSRF and exactly
+`{"map_pool_id":"...","expected_version":3}`. It selects an existing pool
+under the normal configuration deadline and optimistic version rules. The
+generated bracket retains its stored pool. A stale revision or locked
+tournament returns `409`.
 
 ### GET `/tournaments/{id}/bracket`
 
@@ -640,7 +692,8 @@ decision.
 returns `tournament_id` and a `bracket` object once a draw is stored. The bracket
 contains the recorded draw, registered playoff teams, map-pool ID when recorded,
 rounds, pairings, byes, game IDs/status, advancement and champion. The `bracket`
-field is `null` before a draw. Scores require additional engine result data.
+field is `null` before a draw. The series includes win counts by side based on
+the recorded game outcomes. Raw engine point totals require additional result data.
 
 ### GET `/matches/{match_id}`
 
@@ -653,7 +706,7 @@ identifiers; no source code.
 a game ID exposed by the bracket pairing's `series.games`. The response contains
 `tournament_id`, selected `match_id`, `round_number` and the enclosing `series`.
 The series reports the two pinned version IDs, maps, ordered game outcomes,
-winner/result type and recorded coin flip when applicable. A drawn/paused game
+winner/result type, win counts and recorded coin flip when applicable. A drawn/paused game
 without a decision has a `null` result. Engine scores, raw paths, diagnostics,
 and replay availability are outside this projection.
 
@@ -837,7 +890,12 @@ Canonical new paths use a trailing slash except `analytics.csv`.
 
 - GET/HEAD `/health/` implements process liveness; §1.1 records the shared error/request-ID behavior.
 - Session lifecycle: GET `/auth/session/`, POST `/auth/login/`, POST `/auth/logout/`.
-- GET `/tournaments/` lists current accessible records; GET `/dependencies/` is a public pinned catalogue.
+- GET `/tournaments/` lists current accessible records.
+- GET `/dependencies/` is public. It returns `items` with a `name`, exact
+  `version`, reviewed `sha256` and `description` for each verified release,
+  plus the interim `max_files` and `max_bytes` limits. A bundle may declare
+  one version per name in `requirements.json`. Stored bundles keep their
+  original release pins.
 - GET `/tournaments/{id}/live/` supplies numeric board snapshots and safe match metadata, with current authorization on every poll, private/no-store cache policy and 410 after archive.
 - GET `/tournaments/{id}/analytics/` and `/analytics.csv` expose results-derived team/version/map/round and failure/timing statistics. No source, host path or bot output is included.
 - GET/POST `/tournaments/{id}/teams/{team}/submissions/` and GET `/tournaments/{id}/submissions/{version}/download/` implement team-private history, captain upload using the stored deadline, queued validation and authorized source/bundle delivery. POST accepts one multipart `file` and requires `Idempotency-Key`.

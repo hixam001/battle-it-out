@@ -211,6 +211,20 @@ class HTTPContract(SimpleTestCase):
         response = self.client.get('/api/v1/dependencies/', HTTP_ACCEPT='text/html')
         self.assert_error(response, 406, 'NOT_ACCEPTABLE')
 
+    def test_public_dependency_catalogue_has_pinned_metadata(self):
+        response = self.client.get('/api/v1/dependencies/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {
+            'items': [{
+                'name': 'biohelpers',
+                'version': '1.0.0',
+                'sha256': 'a3a967470f89dd839fd246eebdff795f2d1e404f4f56f7c494d70c9c9b6d9cf8',
+                'description': 'Grid distances and numeric clamping',
+            }],
+            'max_files': 32,
+            'max_bytes': 262144,
+        })
+
     def test_completion_log_contains_only_status_and_correlation_id(self):
         with self.assertLogs('backend.webapp.api_errors', level='WARNING') as logs:
             response = self.client.get('/api/v1/private-token-in-path/')

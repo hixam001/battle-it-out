@@ -60,6 +60,7 @@ class ResultsAPI(TestCase):
                 decision = record['rounds'][0]['matches'][0]
                 self.assertEqual(decision['winner'], 'ta')
                 self.assertEqual(decision['series']['games'], [{'match_id': self.mid, 'status': O.COMPLETED}])
+                self.assertEqual(sum(decision['series']['wins'].values()), 1)
 
                 response = client.get(self.match_url)
                 self.assertEqual(response['Cache-Control'], 'private, no-store')
@@ -138,6 +139,7 @@ class ResultsAPI(TestCase):
         series = admin.get(path).json()['series']
         self.assertEqual([game['map'] for game in series['games'][1:]], MAPS['tiebreak_final'])
         self.assertTrue(all(game['winner_team'] is None for game in series['games']))
+        self.assertEqual(series['wins'], {'A': 0, 'B': 0})
         self.assertEqual(series['result']['result_type'], 'coin_flip')
         self.assertEqual(series['result']['winner_team'], series['coin_flip']['result_team'])
         self.assertEqual(series['coin_flip']['probability_each'], 0.5)

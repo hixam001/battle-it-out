@@ -269,10 +269,15 @@ def _view(state: dict, rec: dict) -> dict:
     """What a reader may see. Never the claim token, never a storage path."""
     pinned = sorted(t for t, p in state["pins"].items() if p["teams"].get(rec["team_id"]) == rec["id"])
     keep = ("id", "team_id", "tournament_id", "version", "content_hash", "bytes", "uploaded_by", "uploaded_at",
-            "validation_status", "is_active", "activated_at", "superseded_by")
+            "is_active", "activated_at", "superseded_by")
     return {**({"format": "python-bundle", "files": rec["bundle_files"]} if "bundle_files" in rec else {}),
-            **{k: rec[k] for k in keep}, "validations": [dict(v) for v in rec["validations"]],
-            "check_in_progress": rec["claim"] is not None, "pinned_in": pinned}
+            **{k: rec[k] for k in keep}, **_validation_view(rec), "pinned_in": pinned}
+
+
+def _validation_view(rec: dict) -> dict:
+    return {"validation_status": rec["validation_status"],
+            "validations": [dict(item) for item in rec["validations"]],
+            "check_in_progress": rec["claim"] is not None}
 
 
 def _team(state: dict, team_id: str) -> dict | None:
@@ -487,30 +492,41 @@ def run_check(reg: Registry, submission_id: str, check: Callable[[Path], dict], 
 
 # ---------------------------------------------------------------------------------------------- reading
 
-def _readable(state: dict, actor: Actor | None, submission_id: str) -> dict:
+def _readable(state: dict, actor: Actor | None, submission_id: str, tournament_id: str | None = None) -> dict:
     rec = state["submissions"].get(submission_id) if isinstance(submission_id, str) else None
-    if rec is None or not _can_read(actor, rec["team_id"], rec["tournament_id"]):
+    if rec is None or (tournament_id is not None and rec["tournament_id"] != tournament_id) \
+            or not _can_read(actor, rec["team_id"], rec["tournament_id"]):
         raise NotFound("no such submission")
     return rec
 
 
-def history(reg: Registry, actor: Actor | None, team_id: str) -> list[dict]:
+def history(reg: Registry, actor: Actor | None, team_id: str, *, tournament_id: str | None = None) -> list[dict]:
     """Every version of a team, oldest first, with the validation outcomes (SRD-053, SRD-056, SRD-057)."""
     state = reg.store.snapshot()
     team = _team(state, team_id) if isinstance(team_id, str) else None
     if team is None:
-        if actor is not None and (actor.role == "admin" or (actor.role == "participant" and team_id in actor.team_ids)):
+        if tournament_id is None and actor is not None and (
+                actor.role == "admin" or (actor.role == "participant" and team_id in actor.team_ids)):
             return []
         raise NotFound("no such team")
-    if not _can_read(actor, team_id, team["tournament_id"]):
+    if (tournament_id is not None and team["tournament_id"] != tournament_id) \
+            or not _can_read(actor, team_id, team["tournament_id"]):
         raise NotFound("no such team")
-    recs = sorted((r for r in state["submissions"].values() if r["team_id"] == team_id), key=lambda r: r["version"])
+    recs = sorted((r for r in state["submissions"].values() if r["team_id"] == team_id
+                   and (tournament_id is None or r["tournament_id"] == tournament_id)), key=lambda r: r["version"])
     return [_view(state, r) for r in recs]
 
 
 def validation(reg: Registry, actor: Actor | None, submission_id: str) -> list[dict]:
-    state = reg.store.snapshot()
-    return _view(state, _readable(state, actor, submission_id))["validations"]
+    return validation_report(reg, actor, submission_id)["validations"]
+
+
+def validation_report(reg: Registry, actor: Actor | None, submission_id: str, *,
+                      tournament_id: str | None = None) -> dict:
+    """Return status and check history from the same authorized registry read."""
+    rec = _readable(reg.store.snapshot(), actor, submission_id, tournament_id)
+    identity = ("id", "tournament_id", "team_id", "version", "is_active")
+    return {**{key: rec[key] for key in identity}, **_validation_view(rec)}
 
 
 def active_submission(reg: Registry, actor: Actor | None, team_id: str) -> dict | None:

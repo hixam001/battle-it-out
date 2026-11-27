@@ -16,14 +16,16 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from rest_framework.decorators import api_view, permission_classes, parser_classes, renderer_classes
-from rest_framework.parsers import JSONParser
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, UnsupportedMediaType, ValidationError
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from backend.match_orchestrator import replays as P
+from backend.registration import registration as G
 from backend.submission_registry import registry as R
 from backend.submission_bundle import bundle as BU
+from backend.tournament_flow import flow as F
 from backend.work_queue import jobs as J
 from backend.notifications import notifications as N
 from backend.tournaments import tournaments as T
@@ -100,7 +102,6 @@ def tournaments(request):
     who = D.actor(request.user)
     rt = D.runtime()
     records = rt.tournaments.store.snapshot()['tournaments'].values()
-    from backend.registration import registration as G
     return private({'items': [{**{k: r[k] for k in ('id', 'name', 'description', 'status', 'deadlines')},
                                'teams': sorted(who.team_ids & set(G.registered_teams(rt.registration, r['id'])))}
                               for r in records if r['status'] != 'deleted' and (who.role == 'admin' or r['id'] in who.tournament_ids)],
@@ -110,8 +111,7 @@ def tournaments(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def dependencies(request):
-    return Response({'items': [{'name': name, **{k: info[k] for k in ('version', 'sha256', 'description')}}
-                               for name, info in BU.CATALOGUE.items()], 'max_files': BU.MAX_FILES, 'max_bytes': BU.MAX_BYTES})
+    return Response({'items': BU.dependency_catalogue(), 'max_files': BU.MAX_FILES, 'max_bytes': BU.MAX_BYTES})
 
 
 @api_view(['GET'])
@@ -270,15 +270,15 @@ def text(body, key, limit):
     return value.strip()
 
 
-def mutate(request, tid, action):
-    key = request.headers.get('Idempotency-Key', '')
-    if not R.KEY_RE.fullmatch(key):
+def mutate(request, tid, action, *, idempotency_key=None, staff=False):
+    key = request.headers.get('Idempotency-Key', '') if idempotency_key is None else idempotency_key
+    if not isinstance(key, str) or not R.KEY_RE.fullmatch(key):
         raise ValidationError('A safe Idempotency-Key of 1–128 characters is required.')
     fingerprint = hashlib.sha256(json.dumps([request.method, request.path, request.data], sort_keys=True, default=str).encode()).hexdigest()
     with transaction.atomic():
         current_user = get_user_model().objects.select_for_update().get(pk=request.user.pk)
         request.user.is_active, request.user.is_superuser = current_user.is_active, current_user.is_superuser
-        D.tournament(request.user, tid)  # current scope again, including before stored-response delivery
+        D.tournament(request.user, tid, staff=staff)  # current scope, including before stored-response delivery
         receipt = Receipt.objects.filter(user=request.user, key=key).first()
         if receipt:
             if receipt.fingerprint != fingerprint:
@@ -290,32 +290,76 @@ def mutate(request, tid, action):
 
 
 @api_view(['GET', 'POST'])
+@parser_classes([MultiPartParser])
 def submissions(request, tid, team):
-    who, record = D.tournament(request.user, tid)
+    who, _ = D.tournament(request.user, tid)
     rt = D.runtime()
     if request.method == 'GET':
-        return private({'items': R.history(rt.flow.registry, who, team)})
+        try:
+            items = R.history(rt.flow.registry, who, team, tournament_id=tid)
+        except R.NotFound:
+            # A roster team can legitimately have no registry entry yet.
+            try:
+                G.team_view(rt.registration, who, tid, team)
+            except G.NotFound as exc:
+                raise NotFound() from exc
+            items = []
+        references = D.submission_match_ids(tid, (item['id'] for item in items))
+        for item in items:
+            item['match_ids'] = references[item['id']]
+        if who.role in ('organizer', 'admin'):
+            AuditEvent.objects.create(actor_id_text=who.user_id, tournament_id=tid,
+                                      action='submission_history_read', detail={'team_id': team})
+        return private({'items': items})
+    if who.role == 'participant':
+        if team not in who.team_ids or team not in G.registered_teams(rt.registration, tid):
+            raise NotFound('No such team.')
     if who.role != 'participant' or team not in who.captain_of:
         raise PermissionDenied('Only this team’s captain may upload.')
-    if set(request.data) != {'file'} or 'file' not in request.FILES:
+    if request.content_type.partition(';')[0].strip().lower() != 'multipart/form-data':
+        raise UnsupportedMediaType(request.content_type)
+    if set(request.data) != {'file'} or len(request.data.getlist('file')) != 1 or 'file' not in request.FILES:
         raise ValidationError('Upload one bot.py or Python bundle ZIP as file.')
-    upload = request.FILES['file']
-    raw = upload.read(BU.MAX_BYTES + 1)
-    if len(raw) > BU.MAX_BYTES:
-        return private({'error': {'message': 'Upload exceeds the interim 256 KiB limit.'}}, 413)
     key = request.headers.get('Idempotency-Key', '')
     if not R.KEY_RE.fullmatch(key):
-        raise ValidationError('An Idempotency-Key is required.')
-    # Registry owns immutable bytes, idempotency, audit and the official deadline gate; queue insertion heals on retry.
-    if upload.name.endswith('.zip'):
-        result = R.submit_bundle(rt.flow.registry, who, team, tid, raw, idempotency_key=key,
-                                 deadline_at=record['deadlines']['submission'])
-    else:
-        result = R.submit(rt.flow.registry, who, team, tid, upload.name, raw, idempotency_key=key,
-                          deadline_at=record['deadlines']['submission'])
-    if result['validation_status'] == R.VALIDATING:
-        J.enqueue_check(rt.flow.queue, result['id'])
+        raise ValidationError('A safe Idempotency-Key of 1–128 characters is required.')
+    upload = request.FILES['file']
+    is_bundle = upload.name.endswith('.zip')
+    limit = min(rt.flow.registry.max_bytes, BU.MAX_BYTES) if is_bundle else rt.flow.registry.max_bytes
+    raw = upload.read(limit + 1)
+    if len(raw) > limit:
+        return private({'error': {'message': f'Upload is larger than {limit} bytes.'}}, 413)
+    if not is_bundle and upload.name != R.STORED_NAME:
+        return private({'error': {'message': 'Name the Python file bot.py, or upload a Python bundle ZIP.'}}, 422)
+    # Hold the tournament lock while storing the version against its current deadline.
+    try:
+        with rt.tournaments.store.transaction() as state:
+            record = state['tournaments'].get(tid)
+            if not record or record['status'] == T.DELETED:
+                raise NotFound('No such tournament.')
+            result = F.upload(rt.flow, who, team, tid, upload.name, raw, bundle=is_bundle,
+                              idempotency_key=key, deadline_at=record['deadlines'][T.SUBMISSION])
+    except BU.TooLarge as exc:
+        return private({'error': {'message': str(exc)}}, 413)
+    except BU.Invalid as exc:
+        return private({'error': {'message': str(exc)}}, 422)
+    static = result['validations'][0]
+    if static['status'] == 'rejected':
+        reasons = static['reasons']
+        return private({'error': {'message': reasons[0]['message'],
+                                  'details': {'submission_id': result['id'], 'reasons': reasons}}}, 422)
+    del result['check_job']
     return private(result, 201)
+
+
+@api_view(['GET'])
+def submission_validation(request, tid, sid):
+    who, _ = D.tournament(request.user, tid)
+    report = R.validation_report(D.runtime().flow.registry, who, sid, tournament_id=tid)
+    if who.role in ('organizer', 'admin'):
+        AuditEvent.objects.create(actor_id_text=who.user_id, tournament_id=tid,
+                                  action='submission_validation_read', detail={'submission_id': sid})
+    return private(report)
 
 
 @api_view(['GET'])
