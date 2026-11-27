@@ -10,7 +10,8 @@ Sign in with the provisioned platform Admin account and open **Operations**.
 The page shows service counts, current incidents, dead jobs and recent feature
 audit events. Use the [interim operations runbook](OPERATIONS_RUNBOOK.md) for
 triage, deadline requests, purge checks and a staging recovery rehearsal. The
-console is read-only for those operational incidents. **Match disputes** lets
+console is read-only for those operational incidents. Use **Approvals** to
+approve or reject Organizer-submitted tournaments. **Match disputes** lets
 you review cases in the selected tournament and record a resolution.
 
 The rest of this guide describes the planned Admin workflow and the current
@@ -37,11 +38,11 @@ The Admin has **global** access and is the only role that can:
 
 ## 2. Approving tournaments
 
-1. Open the **approval queue** (`/admin/approvals`). It lists Organizer-created tournaments in `pending_approval`.
+1. Open **Approvals** (`/admin/approvals`) and select a pending tournament.
 2. Review name, description, deadlines, and configuration.
 3. **Approve** (confirmation required) or **Reject** with a reason (mandatory; the Organizer sees it, edits, and resubmits).
-4. If you create a tournament yourself, no separate approval step applies.
-5. If approval happens after the intended registration date, correct the dates before registration opens.
+4. If the record changed during review, reload the details before deciding.
+5. An approval leaves the tournament in `approved`. Opening registration is a separate action.
 
 Tournament states: `draft -> pending_approval -> approved -> registration_open -> running -> completed -> archived -> deleted`, with `rejected` looping back to `pending_approval`. Whether registration opens by a manual action or by schedule is `[DECIDE]`.
 

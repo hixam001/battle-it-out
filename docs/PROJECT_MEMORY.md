@@ -22,6 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-707 / CN-055 adds the Admin approval queue. All 14 Playwright
+  tests and the production build passed. PR #62 merged into main at
+  `84c6e13`.
 - BIO-705 / CN-054 adds scoped bracket, game results and a native replay
   page. The production build, all 12 Playwright and all 147 Django cases
   passed. PR #61 merged into main at `3158801`.
@@ -394,6 +397,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    recorded tie resolution in the console. CN-038 delivers staff map-pool selection,
    bracket draw and sequential round-start actions. CN-047 adds draft creation,
    detail, edit, submit, approve, reject and open registration over HTTP.
+   CN-055 adds the Admin screen for approving or rejecting submitted drafts.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; Organizer approval/rejection
    and dispute notices; mandatory security
@@ -417,7 +421,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
-   tournament creation/approval/deadline/round management, browser replay
+   tournament creation/deadline/round management, browser replay
    playback and Admin mutation screens. Public landing and the private
    live/analytics/submission/dispute/operations console now exist. CN-053 adds
    direct team and submission routes, bracket standing and validation details.
@@ -855,3 +859,18 @@ Worker-scoped fixture sessions reduced repeated loopback sign-ins after the
 first browser run reached the existing login limiter. The orchestrator
 selection ran 164 cases, with 153 passes and 11 expected integration skips.
 All 91 statuses, nine backlog categories and 43 open Jira items remain.
+
+## CN-055 continuation evidence
+
+BIO-707 starts from merged main at `84c6e13` on `BIO-707-admin-approval-queue`.
+The Admin route shows pending Organizer submissions and loads the current
+version and settings before each review. The approval confirmation or rejection
+reason goes to the existing lifecycle API. A competing review requires
+reloading details, and opening registration stays separate.
+
+The production build and all 14 Playwright tests passed in 22.2 seconds
+against disposable state. The two new cases exercise approval, rejection,
+a stale decision and participant route refusal. All 91 requirement
+statuses, nine backlog categories and 43 open Jira items remain. Deadline,
+invitation and incident controls, dedicated audit and formal acceptance
+remain open.

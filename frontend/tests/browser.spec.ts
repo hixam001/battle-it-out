@@ -378,3 +378,58 @@ test("scoped bracket navigation shows pending draws and keeps foreign tournament
   await expect(page).toHaveURL(/\/bracket$/);
   await expect(page.getByRole("heading", { name: "Awaiting bracket draw" })).toBeVisible();
 });
+
+test("Admin approval queue confirms approval, requires a reason, and refuses a stale review", async ({
+  page, useSession,
+}) => {
+  await useSession(page, "admin");
+  await page.goto("/admin/approvals");
+  await expect(page.getByRole("heading", { name: "Tournament approvals" })).toBeVisible();
+  const pending = page.getByLabel("Pending tournament");
+  const approve = page.getByRole("button", { name: "Approve tournament", exact: true });
+  await pending.selectOption("approval-approve");
+  await expect(page.getByRole("heading", { name: "Fixture to approve", exact: true })).toBeVisible();
+  await expect(approve).toBeDisabled();
+  await page.getByLabel("Confirm tournament approval").check();
+  await approve.click();
+  await expect(page.getByText("Fixture to approve approved. Registration can now be opened separately.")).toBeVisible();
+  await expect(pending.locator('option[value="approval-approve"]')).toHaveCount(0);
+  const approved = await page.request.get("/api/v1/tournaments/approval-approve/");
+  expect((await approved.json()).status).toBe("approved");
+
+  await pending.selectOption("approval-reject");
+  await expect(page.getByRole("heading", { name: "Fixture to reject", exact: true })).toBeVisible();
+  await page.getByLabel("Decision").selectOption("reject");
+  const reject = page.getByRole("button", { name: "Reject tournament", exact: true });
+  await expect(reject).toBeDisabled();
+  await page.getByLabel("Rejection reason").fill("Correct the fixture schedule.");
+  await reject.click();
+  await expect(page.getByText("Fixture to reject rejected. The Organizer can edit and resubmit it.")).toBeVisible();
+  const rejected = await page.request.get("/api/v1/tournaments/approval-reject/");
+  expect((await rejected.json()).rejection_reason).toBe("Correct the fixture schedule.");
+
+  await expect(page.getByRole("heading", { name: "Fixture to changed", exact: true })).toBeVisible();
+  await page.getByLabel("Confirm tournament approval").check();
+  const stale = (await (await page.request.get("/api/v1/tournaments/approval-changed/")).json()).version;
+  const csrf = (await (await page.request.get("/api/v1/auth/session/")).json()).csrf;
+  const external = await page.request.post("/api/v1/tournaments/approval-changed/reject/", {
+    data: { expected_version: stale, reason: "Another reviewer already decided." },
+    headers: { "X-CSRFToken": csrf },
+  });
+  expect(external.ok()).toBe(true);
+  await approve.click();
+  await expect(page.getByRole("alert")).toContainText(/version|changed/i);
+  await expect(approve).toBeDisabled();
+  await page.getByRole("button", { name: "Reload tournament details" }).click();
+  await expect(page.getByText("This tournament is now rejected. Refresh the queue.")).toBeVisible();
+  await page.getByRole("button", { name: "Refresh queue" }).click();
+  await expect(page.getByText("No tournaments are awaiting approval.")).toBeVisible();
+});
+
+test("a participant cannot open the Admin approval queue", async ({ page, useSession }) => {
+  await useSession(page, "captain-a");
+  await page.goto("/admin/approvals");
+  await expect(page.getByRole("alert")).toHaveText("Admin access is required to review tournaments.");
+  await expect(page.getByRole("link", { name: "Approvals", exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Pending tournament")).toHaveCount(0);
+});

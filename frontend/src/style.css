@@ -868,14 +868,16 @@ textarea {
   border-top: 1px solid #e2e0ec;
   padding-top: 1rem;
 }
-.notice-choice {
+.notice-choice,
+.review-confirm {
   display: flex;
   align-items: center;
   gap: 0.65rem;
   min-height: 2.5rem;
   font-weight: 600;
 }
-.notice-choice input {
+.notice-choice input,
+.review-confirm input {
   width: 1.15rem;
   height: 1.15rem;
   margin: 0;
