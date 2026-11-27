@@ -18,7 +18,9 @@ Start Django on `127.0.0.1:8000` and Vite on `127.0.0.1:5173`; Vite proxies `/ap
 on the same origin. All service/data directories must be outside `frontend/`.
 Production static assets are generated into ignored `frontend/dist/`. Serve
 `index.html` for `/dashboard`, `/notifications`, `/participant/team` and
-`/participant/submissions`; retain the same-origin
+`/participant/submissions`, `/bracket`,
+`/participant/tournaments/{id}/bracket`, `/matches/{id}` and
+`/matches/{id}/replay`; retain the same-origin
 `/api` route to Django. Hosting,
 TLS, reverse proxy and public deployment remain operator/deployment work; no
 external Site has been created or published. Native session cookies and masked
@@ -55,6 +57,12 @@ history, downloads and expandable check results. Only the current captain
 gets an upload form while the selected tournament's deadline is open.
 Refresh submissions picks up new verdicts and any deadline change. The former
 `/#submissions` address still opens submission history.
+
+Bracket & results shows recorded rounds, byes, game wins and progression.
+Match detail shows the game order, pinned bot versions, tie-break maps and
+the recorded coin flip when it decided a series. The replay page offers a
+native download while retained and explains archive or unavailable states.
+Playback uses the Battlecode client.
 
 Direct console links preserve the destination through sign-in. Operations is
 Admin-only, and the personal inbox uses participant scope. The API remains

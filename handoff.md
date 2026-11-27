@@ -1060,3 +1060,25 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   changelog and project memory. All 91 statuses and nine backlog categories
   remain, with 43 Jira items open. Full accessibility and flow acceptance
   remain BIO-708.
+
+### 2026-11-27 — BIO-705 bracket, game results and replay pages
+
+- PR #61 merged into main at `3158801`. Started
+  `BIO-705-bracket-match-results` from that commit. Added scoped React
+  bracket, match and replay routes, plus a link from the live room. The
+  pages show round progression, game wins, pinned versions, tie-break
+  order and the recorded 50/50 decision.
+- Added an official-game replay status route in `backend/webapp/results.py`
+  using the authorized vault index. The replay page serves downloads
+  through the existing verified stream. A visible archived game keeps
+  its history and loses the download link. The index is the status source.
+- The production build, all 12 Playwright tests (18.4 s) and all 147
+  Django tests (17.727 s) passed, with system and migration-drift checks.
+  The orchestrator unit selection had 153 passes and 11 expected skips.
+  The first browser run reached the login limiter. The successful run
+  reused test sessions and preserved dedicated login coverage. All test
+  state and replay fixtures were disposable.
+- Updated the API, user and frontend guides, test plan, Jira, CN-054,
+  changelog, coverage and memory. All 91 requirement statuses and nine
+  backlog categories remain. Browser playback, raw engine scores and
+  full acceptance keep BIO-705 open.

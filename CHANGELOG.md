@@ -6,6 +6,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Bracket and match results (BIO-705; CN-054)** show private rounds, game
+  wins, tie-break maps and recorded coin flips. The replay screen offers
+  retained native downloads and reports unavailable or archived state.
+
 - **Participant team and submission screens (BIO-704; CN-053)** open through
   direct console links. Members can see their verified roster and bracket
   standing, find their active bot and expand validation findings. The upload

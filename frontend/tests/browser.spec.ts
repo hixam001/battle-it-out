@@ -1,4 +1,33 @@
-import { test, expect } from "@playwright/test";
+import { test as base, expect } from "@playwright/test";
+import type { BrowserContext, Page } from "@playwright/test";
+
+type UseSession = (page: Page, username: string) => Promise<void>;
+type Cookies = Awaited<ReturnType<BrowserContext["cookies"]>>;
+
+const test = base.extend<{}, { useSession: UseSession }>({
+  useSession: [async ({ browser }, use, worker) => {
+    const sessions = new Map<string, Cookies>();
+    await use(async (page, username) => {
+      let cookies = sessions.get(username);
+      if (!cookies) {
+        const context = await browser.newContext({ baseURL: worker.project.use.baseURL });
+        try {
+          const session = await context.request.get("/api/v1/auth/session/");
+          const login = await context.request.post("/api/v1/auth/login/", {
+            data: { username, password: "test-fixture-passphrase" },
+            headers: { "X-CSRFToken": (await session.json()).csrf },
+          });
+          expect(login.ok()).toBe(true);
+          cookies = await context.cookies();
+          sessions.set(username, cookies);
+        } finally {
+          await context.close();
+        }
+      }
+      await page.context().addCookies(cookies);
+    });
+  }, { scope: "worker" }],
+});
 
 test("public landing is responsive, keyboard accessible and clearly labels its illustration", async ({
   page,
@@ -112,13 +141,10 @@ test("participant signs in, sees recorded analytics and opens a match dispute", 
 
 test("Admin sees operational health and participants cannot call it", async ({
   page,
+  useSession,
 }) => {
+  await useSession(page, "admin");
   await page.goto("/#console");
-  await page.getByLabel("Username", { exact: true }).fill("admin");
-  await page
-    .getByLabel("Password", { exact: true })
-    .fill("test-fixture-passphrase");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByRole("link", { name: "Operations", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Eyes on the operation." }),
@@ -285,11 +311,9 @@ test("team and submission deep links show the selected roster and current deadli
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test("captain sees an invalid upload and queued validation without losing the active bot", async ({ page }) => {
+test("captain sees an invalid upload and queued validation without losing the active bot", async ({ page, useSession }) => {
+  await useSession(page, "captain-a");
   await page.goto("/participant/submissions");
-  await page.getByLabel("Username", { exact: true }).fill("captain-a");
-  await page.getByLabel("Password", { exact: true }).fill("test-fixture-passphrase");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByLabel("Tournament", { exact: true }).selectOption("upload-fixture");
   const history = page.getByRole("region", { name: "Submission history" });
   await expect(history.getByText("Active version: v1")).toBeVisible();
@@ -310,4 +334,47 @@ test("captain sees an invalid upload and queued validation without losing the ac
   await expect(history.getByText("Queued for validation", { exact: true })).toBeVisible();
   await history.getByRole("button", { name: "Refresh submissions" }).click();
   await expect(history.getByText("Active version: v1")).toBeVisible();
+});
+
+test("bracket links show match results and a recorded coin flip after replay archive", async ({ page, useSession }) => {
+  await useSession(page, "admin");
+  await page.goto("/participant/tournaments/tied-fixture/bracket");
+  await expect(page.getByRole("heading", { name: "Bracket & results" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Final" }).getByText("Game wins 0–0")).toBeVisible();
+  await page.getByRole("link", { name: "Match details" }).click();
+  const matchUrl = page.url();
+  await expect(page.getByRole("heading", { name: "Recorded coin flip" })).toBeVisible();
+  await expect(page.getByText(/each team had a 50% chance/i)).toBeVisible();
+  const games = page.getByRole("region", { name: "Games in this series" });
+  await expect(games.getByRole("listitem")).toHaveCount(4);
+  await expect(games.getByText("Selected game")).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  await page.getByRole("link", { name: "Replay", exact: true }).click();
+  const download = page.waitForEvent("download");
+  await page.getByRole("link", { name: "Download replay" }).click();
+  expect((await download).suggestedFilename()).toMatch(/\.bc26$/);
+
+  const session = await page.request.get("/api/v1/auth/session/");
+  const archive = await page.request.post("/api/v1/tournaments/tied-fixture/archive/", {
+    data: { confirm: true }, headers: { "X-CSRFToken": (await session.json()).csrf },
+  });
+  expect(archive.ok()).toBe(true);
+  expect((await archive.json()).replays_deleted).toBe(true);
+  await page.getByRole("button", { name: "Refresh replay status" }).click();
+  await expect(page.getByText("Replay no longer available. The tournament is archived.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Download replay" })).toHaveCount(0);
+  await page.getByRole("link", { name: "Back to match" }).click();
+  await expect(page).toHaveURL(matchUrl);
+  await expect(page.getByRole("heading", { name: "Recorded coin flip" })).toBeVisible();
+});
+
+test("scoped bracket navigation shows pending draws and keeps foreign tournaments hidden", async ({ page, useSession }) => {
+  await useSession(page, "captain-a");
+  await page.goto("/participant/tournaments/tied-fixture/bracket");
+  await expect(page.getByText("This tournament is unavailable.")).toBeVisible();
+  await page.getByLabel("Tournament", { exact: true }).selectOption("upload-fixture");
+  await expect(page).toHaveURL(/\/bracket$/);
+  await expect(page.getByRole("heading", { name: "Awaiting bracket draw" })).toBeVisible();
 });

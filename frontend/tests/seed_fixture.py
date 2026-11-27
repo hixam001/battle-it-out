@@ -1,4 +1,5 @@
 """Seed the browser suite against a fresh local database and empty state directory."""
+import gzip
 import os
 import shutil
 from pathlib import Path
@@ -13,9 +14,13 @@ def main():
     from django.conf import settings
     from django.contrib.auth import get_user_model
     from django.db import transaction
+    from backend.match_orchestrator import bracket, replays
+    from backend.match_orchestrator.tests.test_bracket import MAPS, teams
+    from backend.match_orchestrator.tests.test_tiebreak import COIN, Coin, won
     from backend.notifications import notifications
     from backend.registration import registration
     from backend.submission_registry import registry
+    from backend.tournaments import tournaments
     from backend.webapp.tests import ADM, BOT, FeatureAPI, verdict
 
     connection = settings.DATABASES['default']
@@ -56,6 +61,22 @@ def main():
             source = registry.submit(stored, actor, 'upload-team', 'upload-fixture', 'bot.py', BOT,
                                      idempotency_key='fixture-source', deadline_at=fixture.now + 7200)
             registry.record_verdict(stored, registry.claim_check(stored, source['id']), verdict(BOT))
+            fixture.make_cup('tied-fixture', fixture.now - 3000, fixture.now - 1000)
+            store = fixture.rt.flow.store
+            bracket.create_bracket(store, 'tied-fixture', teams(2), MAPS)
+            with store.transaction() as data:
+                data['brackets']['tied-fixture']['tournament_id'] = 'tied-fixture'
+            bracket.start_round(store, 'tied-fixture', 1, 'fixture-organizer')
+            bracket.run_round(store, 'tied-fixture', 1, lambda _: won('A', reason=COIN), coin=Coin('B'))
+            with fixture.rt.tournaments.store.transaction() as data:
+                data['tournaments']['tied-fixture']['status'] = tournaments.COMPLETED
+            pairing = store.snapshot()['brackets']['tied-fixture']['rounds'][0]['matches'][0]
+            series = store.snapshot()['series'][pairing['series_id']]
+            match_id = series['games'][-1]['match_id']
+            replay_source = fixture.root / 'browser-fixture.bc26'
+            replay_source.write_bytes(gzip.compress(b'Local browser download fixture.' * 40))
+            replays.register_replay(fixture.rt.vault, 'tied-fixture', match_id, replay_source, None)
+            replay_source.unlink()
             for i in range(1, 24):
                 cup = 'cup' if i <= 22 else 'historical'
                 title = f'Fixture notice {i:02d}' if i <= 22 else 'Historical fixture notice'
