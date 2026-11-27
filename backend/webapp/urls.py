@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 from django.urls import path
 from . import results
+from . import round_actions
 from . import views as V
 from . import tournament_archive
 urlpatterns = [
@@ -17,9 +18,13 @@ urlpatterns = [
     path('api/v1/tournaments/<str:tid>/live/', V.live),
     path('api/v1/tournaments/<str:tid>/teams/<str:team>/submissions/', V.submissions),
     path('api/v1/tournaments/<str:tid>/submissions/<str:sid>/download/', V.download),
+    path('api/v1/tournaments/<str:tid>/submissions/<str:sid>/validation/', V.submission_validation),
     path('api/v1/tournaments/<str:tid>/archive/', tournament_archive.archive),
     path('api/v1/tournaments/<str:tid>/disputes/', V.disputes),
     path('api/v1/tournaments/<str:tid>/disputes/<uuid:did>/', V.dispute_detail),
     path('api/v1/tournaments/<str:tid>/bracket/', results.bracket),
+    path('api/v1/tournaments/<str:tid>/bracket/generate/', round_actions.generate),
+    path('api/v1/tournaments/<str:tid>/map-pool/', round_actions.map_pool),
+    path('api/v1/tournaments/<str:tid>/rounds/<int:round_number>/start/', round_actions.start),
     path('api/v1/matches/<str:mid>/', results.match_detail),
 ]

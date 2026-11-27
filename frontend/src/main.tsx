@@ -206,7 +206,7 @@ function Landing({ open }: { open: () => void }) {
           </button>
         </nav>
       </header>
-      <main id="main-content">
+      <main id="main-content" tabIndex={-1}>
         <section className="hero">
           <div className="hero-copy">
             <p className="eyebrow">
@@ -396,6 +396,20 @@ function currentPage() {
   return consoleLinks.find(({ href }) => href === address)?.page ?? null;
 }
 
+function SkipToContent() {
+  return (
+    <a className="skip" href="#main-content" onClick={(event) => {
+      const main = document.getElementById("main-content");
+      if (main) {
+        event.preventDefault();
+        main.focus();
+      }
+    }}>
+      Skip to content
+    </a>
+  );
+}
+
 function App() {
   const [user, setUser] = useState<User | null>(null),
     [checking, setChecking] = useState(true),
@@ -426,9 +440,7 @@ function App() {
   if (!page)
     return (
       <>
-        <a className="skip" href="#main-content">
-          Skip to content
-        </a>
+        <SkipToContent />
         {error && (
           <p className="offline" role="status">
             {error}
@@ -459,7 +471,7 @@ function App() {
       )}
       <Console
         user={user}
-        page={page === "operations" && !user.admin ? "live" : page}
+        page={page}
         logout={async () => {
           try {
             await api("/auth/logout/", { method: "POST" });
@@ -565,8 +577,14 @@ function Console({ user, page, logout }: { user: User; page: ConsolePage; logout
   }, []);
   const cup = cups.find((c) => c.id === selected);
   const showTournament = page !== "notifications" && page !== "operations";
+  const canOpen = (target: ConsolePage) => {
+    if (target === "operations") return user.admin;
+    if (target === "notifications") return !user.admin && role !== "organizer";
+    return true;
+  };
   return (
     <div className="console">
+      <SkipToContent />
       <aside className="sidebar">
         <a className="wordmark" href="/">
           <Mark />
@@ -576,10 +594,7 @@ function Console({ user, page, logout }: { user: User; page: ConsolePage; logout
         </a>
         <p className="eyebrow">COMPETITION CONSOLE</p>
         <nav aria-label="Console">
-          {consoleLinks.filter((link) => (
-            (link.page !== "operations" || user.admin) &&
-            (link.page !== "notifications" || (!user.admin && role !== "organizer"))
-          )).map((link) => (
+          {consoleLinks.filter((link) => canOpen(link.page) && (link.page !== "notifications" || !loading)).map((link) => (
             <a key={link.page} href={link.href} aria-current={page === link.page ? "page" : undefined}>
               <span className="nav-icon" aria-hidden="true">{link.icon}</span> {link.label}
             </a>
@@ -591,7 +606,7 @@ function Console({ user, page, logout }: { user: User; page: ConsolePage; logout
           <button onClick={logout}>Sign out</button>
         </div>
       </aside>
-      <main className="workspace" id="main-content">
+      <main className="workspace" id="main-content" tabIndex={-1}>
         <header className="workspace-top">
           <span className="eyebrow">INNOFEST / COMPETITION</span>
           {showTournament && cups.length > 0 && <label className="cup-picker">
@@ -614,8 +629,17 @@ function Console({ user, page, logout }: { user: User; page: ConsolePage; logout
             {error}
           </p>
         )}
-        {page === "notifications" ? (
-          <Inbox tournaments={new Map(cups.map((item) => [item.id, item.name]))} />
+        {!canOpen(page) ? (
+          <section className="empty">
+            <h1>Access required</h1>
+            <p role="alert">{page === "operations"
+              ? "Admin access is required to open Operations."
+              : "Notifications are available to linked participant accounts."}</p>
+            <a href="/dashboard">Open Dashboard</a>
+          </section>
+        ) : page === "notifications" ? (
+          loading ? <p role="status">Checking notification access…</p> :
+            <Inbox tournaments={new Map(cups.map((item) => [item.id, item.name]))} />
         ) : page === "operations" ? (
           <Operations />
         ) : loading ? (
@@ -1152,7 +1176,7 @@ function Submissions({ cup, role }: { cup: Cup; role: string }) {
             platform snapshots the pinned source into your bundle.
           </p>
           {catalogue.map((d) => (
-            <div key={d.name} className="dependency">
+            <div key={`${d.name}@${d.version}`} className="dependency">
               <code>
                 {d.name} / {d.version}
               </code>

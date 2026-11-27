@@ -22,6 +22,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, UnsupportedMed
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from backend.match_orchestrator import replays as P
+from backend.registration import registration as G
 from backend.submission_registry import registry as R
 from backend.submission_bundle import bundle as BU
 from backend.tournament_flow import flow as F
@@ -101,7 +102,6 @@ def tournaments(request):
     who = D.actor(request.user)
     rt = D.runtime()
     records = rt.tournaments.store.snapshot()['tournaments'].values()
-    from backend.registration import registration as G
     return private({'items': [{**{k: r[k] for k in ('id', 'name', 'description', 'status', 'deadlines')},
                                'teams': sorted(who.team_ids & set(G.registered_teams(rt.registration, r['id'])))}
                               for r in records if r['status'] != 'deleted' and (who.role == 'admin' or r['id'] in who.tournament_ids)],
@@ -111,8 +111,7 @@ def tournaments(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def dependencies(request):
-    return Response({'items': [{'name': name, **{k: info[k] for k in ('version', 'sha256', 'description')}}
-                               for name, info in BU.CATALOGUE.items()], 'max_files': BU.MAX_FILES, 'max_bytes': BU.MAX_BYTES})
+    return Response({'items': BU.dependency_catalogue(), 'max_files': BU.MAX_FILES, 'max_bytes': BU.MAX_BYTES})
 
 
 @api_view(['GET'])
@@ -271,15 +270,15 @@ def text(body, key, limit):
     return value.strip()
 
 
-def mutate(request, tid, action):
-    key = request.headers.get('Idempotency-Key', '')
-    if not R.KEY_RE.fullmatch(key):
+def mutate(request, tid, action, *, idempotency_key=None, staff=False):
+    key = request.headers.get('Idempotency-Key', '') if idempotency_key is None else idempotency_key
+    if not isinstance(key, str) or not R.KEY_RE.fullmatch(key):
         raise ValidationError('A safe Idempotency-Key of 1–128 characters is required.')
     fingerprint = hashlib.sha256(json.dumps([request.method, request.path, request.data], sort_keys=True, default=str).encode()).hexdigest()
     with transaction.atomic():
         current_user = get_user_model().objects.select_for_update().get(pk=request.user.pk)
         request.user.is_active, request.user.is_superuser = current_user.is_active, current_user.is_superuser
-        D.tournament(request.user, tid)  # current scope again, including before stored-response delivery
+        D.tournament(request.user, tid, staff=staff)  # current scope, including before stored-response delivery
         receipt = Receipt.objects.filter(user=request.user, key=key).first()
         if receipt:
             if receipt.fingerprint != fingerprint:
@@ -296,9 +295,23 @@ def submissions(request, tid, team):
     who, _ = D.tournament(request.user, tid)
     rt = D.runtime()
     if request.method == 'GET':
-        return private({'items': R.history(rt.flow.registry, who, team)})
+        try:
+            items = R.history(rt.flow.registry, who, team, tournament_id=tid)
+        except R.NotFound:
+            # A roster team can legitimately have no registry entry yet.
+            try:
+                G.team_view(rt.registration, who, tid, team)
+            except G.NotFound as exc:
+                raise NotFound() from exc
+            items = []
+        references = D.submission_match_ids(tid, (item['id'] for item in items))
+        for item in items:
+            item['match_ids'] = references[item['id']]
+        if who.role in ('organizer', 'admin'):
+            AuditEvent.objects.create(actor_id_text=who.user_id, tournament_id=tid,
+                                      action='submission_history_read', detail={'team_id': team})
+        return private({'items': items})
     if who.role == 'participant':
-        from backend.registration import registration as G
         if team not in who.team_ids or team not in G.registered_teams(rt.registration, tid):
             raise NotFound('No such team.')
     if who.role != 'participant' or team not in who.captain_of:
@@ -337,6 +350,16 @@ def submissions(request, tid, team):
                                   'details': {'submission_id': result['id'], 'reasons': reasons}}}, 422)
     del result['check_job']
     return private(result, 201)
+
+
+@api_view(['GET'])
+def submission_validation(request, tid, sid):
+    who, _ = D.tournament(request.user, tid)
+    report = R.validation_report(D.runtime().flow.registry, who, sid, tournament_id=tid)
+    if who.role in ('organizer', 'admin'):
+        AuditEvent.objects.create(actor_id_text=who.user_id, tournament_id=tid,
+                                  action='submission_validation_read', detail={'submission_id': sid})
+    return private(report)
 
 
 @api_view(['GET'])
