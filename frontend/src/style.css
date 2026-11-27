@@ -933,6 +933,26 @@ textarea {
 .validation-details ul {
   padding-inline-start: 1rem;
 }
+.match-log-events {
+  list-style: none;
+  padding: 0;
+}
+.match-log-events > li {
+  border-top: 1px solid #e2e0ec;
+  padding: 0.6rem 0;
+  overflow-wrap: anywhere;
+}
+.match-log-events dd {
+  margin: 0 0 0.6rem;
+}
+.match-log-events pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.validation-details .match-log-output {
+  list-style: none;
+  padding: 0;
+}
 .bracket-overview {
   margin: 0 0 1.5rem;
 }

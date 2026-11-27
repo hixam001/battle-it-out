@@ -487,6 +487,13 @@ opens the dashboard. Invalid credentials keep the sign-in form and display
 the matching API request ID. The suite continues to exercise protected
 deep links through sign-in.
 
+### Structured match log view (BIO-705 / CN-071)
+
+The browser opens a selected game's log, checks the latest recorded attempt,
+requests a missing attempt and returns to the latest log. Disposable data
+shows own-team output to a participant, both sides to an assigned Organizer,
+and allowlisted diagnostics to an Admin.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

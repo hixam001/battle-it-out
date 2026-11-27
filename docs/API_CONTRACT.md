@@ -843,6 +843,10 @@ An unavailable log reference, missing game or unauthorized scope returns
 under the existing worker policy remain available after archive to authorized
 readers. Replay purge follows the separate archive rules above.
 
+The browser match log screen uses this endpoint with the current session.
+It opens the latest recorded log and accepts an explicit attempt number
+(CN-071).
+
 ## 7. Notifications and audit --- BIO-EPIC-04/06
 
 **Implemented recipient subset (BIO-607 / CN-030):** the notification routes

@@ -936,3 +936,11 @@ Decisions from the owner that change or narrow what the requirement documents (P
   dashboard, while protected links preserve their destination.
 - The production build and all 28 Playwright tests passed. The browser
   checks the public link, the redirect and the request ID for a failed login.
+
+## CN-071 — Structured match log view (2026-11-28)
+
+- **BIO-705:** The selected game links to the latest verified attempt log.
+  Readers can request a numbered attempt and expand the event details and
+  team output supplied by the existing authorized API.
+- The production build and all 29 Playwright tests passed. Browser coverage
+  checks attempt selection and the participant, Organizer and Admin projections.

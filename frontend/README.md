@@ -20,7 +20,7 @@ Production static assets are generated into ignored `frontend/dist/`. Serve
 `index.html` for `/login`, `/dashboard`, `/notifications`, `/account/settings`, `/participant/team` and
 `/participant/submissions`, `/bracket`,
 `/participant/tournaments/{id}/bracket`, `/matches/{id}` and
-`/matches/{id}/replay`, `/admin`, `/admin/approvals`, `/admin/audit`,
+`/matches/{id}/replay`, `/matches/{id}/logs`, `/admin`, `/admin/approvals`, `/admin/audit`,
 `/admin/manage-tournaments`, `/admin/manage-tournaments/new`,
 `/admin/manage-tournaments/{id}/settings`, `/admin/manage-tournaments/{id}/roster`,
 `/admin/manage-tournaments/{id}/teams`,
@@ -74,6 +74,9 @@ Match detail shows the game order, pinned bot versions, tie-break maps and
 the recorded coin flip when it decided a series. The replay page offers a
 native download while retained and explains archive or unavailable states.
 Playback uses the Battlecode client.
+**Structured match log** shows the latest verified attempt and opens an
+earlier numbered attempt on request. The API supplies event fields and team
+output according to the current viewer's role.
 
 Admins can review pending Organizer tournaments through **Approvals**.
 The queue reuses the server's confirmation, required rejection reasons

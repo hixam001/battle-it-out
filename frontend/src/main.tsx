@@ -14,6 +14,7 @@ import { Roster } from "./roster";
 import { RoundControls } from "./rounds";
 import { StaffTeams } from "./staff-teams";
 import { Operations } from "./operations";
+import { MatchLogs } from "./match-logs";
 import "./style.css";
 
 type User = { id: number; username: string; admin: boolean };
@@ -411,12 +412,13 @@ const consoleLinks = [
   { page: "organizer", href: "/organizer", label: "Manage tournaments", icon: "▤" },
   { page: "announce", href: "/announcements/new", label: "Post announcement", icon: "◈" },
 ] as const;
-type ConsolePage = (typeof consoleLinks)[number]["page"] | "match" | "replay"
+type ConsolePage = (typeof consoleLinks)[number]["page"] | "match" | "replay" | "match-logs"
   | "organizer-roster" | "organizer-rounds" | "organizer-teams" | "admin-roster" | "admin-teams";
 type ConsoleRoute = { page: ConsolePage; id?: string; create?: boolean };
 const detailRoutes: [RegExp, ConsolePage][] = [
   [/^\/participant\/tournaments\/([^/#]+)\/bracket$/, "bracket"],
   [/^\/matches\/([^/#]+)\/replay$/, "replay"],
+  [/^\/matches\/([^/#]+)\/logs$/, "match-logs"],
   [/^\/matches\/([^/#]+)$/, "match"],
   [/^\/organizer\/tournaments\/([^/#]+)\/roster$/, "organizer-roster"],
   [/^\/organizer\/tournaments\/([^/#]+)\/rounds$/, "organizer-rounds"],
@@ -669,7 +671,7 @@ function Console({ user, route, navigate, logout }: {
   const adminManagement = page.startsWith("admin-");
   const staffSettingsPath = adminManagement ? adminTournamentSettings : organizerTournamentPath;
   const showTournament = !organizerPage && !adminManagement && !["notifications", "account-settings", "operations", "approvals",
-    "audit", "match", "replay"].includes(page);
+    "audit", "match", "replay", "match-logs"].includes(page);
   const canOpen = (target: ConsolePage) => {
     if (target.startsWith("admin-") || ["operations", "approvals", "audit", "deadlines", "invitations"].includes(target)) return user.admin;
     if (target === "announce") return user.admin || role === "organizer" || loading;
@@ -785,6 +787,8 @@ function Console({ user, route, navigate, logout }: {
           id && <MatchResult key={id} matchId={id} />
         ) : page === "replay" ? (
           id && <Replay key={id} matchId={id} />
+        ) : page === "match-logs" ? (
+          id && <MatchLogs key={id} matchId={id} />
         ) : loading ? (
           <p role="status">Loading tournaments…</p>
         ) : page === "dashboard" ? (

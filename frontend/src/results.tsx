@@ -193,7 +193,7 @@ export function MatchResult({ matchId }: { matchId: string }) {
                 <p>{currentGame.map} · {stateLabel(currentGame.status)}</p>
                 <a href={matchPath(matchId) + "/replay"}>Replay</a>
                 {" · "}
-                <a href={`/api/v1${matchPath(matchId)}/logs/`} target="_blank" rel="noreferrer">Structured match log</a>
+                <a href={matchPath(matchId) + "/logs"}>Structured match log</a>
               </section>
             )}
           </>

@@ -418,6 +418,9 @@ Authenticated Web App (later phase)
   `/matches/{id}/replay`                    Authorized user Replay                 Player/download     Available, processing,
                                             before archive  playback/download                          archived/unavailable
 
+  `/matches/{id}/logs`                      Authorized      Structured match log    Read events,        Latest attempt, earlier
+                                             match viewer                          select attempt      attempt, unavailable
+
   `/notifications`                          Linked          Dashboard notification Read/unread,        Empty, unread,
                                              participant     feed                   email preference   delivery issue
 

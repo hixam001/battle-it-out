@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-705 / CN-071 adds the structured match log view for recorded attempts.
+  The production build and all 29 browser tests passed.
 - BIO-702 / CN-070 adds `/login` for provisioned accounts and opens the
   dashboard after authentication. The build and 28 browser tests passed.
+  PR #78 merged into `main` at `7e9cea2`.
 - BIO-702 / CN-069 adds the linked participant account settings page
   with the shared inbox email preference. The build and all 28 browser tests passed.
   PR #77 merged into `main` at `dcd6278`.
@@ -475,7 +478,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    omit arbitrary text, check current scope per poll and are denied/purged after
    archive. Full viewer overlays/traps/animations and production reconnect/load
    evidence remain. CN-032 adds current-scope native replay downloads from the
-   private vault. CN-046 exposes verified role-scoped structured attempt logs.
+   private vault. CN-046 exposes verified role-scoped structured attempt logs,
+   and CN-071 adds the match log screen with attempt selection.
    CN-054 adds the replay availability and download screen.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
@@ -1159,3 +1163,18 @@ browser checks the public link, existing sessions, bad credentials and
 the matching HTTP request ID, plus protected deep links. All 91 statuses,
 nine backlog categories and 42 Jira items remain. The next ready results
 slice can show existing scoped match logs in the console.
+
+## CN-071 continuation evidence
+
+BIO-705 starts from merged main at `7e9cea2` on
+`BIO-705-structured-match-log-view`. The selected game's log opens the
+latest verified attempt and accepts a numbered attempt. The page displays
+the API's current-role event projection with expandable details and output
+as text. It distinguishes missing logs from API errors.
+
+The production build and all 29 Playwright tests passed (45.7 s). The
+browser uses a real, disposable log fixture and verifies a participant's
+own side, both sides for the assigned Organizer, and diagnostics for the
+Admin. All 91 statuses, nine backlog categories and 42 tracked Jira items
+remain. Browser replay playback, raw engine scores, formal accessibility
+and log retention remain open.
