@@ -20,7 +20,7 @@ Production static assets are generated into ignored `frontend/dist/`. Serve
 `index.html` for `/dashboard`, `/notifications`, `/participant/team` and
 `/participant/submissions`, `/bracket`,
 `/participant/tournaments/{id}/bracket`, `/matches/{id}` and
-`/matches/{id}/replay`; retain the same-origin
+`/matches/{id}/replay` and `/admin/approvals`; retain the same-origin
 `/api` route to Django. Hosting,
 TLS, reverse proxy and public deployment remain operator/deployment work; no
 external Site has been created or published. Native session cookies and masked
@@ -63,6 +63,10 @@ Match detail shows the game order, pinned bot versions, tie-break maps and
 the recorded coin flip when it decided a series. The replay page offers a
 native download while retained and explains archive or unavailable states.
 Playback uses the Battlecode client.
+
+Admins can review pending Organizer tournaments through **Approvals**.
+The queue reuses the server's confirmation, required rejection reasons
+and version checks. Open registration separately after approval.
 
 Direct console links preserve the destination through sign-in. Operations is
 Admin-only, and the personal inbox uses participant scope. The API remains

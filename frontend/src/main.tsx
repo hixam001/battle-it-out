@@ -4,6 +4,7 @@ import { api, setCsrfToken } from "./api";
 import { Inbox, TournamentNotices } from "./notifications";
 import { Submissions, Team } from "./participant";
 import { BracketResults, MatchResult, Replay } from "./results";
+import { Approvals } from "./approvals";
 import "./style.css";
 
 type User = { id: number; username: string; admin: boolean };
@@ -394,6 +395,7 @@ const consoleLinks = [
   { page: "submissions", href: "/participant/submissions", label: "Bot submissions", icon: "⌘" },
   { page: "disputes", href: "/#disputes", label: "Match disputes", icon: "☷" },
   { page: "operations", href: "/#operations", label: "Operations", icon: "⚙" },
+  { page: "approvals", href: "/admin/approvals", label: "Approvals", icon: "✓" },
 ] as const;
 type ConsolePage = (typeof consoleLinks)[number]["page"] | "match" | "replay";
 type ConsoleRoute = { page: ConsolePage; id?: string };
@@ -603,6 +605,7 @@ function Console({ user, route, navigate, logout }: {
     const data = await api<{ items: Cup[]; role: string }>("/tournaments/");
     setCups(data.items);
     setRole(data.role);
+    setError("");
     setSelected((id) => data.items.some((item) => item.id === id) ? id : data.items[0]?.id || "");
   }, []);
   useEffect(() => {
@@ -610,9 +613,9 @@ function Console({ user, route, navigate, logout }: {
   }, [refreshTournament]);
   const scopedBracket = page === "bracket" && id;
   const cup = cups.find((c) => c.id === (scopedBracket || selected));
-  const showTournament = !["notifications", "operations", "match", "replay"].includes(page);
+  const showTournament = !["notifications", "operations", "approvals", "match", "replay"].includes(page);
   const canOpen = (target: ConsolePage) => {
-    if (target === "operations") return user.admin;
+    if (target === "operations" || target === "approvals") return user.admin;
     if (target === "notifications") return !user.admin && role !== "organizer";
     if (target === "team") return role === "participant" || (loading && !user.admin);
     return true;
@@ -679,6 +682,7 @@ function Console({ user, route, navigate, logout }: {
             <h1>Access required</h1>
             <p role="alert">{page === "operations"
               ? "Admin access is required to open Operations."
+              : page === "approvals" ? "Admin access is required to review tournaments."
               : page === "team" ? "My team is available to participant accounts."
               : "Notifications are available to linked participant accounts."}</p>
             <a href="/dashboard">Open Dashboard</a>
@@ -688,6 +692,10 @@ function Console({ user, route, navigate, logout }: {
             <Inbox tournaments={new Map(cups.map((item) => [item.id, item.name]))} />
         ) : page === "operations" ? (
           <Operations />
+        ) : page === "approvals" ? (
+          <Approvals tournaments={cups} loading={loading} loadError={error} refreshQueue={refreshTournament}
+            onReview={(review) => setCups((items) => items.map((cup) => cup.id === review.id
+              ? { ...cup, status: review.status } : cup))} />
         ) : page === "match" ? (
           id && <MatchResult key={id} matchId={id} />
         ) : page === "replay" ? (

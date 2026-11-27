@@ -21,6 +21,7 @@ def main():
     from backend.registration import registration
     from backend.submission_registry import registry
     from backend.tournaments import tournaments
+    from backend.webapp.models import OrganizerAssignment
     from backend.webapp.tests import ADM, BOT, FeatureAPI, verdict
 
     connection = settings.DATABASES['default']
@@ -77,6 +78,14 @@ def main():
             replay_source.write_bytes(gzip.compress(b'Local browser download fixture.' * 40))
             replays.register_replay(fixture.rt.vault, 'tied-fixture', match_id, replay_source, None)
             replay_source.unlink()
+            organizer = registry.Actor(str(FeatureAPI.org.pk), 'organizer')
+            for suffix in ('approve', 'reject', 'changed'):
+                tid = f'approval-{suffix}'
+                OrganizerAssignment.objects.create(user=FeatureAPI.org, tournament_id=tid)
+                tournaments.create(fixture.rt.tournaments, organizer, tid, f'Fixture to {suffix}',
+                                   'An Organizer-created fixture for the approval queue.',
+                                   fixture.now + 7200, fixture.now + 10800, idempotency_key=tid)
+                tournaments.submit_for_approval(fixture.rt.tournaments, organizer, tid)
             for i in range(1, 24):
                 cup = 'cup' if i <= 22 else 'historical'
                 title = f'Fixture notice {i:02d}' if i <= 22 else 'Historical fixture notice'

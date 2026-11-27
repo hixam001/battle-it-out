@@ -6,6 +6,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Admin approval queue (BIO-707; CN-055)** shows pending Organizer
+  tournaments, requires confirmation or a rejection reason, and reloads
+  stale settings before a review can be submitted again.
+
 - **Bracket and match results (BIO-705; CN-054)** show private rounds, game
   wins, tie-break maps and recorded coin flips. The replay screen offers
   retained native downloads and reports unavailable or archived state.

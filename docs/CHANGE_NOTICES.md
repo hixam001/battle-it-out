@@ -790,3 +790,13 @@ Decisions from the owner that change or narrow what the requirement documents (P
   passed. The orchestrator unit selection had 153 passes and 11 integration
   skips. Raw engine scores, browser playback and production acceptance remain
   open.
+
+## CN-055 — Admin tournament approval queue (2026-11-27)
+
+- **BIO-707:** The Admin console lists pending Organizer tournaments with
+  dates and map-pool selection. It submits approval confirmation or a
+  rejection reason with the reviewed version.
+- A stale decision requires reloading the tournament. Successful reviews
+  leave the queue. Registration opening stays a separate action.
+- The production build and all 14 Playwright tests passed, including
+  approval, rejection, concurrent review and participant refusal.

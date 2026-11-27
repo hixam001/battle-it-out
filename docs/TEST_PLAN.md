@@ -375,6 +375,13 @@ native-format attachment. It archives the fixture and verifies that the
 download disappears while the recorded result remains. A participant sees
 only their available tournaments and can open a pending bracket.
 
+### Admin approval queue (BIO-707 / CN-055)
+
+Playwright checks a confirmed approval, a reasoned rejection and a stale
+review against the actual tournament API. It verifies that decided
+tournaments leave the queue, a stale review requires reloading and a
+participant cannot open the Admin screen.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

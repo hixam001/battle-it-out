@@ -1082,3 +1082,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   changelog, coverage and memory. All 91 requirement statuses and nine
   backlog categories remain. Browser playback, raw engine scores and
   full acceptance keep BIO-705 open.
+
+### 2026-11-27 — BIO-707 Admin tournament approval queue
+
+- PR #62 merged into main at `84c6e13`. Started
+  `BIO-707-admin-approval-queue` from that commit. Added the Admin-only
+  `/admin/approvals` route in the React console. The selected review shows
+  tournament details, deadlines and map pool, and uses the existing API
+  version with a confirmed approval or required rejection reason.
+- Successful decisions leave the queue. A concurrent decision requires
+  reloading the selected tournament. Registration opening remains separate.
+- The production build and all 14 Playwright tests (22.2 s) passed against
+  disposable Django and PostgreSQL. The browser cases check both review
+  outcomes, refusal of a stale version and participant access. No backend
+  or schema change was needed. No real tournament or replay was changed.
+- Updated the Admin and frontend guides, test plan, Jira, CN-055,
+  requirements, changelog and memory. All 91 statuses, nine backlog
+  categories and 43 open Jira items remain. Other Admin controls and
+  formal acceptance stay open.
