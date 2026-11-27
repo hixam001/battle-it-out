@@ -813,12 +813,27 @@ The [participant inbox](../frontend/README.md) uses these endpoints (CN-031).
 Announcements, automatic extension/override notices, real email providers and
 mandatory security-email policy remain open.
 
-### GET `/tournaments/{id}/audit-logs`
+### GET `/tournaments/{id}/audit-logs/` and GET `/admin/audit-logs/`
 
-**Purpose:** Read scoped audit log.\
-**Access:** Admin global; assigned Organizer for assigned tournament;
-Participant for own team/tournament-relevant entries.\
-**Success:** redacted, paginated immutable records.
+**Implemented (BIO-610 / CN-042):** Read-only audit across PostgreSQL feature
+actions and existing tournament, registration, submission and notification
+audit stores. Both routes return `items` and a nullable `next_offset`.
+The optional parameters are `limit` (1–200, default 50) and `offset`
+(0–2147483647). Records are ordered newest first with a deterministic
+source and sequence tie-break. Appends can shift offset pages.
+
+The tournament route uses current verified roster or explicit Organizer scope.
+Participants see public lifecycle events, their own teams' upload/verdict
+metadata and their own teams' disputes. Assigned Organizers see tournament
+staff activity. The global route is Admin-only and additionally accepts
+`tournament_id`, including IDs of deleted tournaments with retained audit.
+Missing and hidden scoped tournaments share `404`. Archive retains access
+for currently authorized roles.
+
+Records contain `id`, `source`, `action`, `created_at`, `tournament_id`,
+an explicit `detail` projection and a role-appropriate `actor_id` for staff.
+Free-form reasons, invitation/provider credentials, source and host paths are
+excluded. Private/no-store and the shared error envelope apply.
 
 ## 8. Internal match-worker contract (not public API)
 

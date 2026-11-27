@@ -18,6 +18,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
   submission deadline and override a locked setting with an audited reason.
   The response reports the affected count and participant notice status.
   Maintenance retries pending notices after an interruption.
+- **Scoped audit feeds (BIO-610; CN-042)** provide current-role tournament audit
+  and Admin global audit, with paginated redacted metadata and retained
+  deleted-tournament records for Admins.
 
 - **Private replay download (BIO-605; CN-032):** authenticated `.bc26` attachment from the existing vault after current tournament authorization and digest verification. Archive denies new downloads for every role, and hidden replays share the missing response. The live match list now exposes the game ID for downloads.
 

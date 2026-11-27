@@ -193,6 +193,13 @@ Documentation checks cannot satisfy the API permission exit gate.
 | AC-13 | Fail audit/outbox persistence during role/assignment mutation, then retry; delete tournament afterward | No unaudited committed change; at most one transition/event; redacted permanent audit survives tournament deletion |
 | AC-14 | Assigned Organizer reads source then attempts upload/activation, code replacement or approval | Read is allowed and staff source read audited; forbidden mutation remains forbidden despite assignment |
 
+#### Implemented audit read subset (BIO-610 / CN-042)
+
+PostgreSQL HTTP checks cover own-team submissions and disputes, currently
+assigned Organizer scope and revocation, Admin-only global access and
+retained deletion audit. Pagination, deterministic ordering, shared hidden
+responses and redaction are verified across the web and legacy sources.
+
 ### TC-08 --- Replay, notifications, archive, and recovery
 
 **Jira:** BIO-305 / BIO-EPIC-06 / BIO-EPIC-08\

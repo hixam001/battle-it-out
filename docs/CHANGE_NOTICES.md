@@ -607,3 +607,17 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - **Coverage:** evidence advances for SRD-034/035/037. The 91 statuses are
   unchanged. Provider delivery, production deployment, Admin controls and
   the separate configuration-freeze decision remain open.
+## CN-042 — Scoped and global audit feeds (2026-11-27)
+
+- **BIO-610:** role-scoped tournament and Admin global read endpoints with
+  newest-first pages. The feeds combine audit entries from PostgreSQL
+  features and the tournament, registration, submission and notification
+  stores. They project allowlisted metadata and omit free-form text.
+- **Access:** verified participants see public lifecycle and own-team
+  submission/dispute activity. Current explicit Organizer assignment
+  grants tournament staff audit. The Admin feed can filter retained
+  history by a deleted tournament ID.
+- **Checks:** 85 Django cases passed with disposable PostgreSQL, including
+  six audit cases. System and migration checks passed. Coverage statuses
+  stay unchanged. Permanent consolidated storage, series/incident audit
+  integration and a dedicated Admin screen remain open.
