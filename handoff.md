@@ -1158,3 +1158,23 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   changelog, coverage and memory. All 91 statuses, nine backlog
   categories and 43 open Jira items remain. Other Admin mutation
   controls and permanent audit persistence remain open.
+
+### 2026-11-27 — BIO-707 Admin deadline controls
+
+- PR #66 merged into main at `8077df2`. Started
+  `BIO-707-admin-deadline-controls` from that commit. Added Admin routes
+  for deadline extension and emergency override. The console shows
+  current dates, accepts a reason and explicit confirmation, and reports
+  the affected-account count and dashboard notice state.
+- The existing API enforces current Admin role, lock state, deadline
+  order and pinned maps. Retrying an unchanged request uses the same
+  key. No API or schema change was needed.
+- The production build and 19 Playwright tests passed on disposable
+  services, including extension, locked override and participant notices.
+  All 147 Django tests and system and migration-drift checks passed.
+  The Python 3.15 backend suite recorded 738 passes of 786 with 48
+  integration cases skipped in unit mode. Existing replays were preserved.
+- Updated the Admin and frontend guides, test plan, Jira, CN-059,
+  changelog, coverage and memory. All 91 statuses, nine backlog categories
+  and 43 open Jira items remain. Remaining Admin management, invitations,
+  incident controls and formal acceptance stay open.

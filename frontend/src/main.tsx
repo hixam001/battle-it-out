@@ -8,6 +8,7 @@ import { Approvals } from "./approvals";
 import { Organizer } from "./organizer";
 import { AnnouncementForm } from "./announcements";
 import { GlobalAudit } from "./audit";
+import { DeadlineControls } from "./deadlines";
 import "./style.css";
 
 type User = { id: number; username: string; admin: boolean };
@@ -400,6 +401,7 @@ const consoleLinks = [
   { page: "operations", href: "/#operations", label: "Operations", icon: "⚙" },
   { page: "approvals", href: "/admin/approvals", label: "Approvals", icon: "✓" },
   { page: "audit", href: "/admin/audit", label: "Audit log", icon: "☷" },
+  { page: "deadlines", href: "/admin/tournaments", label: "Deadline controls", icon: "◷" },
   { page: "organizer", href: "/organizer", label: "Manage tournaments", icon: "▤" },
   { page: "announce", href: "/announcements/new", label: "Post announcement", icon: "◈" },
 ] as const;
@@ -412,11 +414,12 @@ function currentRoute(address: string): ConsoleRoute | null {
   const bracket = normalized.match(/^\/participant\/tournaments\/([^/#]+)\/bracket$/);
   const game = normalized.match(/^\/matches\/([^/#]+)(\/replay)?$/);
   const organizer = normalized.match(/^\/organizer\/tournaments\/([^/#]+)$/);
-  const route = bracket ?? game ?? organizer;
+  const adminTournament = normalized.match(/^\/admin\/tournaments\/([^/#]+)$/);
+  const route = bracket ?? game ?? organizer ?? adminTournament;
   if (route) {
     try {
       return {
-        page: organizer ? "organizer" : bracket ? "bracket" : game?.[2] ? "replay" : "match",
+        page: adminTournament ? "deadlines" : organizer ? "organizer" : bracket ? "bracket" : game?.[2] ? "replay" : "match",
         id: decodeURIComponent(route[1]),
       };
     } catch {
@@ -637,11 +640,11 @@ function Console({ user, route, navigate, logout }: {
   useEffect(() => {
     refreshTournament().catch((e) => setError(e.message)).finally(() => setLoading(false));
   }, [refreshTournament]);
-  const scopedBracket = page === "bracket" && id;
-  const cup = cups.find((c) => c.id === (scopedBracket || selected));
+  const scopedTournament = (page === "bracket" || page === "deadlines") && id;
+  const cup = cups.find((c) => c.id === (scopedTournament || selected));
   const showTournament = !["notifications", "operations", "approvals", "audit", "organizer", "match", "replay"].includes(page);
   const canOpen = (target: ConsolePage) => {
-    if (["operations", "approvals", "audit"].includes(target)) return user.admin;
+    if (["operations", "approvals", "audit", "deadlines"].includes(target)) return user.admin;
     if (target === "announce") return user.admin || role === "organizer" || loading;
     if (target === "organizer") return role === "organizer" || (loading && !user.admin);
     if (target === "notifications") return !user.admin && role !== "organizer";
@@ -688,7 +691,7 @@ function Console({ user, route, navigate, logout }: {
               value={cup?.id ?? ""}
               onChange={(e) => {
                 setSelected(e.target.value);
-                if (scopedBracket) navigate("/bracket");
+                if (scopedTournament) navigate(page === "deadlines" ? "/admin/tournaments" : "/bracket");
               }}
             >
               {!cup && <option value="" disabled>Select a tournament</option>}
@@ -712,6 +715,7 @@ function Console({ user, route, navigate, logout }: {
               ? "Admin access is required to open Operations."
               : page === "approvals" ? "Admin access is required to review tournaments."
               : page === "audit" ? "Admin access is required to open the global audit log."
+              : page === "deadlines" ? "Admin access is required to change deadlines and locked settings."
               : page === "organizer" ? "Organizer access is required to manage tournaments."
               : page === "announce" ? "Tournament staff access is required to post announcements."
               : page === "team" ? "My team is available to participant accounts."
@@ -746,11 +750,16 @@ function Console({ user, route, navigate, logout }: {
             <section className="empty"><h1>Post announcement</h1>
               {!error && <p>No tournaments are available to your account.</p>}
             </section>
+        ) : page === "deadlines" ? (
+          cup ? <DeadlineControls key={cup.id} tournament={cup} refresh={refreshTournament} /> :
+            <section className="empty"><h1>Deadline controls</h1>
+              {!error && <p>{scopedTournament ? "This tournament is unavailable." : "No tournaments are available."}</p>}
+            </section>
         ) : page === "bracket" ? (
           cup ? <BracketResults key={cup.id} tournament={cup} /> :
             <section className="empty">
               <h1>Bracket &amp; results</h1>
-              <p>{scopedBracket ? "This tournament is unavailable." : "No tournaments yet."}</p>
+              <p>{scopedTournament ? "This tournament is unavailable." : "No tournaments yet."}</p>
             </section>
         ) : cup ? (
           <>

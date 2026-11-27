@@ -6,6 +6,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Admin deadline controls (BIO-707; CN-059)** support confirmed deadline
+  extensions and locked-setting overrides, with affected-account counts
+  and dashboard notice status.
+
 - **Global audit screen (BIO-707; CN-058)** lets Admins page through
   scoped audit events and find retained records by tournament ID.
 

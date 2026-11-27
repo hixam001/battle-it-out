@@ -53,9 +53,11 @@ registration manually from the approved tournament.
 
 ## 3. Deadlines and emergency overrides
 
-The [Admin API](API_CONTRACT.md#post-tournamentsidextend-deadline) records each
-confirmed change, reports the affected count and publishes the participant
-notices. The console controls are planned.
+Open **Deadline controls** and select the tournament. Review its dates,
+choose an extension or locked-setting override, enter a reason and confirm
+the change. The console shows the affected-account count and whether the
+dashboard notices have been published or are pending automatic retry.
+[Admin API contract](API_CONTRACT.md#post-tournamentsidextend-deadline).
 
 | Situation | What to do | What happens |
 |---|---|---|
@@ -142,4 +144,4 @@ Highest impact first: Python patch version and OS matrix (DEC-03, tested: 3.15.2
 
 ## 10. Quick reference: Admin screens (planned)
 
-`/admin` global status and incidents · `/admin/approvals` approval queue · `/admin/tournaments/{id}` full management, deadlines, overrides · `/admin/invitations` revoke and replace codes · `/admin/audit` global audit log. Team restore, permanent deletion, and user/role assignment appear in the navigation map but have no route in the inventory yet.
+`/admin` global status and incidents · `/admin/approvals` approval queue · `/admin/tournaments/{id}` deadline extensions and locked-setting overrides · `/admin/invitations` planned revoke and replace controls · `/admin/audit` global audit log. Team restore, permanent deletion, and user/role assignment appear in the navigation map but have no route in the inventory yet.

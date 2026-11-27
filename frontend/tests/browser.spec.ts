@@ -568,3 +568,44 @@ test("Admin paginates global audit and filters retained events for a deleted tou
   await expect(page.getByRole("alert")).toHaveText("Admin access is required to open the global audit log.");
   await expect(table).toHaveCount(0);
 });
+
+test("Admin confirms a locked override and a deadline extension with participant receipts", async ({ page, useSession }) => {
+  await useSession(page, "admin");
+  await page.goto("/admin/tournaments/deadline-fixture");
+  await expect(page.getByRole("heading", { name: "Deadline controls" })).toBeVisible();
+  const path = "/api/v1/tournaments/deadline-fixture/";
+  const before = await (await page.request.get(path)).json();
+
+  await page.getByRole("combobox", { name: "Action", exact: true }).selectOption("emergency-override");
+  await page.getByRole("textbox", { name: "Replacement name" }).fill("Updated deadline fixture");
+  await page.getByRole("textbox", { name: "Reason", exact: true }).fill("Correct the displayed fixture name.");
+  const override = page.getByRole("button", { name: "Apply emergency override" });
+  await expect(override).toBeDisabled();
+  await page.getByRole("checkbox", { name: /Confirm this change/ }).check();
+  await override.click();
+  await expect(page.getByRole("status")).toHaveText("Change recorded. Affected accounts: 2. Dashboard notices published.");
+  const changed = await (await page.request.get(path)).json();
+  expect(changed.name).toBe("Updated deadline fixture");
+  expect(changed.submission_deadline).toBe(before.submission_deadline);
+
+  await page.getByRole("combobox", { name: "Action", exact: true }).selectOption("extend-deadline");
+  const next = await page.evaluate(() => {
+    const date = new Date(Date.now() + 86_400_000);
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  });
+  await page.getByLabel("New deadline", { exact: true }).fill(next);
+  await page.getByRole("textbox", { name: "Reason", exact: true }).fill("Allow another fixture submission.");
+  await page.getByRole("checkbox", { name: /Confirm this change/ }).check();
+  await page.getByRole("button", { name: "Extend deadline", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Change recorded. Affected accounts: 2. Dashboard notices published.");
+  const after = await (await page.request.get(path)).json();
+  expect(Date.parse(after.submission_deadline)).toBeGreaterThan(Date.parse(changed.submission_deadline));
+  expect(after.registration_deadline).toBe(before.registration_deadline);
+
+  await useSession(page, "captain-a");
+  await page.goto("/notifications");
+  await expect(page.getByRole("heading", { name: "The submission deadline of deadline-fixture was extended" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "A setting of deadline-fixture was changed by an emergency override" })).toBeVisible();
+  await page.goto("/admin/tournaments/deadline-fixture");
+  await expect(page.getByRole("alert")).toHaveText("Admin access is required to change deadlines and locked settings.");
+});
