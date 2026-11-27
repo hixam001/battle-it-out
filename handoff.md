@@ -1212,3 +1212,22 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   changelog, coverage and project memory. All 91 statuses, nine backlog
   categories and 43 open Jira items remain. Staff initial issuance, rounds
   and dedicated team management remain open.
+
+### 2026-11-27 — BIO-706 Organizer round controls
+
+- PR #69 merged into main at `377940d`. Started
+  `BIO-706-organizer-round-controls` from that commit. Added the assigned
+  Organizer route for map selection, separate confirmed bracket generation
+  and idempotent start of the next ready round.
+- The console shows round readiness and queueing status and links to
+  the recorded bracket. The existing API remains authoritative for
+  scope, deadlines, map pins and ordering.
+- The production build and all 22 Playwright cases (32.2 s) passed.
+  The browser case exercised map selection, draw, start and unassigned
+  scope with a disposable synthetic catalogue and no match worker.
+  The first run's map selector was corrected to use its accessible
+  combobox role.
+- Updated the API, user and frontend guides, test plan, Jira, CN-062,
+  changelog, coverage and memory. All 91 statuses, nine backlog categories
+  and 43 open Jira items remain. Dedicated team management and staff
+  invitation issuance remain open.

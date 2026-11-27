@@ -750,7 +750,8 @@ versions. PUT requires session CSRF and exactly
 `{"map_pool_id":"...","expected_version":3}`. It selects an existing pool
 under the normal configuration deadline and optimistic version rules. The
 generated bracket retains its stored pool. A stale revision or locked
-tournament returns `409`.
+tournament returns `409`. The Organizer round screen uses this endpoint
+and the separate confirmed draw and start routes (CN-062).
 
 ### GET `/tournaments/{id}/bracket`
 

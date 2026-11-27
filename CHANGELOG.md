@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Organizer round controls (BIO-706; CN-062)** select a map pool, confirm
+  a separate bracket draw and queue each ready round on request.
+
 - **Organizer roster screen (BIO-706; CN-061)** imports CSV or JSON,
   reports rejected rows, corrects unlocked entries and shows registration
   progress and exclusions.
