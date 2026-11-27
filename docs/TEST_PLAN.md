@@ -359,6 +359,14 @@ labels in the webapp README.
 
 ## 5. Pre-demo checklist
 
+### Participant team and submissions (BIO-704 / CN-053)
+
+Playwright uses real Django sessions to check the private roster and
+bracket standing, tournament selection across console links, a locked
+deadline, and the captain-only upload form. It submits an invalid replacement
+and a queued version to the local API, expands the validation finding and
+checks that the previous valid version stays active.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

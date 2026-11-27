@@ -915,6 +915,19 @@ textarea {
 .table-wrap {
   overflow-x: auto;
 }
+.validation-details summary {
+  cursor: pointer;
+  color: var(--purple-dark, #4b367e);
+  font-weight: 600;
+}
+.validation-details p,
+.validation-details ul {
+  margin: 0.5rem 0;
+  overflow-wrap: anywhere;
+}
+.validation-details ul {
+  padding-inline-start: 1rem;
+}
 table {
   border-collapse: collapse;
   width: 100%;

@@ -22,6 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-704 / CN-053 delivers the participant team and submissions screens.
+  The production build, 10 Playwright tests and 145 Django tests passed.
+  The announcement API in PR #60 merged into main at `9255e2a`.
 - BIO-607 / CN-052 adds staff announcement publishing to the verified roster.
   The dashboard entries, optional email queue, author audit and retry receipt
   commit together. Staff authoring UI, other notice sources and production
@@ -409,9 +412,11 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
-   team, tournament creation/approval/deadline/round management, full bracket/
+   tournament creation/approval/deadline/round management, full bracket/
    replay/coin-flip and Admin mutation screens. Public landing and the private
-   live/analytics/submission/dispute/operations console now exist. Branding,
+   live/analytics/submission/dispute/operations console now exist. CN-053 adds
+   direct team and submission routes, bracket standing and validation details.
+   Branding,
    usability, formal accessibility/nonvisual play-by-play and full FLOW-01–08
    acceptance remain; production capacity/outage/concurrency/multi-host tests,
    target-host backups/recovery, deployment/TLS, CI matrix/real-engine checks,
@@ -811,3 +816,19 @@ migration checks, and all 101 notification library tests passed on project
 Python 3.15.2. All 91 statuses and nine backlog categories remain. Staff
 authoring UI, account provisioning for staff recipients, real provider and
 PostgreSQL notification migration remain open.
+
+## CN-053 continuation evidence
+
+BIO-704 starts from merged main at `9255e2a` on
+`BIO-704-participant-team-submissions`. My team combines the private verified
+roster with recorded bracket standings. Bot submissions uses current team
+scope and captaincy from the console tournament list. It shows the deadline
+lock, the active bot, expandable check findings and private file downloads.
+Refreshing reloads the current tournament and history. The existing
+`/#submissions` link still works and staff have a read-only team lookup.
+
+The production build, all 10 Playwright cases (15.8 s), all 145 Django
+cases (16.980 s), system and migration-drift checks passed on disposable
+state. The invalid and queued uploads in the browser kept the previous
+active version. All 91 requirement statuses and nine backlog categories
+remain. BIO-704 is implemented locally; 43 tracked Jira items remain.

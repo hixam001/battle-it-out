@@ -22,8 +22,9 @@ ask the Organizer to confirm your account and current roster or assignment.
 
 ## 2. Submit and validate a bot
 
-1. Open **Bot submissions**, confirm the tournament and enter your registered
-   **Team ID**. Under the current captain-only rule, your team captain uploads.
+1. Open **My team** to see your verified roster and bracket standing for the
+   selected tournament. Open **Bot submissions** to view your team's versions.
+   The upload form appears for your team captain while submissions are open.
 2. Choose a UTF-8 `bot.py` or a flat Python ZIP with `bot.py` as its entry point.
    Define a top-level `turn()` function taking no arguments. Keep any other
    modules at the archive root and use flat imports. The interim ceiling is
@@ -34,9 +35,9 @@ ask the Organizer to confirm your account and current roster or assignment.
    uses the approved dependency catalogue. See the [bot policy](BOT_POLICY.md)
    and [bundle contract](../backend/submission_bundle/README.md).
 4. Select **Upload for validation** before the deadline. The worker checks the
-   exact uploaded version. Reopen **Bot submissions** or refresh the page to
-   read the result in **Submission history**. Rejected and inconclusive
-   attempts remain in history.
+   exact uploaded version. Select **Refresh submissions** to load the latest
+   deadline and verdicts. Expand a version's validation status in
+   **Submission history** for specific findings.
 5. Your latest valid upload becomes active. A newer rejected or inconclusive
    upload leaves your earlier valid version active. A completed draw pins the
    versions used by tournament games.

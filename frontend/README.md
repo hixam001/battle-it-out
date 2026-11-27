@@ -17,7 +17,8 @@ npm run build --prefix frontend
 Start Django on `127.0.0.1:8000` and Vite on `127.0.0.1:5173`; Vite proxies `/api`
 on the same origin. All service/data directories must be outside `frontend/`.
 Production static assets are generated into ignored `frontend/dist/`. Serve
-`index.html` for `/dashboard` and `/notifications`; retain the same-origin
+`index.html` for `/dashboard`, `/notifications`, `/participant/team` and
+`/participant/submissions`; retain the same-origin
 `/api` route to Django. Hosting,
 TLS, reverse proxy and public deployment remain operator/deployment work; no
 external Site has been created or published. Native session cookies and masked
@@ -47,6 +48,13 @@ inbox at `/notifications` keeps historical notices available and supports unread
 filtering, paging, read/unread actions and email preferences. Turning email off
 keeps dashboard notices active. Refresh returns to the first page of the current
 filter and picks up new notices.
+
+My team shows the verified roster and the team's recorded bracket standing
+for the selected tournament. Bot submissions shows the active version,
+history, downloads and expandable check results. Only the current captain
+gets an upload form while the selected tournament's deadline is open.
+Refresh submissions picks up new verdicts and any deadline change. The former
+`/#submissions` address still opens submission history.
 
 Direct console links preserve the destination through sign-in. Operations is
 Admin-only, and the personal inbox uses participant scope. The API remains

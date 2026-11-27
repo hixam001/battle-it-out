@@ -765,3 +765,15 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - All 145 Django tests passed with disposable PostgreSQL plus system and
   migration checks. All 101 notification library tests passed. Authoring UI,
   additional notice sources, PostgreSQL migration and delivery remain open.
+
+## CN-053 — Participant team and submission screens (2026-11-27)
+
+- **BIO-704:** Direct console routes show verified roster slots, bracket
+  standing, active bot, submission history, check findings and private
+  downloads. The scoped tournament list supplies captaincy and refresh picks
+  up current deadlines and verdicts.
+- The captain may upload before the deadline. Repeated requests for the same
+  file selection use one key. The API remains authoritative for current
+  permissions, deadline and activation.
+- The production build, all 10 Playwright tests and all 145 Django tests
+  passed. Formal accessibility and full flow acceptance remain open.

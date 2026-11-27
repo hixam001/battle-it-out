@@ -6,6 +6,11 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Participant team and submission screens (BIO-704; CN-053)** open through
+  direct console links. Members can see their verified roster and bracket
+  standing, find their active bot and expand validation findings. The upload
+  form follows captaincy and the current submission deadline.
+
 - **Tournament announcements (BIO-607; CN-052)** let assigned Organizers
   and Admins publish to verified participants' inboxes. Email queues respect
   recipient preferences. Retries reuse the original counts and audit record.

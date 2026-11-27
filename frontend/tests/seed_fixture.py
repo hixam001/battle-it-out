@@ -14,7 +14,9 @@ def main():
     from django.contrib.auth import get_user_model
     from django.db import transaction
     from backend.notifications import notifications
-    from backend.webapp.tests import FeatureAPI
+    from backend.registration import registration
+    from backend.submission_registry import registry
+    from backend.webapp.tests import ADM, BOT, FeatureAPI, verdict
 
     connection = settings.DATABASES['default']
     host = connection['HOST']
@@ -35,6 +37,25 @@ def main():
                 cup = data['tournaments']['cup']
                 cup['name'] = 'QA FIXTURE — not a real competition'
                 cup['description'] = 'Local interface test fixture.'
+            fixture.make_cup('upload-fixture', fixture.now + 3600, fixture.now + 7200)
+            registration.import_roster(fixture.rt.registration, ADM, 'upload-fixture', [
+                {'email': 'a@uni.edu', 'team_key': 'upload-team', 'team_name': 'Fixture Upload Team',
+                 'member_number': 1, 'role': 'captain'},
+                {'email': 'b@uni.edu', 'team_key': 'upload-team', 'team_name': 'Fixture Upload Team',
+                 'member_number': 2, 'role': 'member'},
+            ])
+            roster = registration.list_roster(fixture.rt.registration, ADM, 'upload-fixture')
+            issued = registration.issue_codes(fixture.rt.registration, ADM, 'upload-fixture')['issued']
+            codes = {item['entry_id']: item['code'] for item in issued}
+            for entry in roster:
+                user = 'roster-' + entry['email'].split('@')[0]
+                registration.claim(fixture.rt.registration, 'upload-fixture', entry['email'], codes[entry['id']], user)
+                registration.confirm_email(fixture.rt.registration, 'upload-fixture', user)
+            stored = fixture.rt.flow.registry
+            actor = registration.actor_for(fixture.rt.registration, 'roster-a')
+            source = registry.submit(stored, actor, 'upload-team', 'upload-fixture', 'bot.py', BOT,
+                                     idempotency_key='fixture-source', deadline_at=fixture.now + 7200)
+            registry.record_verdict(stored, registry.claim_check(stored, source['id']), verdict(BOT))
             for i in range(1, 24):
                 cup = 'cup' if i <= 22 else 'historical'
                 title = f'Fixture notice {i:02d}' if i <= 22 else 'Historical fixture notice'
