@@ -713,3 +713,17 @@ Decisions from the owner that change or narrow what the requirement documents (P
   legacy storage and queue/replay incident ingestion remain open.
 - All 129 Django tests passed against disposable PostgreSQL. System and
   migration-drift checks passed. Requirement status counts are unchanged.
+
+## CN-049 — Staff invitation code API (2026-11-27)
+
+- **BIO-502:** current Admins and assigned Organizers can list code metadata
+  and issue first codes to selected official roster entries. Only Admins can
+  revoke or replace a code, with session CSRF, confirmation and a reason.
+  Listing uses the current deadline to show expiry, including extensions.
+- Only a successful issuance or replacement response carries the plaintext
+  code. The registration store keeps hashes and writes the existing audited
+  changes. A repeated initial issue skips existing entries, and replacement
+  retries against the same old code conflict without rotating again.
+- All 130 Django tests passed with disposable PostgreSQL, system and migration
+  checks. Public claims, verification and code delivery remain open. Requirement
+  status counts are unchanged.

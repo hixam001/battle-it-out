@@ -560,29 +560,39 @@ stored registration deadline. Both responses are private/no-store.
 These four BIO-501 routes use the existing roster and interim format rules
 (CN-020/044).
 
-### POST `/tournaments/{id}/invitation-codes`
+### GET and POST `/tournaments/{id}/invitation-codes/`
 
-**Purpose:** Issue invitation codes for eligible roster entries.\
-**Access:** Admin or assigned Organizer for initial issuance;
-replacement issuance is Admin-only.\
-**Request:** `{"roster_entry_ids":["..."]}`\
-**Success:** issuance summary. Secret code values must be shown only to
-authorized issuer at issuance and stored hashed where feasible.
+**Implemented (BIO-502 / CN-049):** Current Admins and assigned Organizers
+can GET `items` with code IDs, roster entry IDs, statuses and issuance and
+revocation dates. The list omits code values, hashes and free-form reasons.
+Unused status follows the stored registration deadline, including extensions.
 
-### POST `/tournaments/{id}/invitation-codes/{code_id}/revoke`
+POST requires session CSRF and JSON `{"roster_entry_ids":["..."]}` with
+1–2,000 IDs. It issues first codes for eligible entries while registration has
+an approved future deadline. The `200` response returns `issued` (each with
+`entry_id`, `code_id` and `code`) and `skipped` (each with `entry_id` and
+`reason`). A repeated issue returns skips for already-issued entries. The
+service stores hashes, and only the first successful issuance response
+contains the plaintext code.
+
+### POST `/tournaments/{id}/invitation-codes/{code_id}/revoke/`
 
 **Purpose:** Revoke lost/compromised code.\
-**Access:** Admin only.\
+**Access:** Current Admin session and CSRF.\
 **Request:** `{"reason":"Reported compromised","confirm":true}`\
-**Success:** revoked status and audit event.
+**Success:** `200` with revoked code metadata. The first revocation records
+the reason in the audit. Repeating it adds no new audit entry.
 
-### POST `/tournaments/{id}/invitation-codes/{code_id}/replace`
+### POST `/tournaments/{id}/invitation-codes/{code_id}/replace/`
 
 **Purpose:** Issue replacement code.\
-**Access:** Admin only.\
+**Access:** Current Admin session and CSRF.\
 **Request:**
 `{"reason":"Replacement for compromised code","confirm":true}`\
-**Success:** replacement issued. Old code remains unusable.
+**Success:** `200` with `code_id`, `replaces` and the new `code`. A retry on
+the old ID returns `409`. The old code remains unusable. All invitation
+responses use private/no-store. Public signup, verification and delivery
+remain part of BIO-502.
 
 ### GET `/tournaments/{id}/teams/{team_id}/`
 
