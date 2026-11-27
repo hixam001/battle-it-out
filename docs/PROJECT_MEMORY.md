@@ -686,3 +686,17 @@ All 85 Django tests and Django system/migration checks passed. Registry and
 bundle unit mode ran 70 cases with 67 passes and three integration skips.
 SRD-057 is DONE; 18 DONE / 61 PARTIAL / 12 TODO / 0 DEFERRED across 91 rows.
 The full backlog remains above. BIO-506 extends the HTTP privacy checks across the submission routes. Production retention remains open.
+## CN-037 continuation evidence
+
+BIO-701 completes the existing web foundation from `d66b95d` on
+`BIO-701-frontend-foundation`. The shared frontend client retains status,
+error code, details and the server request ID. Keyboard skip navigation moves
+focus without changing the route. Direct Operations and inbox links show
+scope-aware refusals and preserve the requested path through sign-in.
+
+The production frontend build and all eight browser cases passed against
+local fixture Django/PostgreSQL in 12.1 s. The three new cases verify the
+participant Operations guard, the Organizer inbox guard and a real failed
+login with its matching server request ID. The mock competition and sessions
+were disposable. Coverage statuses and all nine backlog categories remain.
+Complete usability/accessible-flow acceptance remains BIO-708.

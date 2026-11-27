@@ -524,3 +524,18 @@ Decisions from the owner that change or narrow what the requirement documents (P
   including six new submission-read cases. System and migration-drift checks
   passed. Registry and bundle unit mode ran 70 tests, with 67 passed and three
   real-game skips. SRD-057 advances to DONE.
+## CN-037 — Frontend routing and error foundation (2026-11-26)
+
+- **BIO-701:** completed the current console foundation. The shared API client
+  preserves the HTTP status, error code, details and server request ID. A valid
+  request ID appears with the actionable error message. JSON/CSRF and multipart
+  uploads share the same request path.
+- Direct Operations and inbox links respect the current Admin/participant
+  guard, retain their address during sign-in and provide a way back to Dashboard
+  when refused. The API checks authorization on its own requests. Public and
+  private pages offer a keyboard skip link and retain visible active navigation.
+- TypeScript/Vite production build and eight Playwright tests passed against
+  disposable PostgreSQL with real Django sessions. Three new browser cases
+  exercise direct-link refusal, keyboard focus and the exact request ID in a
+  failed login. Product-wide usability and accessibility acceptance remain
+  BIO-708. Coverage statuses stay 17 DONE / 62 PARTIAL / 12 TODO on this base.

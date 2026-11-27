@@ -706,3 +706,19 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   retention remain in the backlog. SRD-057 moves to DONE for 18 DONE /
   61 PARTIAL / 12 TODO across 91 requirements. Continued on independent
   frontend foundation work (BIO-701) from merged main.
+### 2026-11-26 — BIO-701: frontend foundation
+
+- Started from merged `origin/main` `d66b95d` on
+  `BIO-701-frontend-foundation`, with the independent BIO-505 PR pending.
+- Finished the client error envelope and request ID support in `api.ts`.
+  `main.tsx` now guards restricted direct links, preserves the destination
+  through sign-in and supports keyboard skip navigation in both the public
+  page and private console.
+- TypeScript and Vite build passed; all eight Playwright cases passed in
+  12.1 s with a disposable PostgreSQL database and real Django sessions.
+  New cases check keyboard focus, restricted route refusal and the request ID
+  on a real failed login. Local processes stopped after the suite.
+- Updated the design, development guide, coverage, Jira, changelog,
+  CN-037 and project memory. BIO-701 closes for the current console.
+  All 91 requirement statuses and the nine backlog categories remain.
+  Full usability/accessibility acceptance is tracked under BIO-708.
