@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-708 / CN-072 improves visibility and keyboard focus in the shared
+  console navigation. The production build and 30 browser tests passed.
 - BIO-705 / CN-071 adds the structured match log view for recorded attempts.
   The production build and all 29 browser tests passed.
+  PR #79 merged into `main` at `0a1e028`.
 - BIO-702 / CN-070 adds `/login` for provisioned accounts and opens the
   dashboard after authentication. The build and 28 browser tests passed.
   PR #78 merged into `main` at `7e9cea2`.
@@ -490,6 +493,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    direct team and submission routes, bracket standing and validation details.
    CN-063 adds the equivalent assigned Organizer team and source view.
    CN-070 adds the public sign-in address for provisioned accounts.
+   CN-072 adds current-section visibility and keyboard focus coverage.
    Branding,
    usability, formal accessibility/nonvisual play-by-play and full FLOW-01–08
    acceptance remain; production capacity/outage/concurrency/multi-host tests,
@@ -1178,3 +1182,18 @@ own side, both sides for the assigned Organizer, and diagnostics for the
 Admin. All 91 statuses, nine backlog categories and 42 tracked Jira items
 remain. Browser replay playback, raw engine scores, formal accessibility
 and log retention remain open.
+
+## CN-072 continuation evidence
+
+BIO-708 starts from merged main at `0a1e028` on
+`BIO-708-console-navigation-accessibility`. The console identifies the
+current section on nested routes and scrolls its navigation area to keep
+the active link within view. Keyboard activation moves focus to the main
+region. The link focus outline stays visible inside the scrolling area.
+
+The production build and all 30 Playwright tests passed (45.5 s). The
+browser checks a nested Admin page on mobile, keyboard activation and
+a short desktop viewport after resizing. All 91 statuses, nine backlog
+categories and 42 tracked Jira items remain. Formal accessibility and
+full workflow acceptance remain open. The existing scoped tournament
+audit endpoint can supply the missing Organizer audit screen.

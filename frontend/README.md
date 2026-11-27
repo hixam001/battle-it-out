@@ -121,6 +121,8 @@ authoritative for account and tournament access. The shared API client preserves
 error codes, details and server request IDs. A visible request ID gives support
 a reference when an API call fails. The first keyboard stop on the public page
 and in the console jumps to main content when activated.
+The console keeps the current section visible inside its navigation strip.
+Keyboard activation of a console link moves focus to the main content.
 
 Browser fixtures must target loopback and use disposable seeded accounts/data.
 Use the [Django local environment](../backend/webapp/README.md#install-and-run)

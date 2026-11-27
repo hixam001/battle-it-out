@@ -332,6 +332,31 @@ test("staff notification route is guarded before fetching a participant inbox", 
   expect(privateRequests).toEqual([]);
 });
 
+test("console navigation reveals the current section and moves keyboard focus to the page", async ({ page, useSession }) => {
+  await useSession(page, "admin");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/admin/manage-tournaments/cup/teams");
+  const nav = page.getByRole("navigation", { name: "Console", exact: true });
+  const manage = nav.getByRole("link", { name: "Manage tournaments", exact: true });
+  await expect(manage).toHaveAttribute("aria-current", "location");
+  await expect(manage).toBeInViewport({ ratio: 1 });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await page.screenshot({ path: test.info().outputPath("console-navigation-mobile.png"), fullPage: true });
+
+  const operations = nav.getByRole("link", { name: "Operations", exact: true });
+  await operations.focus();
+  await expect(operations).toBeFocused();
+  await operations.press("Enter");
+  await expect(page).toHaveURL("/admin");
+  await expect(page.getByRole("main")).toBeFocused();
+  await expect(operations).toHaveAttribute("aria-current", "page");
+  await expect(operations).toBeInViewport({ ratio: 1 });
+  await page.setViewportSize({ width: 1280, height: 560 });
+  await expect(operations).toBeInViewport({ ratio: 1 });
+  await expect(page.getByRole("button", { name: "Sign out" })).toBeInViewport({ ratio: 1 });
+  await page.screenshot({ path: test.info().outputPath("console-navigation-desktop.png"), fullPage: true });
+});
+
 test("a failed API request shows its server request ID with the message", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Username", { exact: true }).fill("captain-a");

@@ -669,6 +669,25 @@ function Console({ user, route, navigate, logout }: {
   const cup = cups.find((c) => c.id === (scopedTournament || selected));
   const organizerPage = page.startsWith("organizer");
   const adminManagement = page.startsWith("admin-");
+  const activeSection = organizerPage ? "organizer" : adminManagement ? "admin-tournaments"
+    : ["match", "replay", "match-logs"].includes(page) ? "bracket" : page;
+  const consoleNav = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const nav = consoleNav.current;
+    const active = nav?.querySelector("[aria-current]");
+    if (!nav || !active) return;
+    const revealActive = () => {
+      const viewport = nav.getBoundingClientRect();
+      const link = active.getBoundingClientRect();
+      const left = Math.min(0, link.left - viewport.left) + Math.max(0, link.right - viewport.right);
+      const top = Math.min(0, link.top - viewport.top) + Math.max(0, link.bottom - viewport.bottom);
+      if (left || top) nav.scrollBy(left, top);
+    };
+    revealActive();
+    const observer = new ResizeObserver(revealActive);
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, [activeSection, loading, role]);
   const staffSettingsPath = adminManagement ? adminTournamentSettings : organizerTournamentPath;
   const showTournament = !organizerPage && !adminManagement && !["notifications", "account-settings", "operations", "approvals",
     "audit", "match", "replay", "match-logs"].includes(page);
@@ -693,14 +712,15 @@ function Console({ user, route, navigate, logout }: {
           IT OUT
         </a>
         <p className="eyebrow">COMPETITION CONSOLE</p>
-        <nav aria-label="Console">
+        <nav aria-label="Console" ref={consoleNav}>
           {consoleLinks.filter((link) => canOpen(link.page) && (!loading || !["notifications", "account-settings", "team", "organizer", "announce"].includes(link.page))).map((link) => (
-            <a key={link.page} href={link.href} aria-current={page === link.page ? "page" : undefined}
+            <a key={link.page} href={link.href}
+              aria-current={page === link.page ? "page" : activeSection === link.page ? "location" : undefined}
               onClick={(event) => {
                 if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
                 event.preventDefault();
                 navigate(link.href);
-                document.getElementById("main-content")?.focus();
+                document.getElementById("main-content")?.focus({ preventScroll: true });
               }}>
               <span className="nav-icon" aria-hidden="true">{link.icon}</span> {link.label}
             </a>
