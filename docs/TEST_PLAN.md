@@ -415,6 +415,13 @@ It checks that the new code can be dismissed, list metadata excludes both
 its plaintext and the reason, and an Organizer cannot open the Admin
 controls.
 
+### Organizer roster screen (BIO-706 / CN-061)
+
+Playwright uploads CSV and JSON against the real roster API, checks a
+redacted row rejection, corrects an unlocked entry and sees the
+registration report. A claimed entry stays locked and a foreign
+Organizer link shows no roster.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

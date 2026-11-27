@@ -1195,3 +1195,20 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   coverage and memory. All 91 statuses, nine backlog categories and 43
   open Jira items remain. Staff initial issuance UI, public registration,
   delivery and remaining Admin operations are open.
+
+### 2026-11-27 — BIO-706 Organizer roster screen
+
+- PR #68 merged into main at `8271400`. Started
+  `BIO-706-organizer-roster-screen` from that commit. Added the assigned
+  tournament roster view and a link from tournament management. The page
+  displays registration counts, captain gaps, claim lock and exclusions.
+- The form uses the existing API for idempotent CSV or JSON import, row
+  rejection summaries and version-checked corrections. No API or schema
+  changes were needed.
+- The production build and all 21 Playwright cases (29.8 s) passed on
+  disposable services. The browser verifies CSV and JSON upload, row
+  rejection, correction, a claimed entry and unassigned Organizer refusal.
+- Updated the API, user and frontend guides, test plan, Jira, CN-061,
+  changelog, coverage and project memory. All 91 statuses, nine backlog
+  categories and 43 open Jira items remain. Staff initial issuance, rounds
+  and dedicated team management remain open.

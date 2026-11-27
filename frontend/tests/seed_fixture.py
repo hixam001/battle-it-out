@@ -98,6 +98,9 @@ def main():
                  'member_number': 1, 'role': 'captain'},
             ])
             registration.issue_codes(fixture.rt.registration, ADM, 'invite-fixture')
+            fixture.make_cup('roster-fixture', fixture.now + 3600, fixture.now + 7200)
+            fixture.register('roster-fixture', [('a', 'registered-roster-team')])
+            OrganizerAssignment.objects.create(user=FeatureAPI.org, tournament_id='roster-fixture')
             for i in range(1, 24):
                 cup = 'cup' if i <= 22 else 'historical'
                 title = f'Fixture notice {i:02d}' if i <= 22 else 'Historical fixture notice'

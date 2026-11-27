@@ -848,3 +848,11 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - The production build and 20 Playwright tests passed on disposable
   services. The browser checks both actions, metadata redaction and an
   Organizer's refusal from the Admin route.
+
+## CN-061 — Organizer roster screen (2026-11-27)
+
+- **BIO-706:** The tournament console shows registration status, missing
+  captains and excluded entries. Organizers can import the supported CSV or
+  JSON format, see rejected row numbers and correct an unlocked entry.
+- The production build and all 21 Playwright tests passed. Browser
+  coverage checks both formats, correction and assignment scope.
