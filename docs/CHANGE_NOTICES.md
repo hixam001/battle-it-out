@@ -839,3 +839,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - The production build, all 19 Playwright tests and all 147 Django tests
   passed. Backend unit mode passed 738 of 786 tests, with 48 expected skips.
   Browser tests verify both mutations and their participant notices.
+
+## CN-060 — Admin invitation controls (2026-11-27)
+
+- **BIO-707:** Admins can list existing invitation metadata and confirm
+  revoke or replace actions with a reason. A replacement value appears
+  only in the successful response and can be dismissed.
+- The production build and 20 Playwright tests passed on disposable
+  services. The browser checks both actions, metadata redaction and an
+  Organizer's refusal from the Admin route.

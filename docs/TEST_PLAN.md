@@ -408,6 +408,13 @@ verifies unchanged and updated dates through the API, and opens both
 notices in a verified participant inbox. A participant cannot open the
 Admin controls.
 
+### Admin invitation controls (BIO-707 / CN-060)
+
+Playwright confirms replacement and revocation through the live local API.
+It checks that the new code can be dismissed, list metadata excludes both
+its plaintext and the reason, and an Organizer cannot open the Admin
+controls.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

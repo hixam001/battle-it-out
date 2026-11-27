@@ -6,6 +6,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Admin invitation controls (BIO-707; CN-060)** list invitation metadata,
+  confirm revocation or replacement, and show the new code only after a
+  successful replacement.
+
 - **Admin deadline controls (BIO-707; CN-059)** support confirmed deadline
   extensions and locked-setting overrides, with affected-account counts
   and dashboard notice status.

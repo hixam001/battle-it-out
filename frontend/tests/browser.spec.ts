@@ -609,3 +609,44 @@ test("Admin confirms a locked override and a deadline extension with participant
   await page.goto("/admin/tournaments/deadline-fixture");
   await expect(page.getByRole("alert")).toHaveText("Admin access is required to change deadlines and locked settings.");
 });
+
+test("Admin replaces and revokes invitations with plaintext visible only after replacement", async ({ page, useSession }) => {
+  await useSession(page, "admin");
+  await page.goto("/admin/invitations");
+  await page.getByLabel("Tournament", { exact: true }).selectOption("invite-fixture");
+  const path = "/api/v1/tournaments/invite-fixture/invitation-codes/";
+  const initial = (await (await page.request.get(path)).json()).items;
+  expect(initial).toHaveLength(1);
+  const originalId = initial[0].id;
+  await page.getByRole("button", { name: `Manage code ${originalId}` }).click();
+  await page.getByRole("combobox", { name: "Action", exact: true }).selectOption("replace");
+  await page.getByRole("textbox", { name: "Reason", exact: true }).fill("Replace the fixture invitation.");
+  const replace = page.getByRole("button", { name: "Replace invitation" });
+  await expect(replace).toBeDisabled();
+  await page.getByRole("checkbox", { name: "Confirm this invitation change" }).check();
+  await replace.click();
+  const replacement = page.getByRole("region", { name: "Replacement code" });
+  await expect(replacement.getByLabel("New invitation code")).toHaveText(/^[A-Z0-9-]+$/);
+  const secret = (await replacement.getByLabel("New invitation code").textContent())!;
+  const table = page.getByRole("table", { name: "Invitation metadata" });
+  await expect(table.getByText("Replaced", { exact: true })).toBeVisible();
+  const list = (await page.request.get(path));
+  const metadata = await list.json();
+  expect(JSON.stringify(metadata)).not.toContain(secret);
+  expect(JSON.stringify(metadata)).not.toContain("Replace the fixture invitation.");
+  const activeId = metadata.items.find((item: { status: string }) => item.status === "issued").id;
+  await page.getByRole("button", { name: "Dismiss replacement code" }).click();
+  await expect(page.getByText(secret, { exact: true })).toHaveCount(0);
+
+  await page.getByRole("button", { name: `Manage code ${activeId}` }).click();
+  await page.getByRole("textbox", { name: "Reason", exact: true }).fill("Revoke the fixture invitation.");
+  await page.getByRole("checkbox", { name: "Confirm this invitation change" }).check();
+  await page.getByRole("button", { name: "Revoke invitation" }).click();
+  await expect(page.getByText("Invitation revoked.", { exact: true })).toBeVisible();
+  await expect(table.getByText("revoked", { exact: true })).toBeVisible();
+
+  await useSession(page, "organizer");
+  await page.goto("/admin/invitations");
+  await expect(page.getByRole("alert")).toHaveText("Admin access is required to manage invitation codes.");
+  await expect(table).toHaveCount(0);
+});
