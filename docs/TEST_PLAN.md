@@ -435,6 +435,13 @@ Playwright switches between assigned teams, checks verified roster and
 bracket standing, downloads a bot and verifies the exact fixture bytes
 and associated audit event. A foreign tournament shows no download.
 
+### First invitation issuance (BIO-502 / CN-064)
+
+Playwright verifies that a current assigned Organizer and Admin can issue
+first codes for selected eligible entries. Previously issued entries stay
+out of the selection. Codes can be dismissed and stay out of the metadata
+listing.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

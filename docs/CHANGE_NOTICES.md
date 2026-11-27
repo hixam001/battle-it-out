@@ -874,3 +874,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - The production build and all 23 Playwright tests passed. The browser
   compares fixture source bytes and confirms the staff audit event. The
   local BIO-706 screen scope is complete.
+
+## CN-064 — Staff first invitation issuance (2026-11-27)
+
+- **BIO-502:** Admins and assigned Organizers can select eligible roster
+  entries and issue first codes. The receipt shows the roster email
+  alongside the new code and can be dismissed.
+- The production build and all 24 Playwright tests passed. The browser
+  covers both staff roles, exclusion of already-issued entries and no
+  plaintext in the subsequent metadata list.

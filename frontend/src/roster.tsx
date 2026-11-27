@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { api, ApiError } from "./api";
+import { InitialCodes } from "./initial-codes";
 
 type Tournament = { id: string; name: string; status: string };
 type Fields = {
@@ -77,6 +78,8 @@ function TournamentRoster({ tournament }: { tournament: Tournament }) {
                 <p>Teams awaiting a verified captain: {report.teams_without_registered_captain.join(", ")}.</p>}
             </section>
             {editable && <RosterImport path={path} onImport={refresh} />}
+            {!report.closed && ["approved", "registration_open"].includes(tournament.status) &&
+              <InitialCodes tournamentId={tournament.id} entries={records.items} />}
             <section className="panel">
               <h2>Roster entries</h2>
               {message && <p className="success" role="status">{message}</p>}

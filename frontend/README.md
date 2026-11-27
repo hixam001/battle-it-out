@@ -79,6 +79,8 @@ extensions and locked-setting overrides with a reason. The receipt reports
 affected accounts and the dashboard notice state.
 **Invitation codes** lists code metadata and supports confirmed revocation
 or replacement. A new code appears in the successful replacement receipt.
+The Admin invitation page and Organizer roster page also support first
+issuance for eligible entries, with a one-time receipt.
 
 Organizers use **Manage tournaments** to create drafts, revise assigned
 tournaments, send them for approval and open registration upon approval.

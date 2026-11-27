@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { api } from "./api";
+import { InitialCodes } from "./initial-codes";
 
 type Tournament = { id: string; name: string; status: string; deadlines: { registration: number } };
 type Invitation = {
@@ -91,6 +92,8 @@ export function InvitationControls({ tournament }: { tournament: Tournament }) {
             </div>
           )}
       </section>
+      {open && !selected && !replacement &&
+        <InitialCodes tournamentId={tournament.id} onIssued={() => setRevision((value) => value + 1)} />}
       {invitation && (
         <ManageInvitation key={invitation.id} invitation={invitation} path={path} open={open}
           cancel={() => setSelected(undefined)} complete={(result) => {

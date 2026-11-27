@@ -6,6 +6,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **First invitation issuance (BIO-502; CN-064)** lets current Admins and
+  assigned Organizers issue codes for selected eligible roster entries
+  and read the one-time receipt.
+
 - **Organizer team directory (BIO-706; CN-063)** shows verified team slots,
   bracket standing, validation history and audited source downloads.
 

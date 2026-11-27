@@ -22,6 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-502 / CN-064 adds first invitation issuance to the Admin and
+  Organizer consoles. The production build and all 24 Playwright tests
+  passed. PR #71 merged into main at `5e4247f`.
 - BIO-706 / CN-063 adds the Organizer team directory and audited source
   download, completing the local BIO-706 screens. The production build
   and all 23 Playwright tests passed. PR #70 merged at `77ee8da`.
@@ -399,7 +402,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    roster reads, import, correction and exclusions. CN-061 adds the Organizer
    roster screen. CN-045 adds team profiles.
    CN-049 adds staff invitation code metadata and issue/revoke/replace endpoints.
-   CN-060 adds Admin console listing, revocation and replacement.
+   CN-060 adds Admin console listing, revocation and replacement. CN-064
+   adds first issuance for selected eligible roster entries.
    Plaintext codes appear only in successful issuance or replacement responses.
    BIO-504 defines multipart,
    size and actionable static-error responses. Interim caps are 256 KiB and
@@ -453,8 +457,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
-   Admin tournament creation and incident controls, staff initial code
-   issuance, browser replay
+   Admin tournament creation and incident controls, browser replay
    playback and Admin mutation screens. Public landing and the private
    live/analytics/submission/dispute/operations console now exist. CN-053 adds
    direct team and submission routes, bracket standing and validation details.
@@ -1026,3 +1029,16 @@ entry and foreign scope. All 91 requirement statuses and nine backlog
 categories remain, with 42 tracked Jira items open. Initial invitation
 issuance is BIO-502, team deletion is BIO-609 and formal acceptance is
 BIO-708.
+
+## CN-064 continuation evidence
+
+BIO-502 starts from merged main at `5e4247f` on
+`BIO-502-staff-initial-invitation-issuance`. The Admin invitation page
+and Organizer roster page use current eligibility and the existing
+first-issue API. Success shows each new code alongside its official
+email until dismissed or leaving the view.
+
+The production build and all 24 Playwright tests passed (39.1 s),
+including both staff roles and no plaintext in the subsequent list.
+All 91 statuses, nine backlog categories and 42 open Jira items remain.
+Public claims, verification and automated delivery remain open.
