@@ -459,6 +459,12 @@ Authenticated Web App (later phase)
   `/admin/manage-tournaments/{id}/settings` Admin          Tournament settings    Edit, approve,      Draft, approved,
                                                                                    open registration   registration open
 
+  `/admin/manage-tournaments/{id}/roster`  Admin           Official roster        Import, correct     Import errors, locked
+                                                                                   unlocked rows       entries
+
+  `/admin/manage-tournaments/{id}/teams`   Admin           Verified teams         View team,          Empty, active,
+                                                                                   download source     archived
+
   `/admin/tournaments/{id}`                 Admin           Deadline controls      Extend deadlines,   Active, locked,
                                                                                    override settings   archived
 

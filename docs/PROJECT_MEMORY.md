@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-707 / CN-067 adds Admin roster and team management links, including
+  audited source downloads. The production build and 27 browser tests passed.
 - BIO-606 / CN-066 adds the shared staff archive panel and replay purge
   receipts. The production build and all 26 Playwright tests passed.
+  PR #74 merged into `main` at `c3971ec`.
 - BIO-707 / CN-065 adds Admin tournament listing, draft creation, versioned
   settings, direct approval of Admin drafts and manual registration opening.
   PR #73 merged into `main` at `9f83f3c`.
@@ -440,7 +443,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    CN-062 adds the Organizer map selection, draw and round-start console.
    CN-065 adds Admin tournament listing, draft creation, settings and
    registration opening. CN-066 adds confirmed staff archive, vault purge
-   receipts and a link to retained results.
+   receipts and a link to retained results. CN-067 adds Admin roster import
+   and team review with audited source downloads.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; Organizer approval/rejection
    and dispute notices; mandatory security
@@ -1082,3 +1086,18 @@ pending receipt and checks purge after reload. The on-disk failure and
 maintenance retry are covered by existing Django archive tests. Production
 scheduling, retention, backups and deletion remain. All 91 statuses, nine
 backlog categories and 42 tracked Jira items remain.
+
+## CN-067 continuation evidence
+
+BIO-707 starts from merged main at `c3971ec` on
+`BIO-707-admin-roster-and-teams`. Admin settings link to the shared roster
+and verified team directory. They use the existing role checks, versioned
+roster correction and audited source delivery. Return links follow the
+current staff console.
+
+The production build and all 27 Playwright tests passed (45.0 s). The
+browser verified CSV import, private team display, exact source bytes,
+the Admin download audit and route refusal before scoped requests. All
+91 statuses, nine backlog categories and 42 open Jira items remain.
+The Admin Operations reader can surface existing stuck-job details;
+recovery mutations still need their policy decisions.

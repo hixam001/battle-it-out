@@ -564,8 +564,8 @@ missing a roster or registered captain, and entry IDs excluded after the
 stored registration deadline. Both responses are private/no-store.
 
 These four BIO-501 routes use the existing roster and interim format rules
-(CN-020/044). The Organizer roster screen uses them for import, correction
-and reporting (CN-061).
+(CN-020/044). The Admin and assigned Organizer roster screens use them for
+import, correction and reporting (CN-061/067).
 
 ### GET and POST `/tournaments/{id}/invitation-codes/`
 
@@ -620,8 +620,8 @@ The participant console takes its team selection and upload affordance from
 the scoped tournament list. Each console row includes `teams` and
 `captain_teams`, the subset the current participant captains. The upload
 endpoint still checks current authorization and the stored deadline.
-The assigned Organizer team directory uses the roster for team selection
-and this endpoint for the verified profile (CN-063).
+The Admin and assigned Organizer team directories use the roster for team
+selection and this endpoint for the verified profile (CN-063/067).
 
 ### DELETE `/teams/{team_id}`
 

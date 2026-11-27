@@ -1305,3 +1305,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   categories and 42 tracked Jira items remain. Production retention and
   permanent deletion stay open. Admin roster and team views can reuse
   the existing staff endpoints.
+
+### 2026-11-28 — BIO-707 Admin roster and teams
+
+- Confirmed PR #74 merged into `main` at `c3971ec`. Started
+  `BIO-707-admin-roster-and-teams` from the fetched commit.
+- Admin tournament settings link to the existing staff roster and team
+  views. Both consoles use the same roster actions, verified profiles,
+  submission history and audited source download. The return links
+  preserve the current role's management route.
+- The production build and all 27 Playwright tests passed (45.0 s).
+  The browser imported a disposable CSV entry, checked a verified profile
+  and exact source bytes, found the Admin audit event and verified that
+  an Organizer direct visit makes no scoped request. Desktop and mobile
+  render checks used local fixture data. Existing replays were preserved.
+- Updated API and flow specs, Admin and frontend guides, test plan, Jira,
+  CN-067, changelog, coverage and memory. The 91 statuses, nine backlog
+  categories and 42 tracked Jira items remain. Admin incident triage can
+  proceed using the available read-only data.

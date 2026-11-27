@@ -6,6 +6,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Admin roster and teams (BIO-707, CN-067)** connects tournament settings
+  to roster import and correction, verified team profiles and audited source
+  downloads.
+
 - **Staff archive controls (BIO-606, CN-066)** confirm tournament archive,
   report replay purge status, and link to retained results.
 

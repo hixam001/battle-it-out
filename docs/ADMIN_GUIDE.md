@@ -78,6 +78,11 @@ dashboard notices have been published or are pending automatic retry.
 
 ## 4. Invitation codes and roster issues
 
+From an Admin tournament's settings, open **Manage roster** to import CSV
+or JSON, correct unlocked rows and view the registration report. Open **View
+teams** for verified team profiles, bracket standing, validation history
+and audited source downloads.
+
 - On **Invitation codes**, select eligible roster participants and choose
   **Issue selected codes**. The receipt pairs each new code with its official
   email. Share those codes privately. Assigned Organizers can also issue
