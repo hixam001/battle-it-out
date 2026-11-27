@@ -618,6 +618,8 @@ The participant console takes its team selection and upload affordance from
 the scoped tournament list. Each console row includes `teams` and
 `captain_teams`, the subset the current participant captains. The upload
 endpoint still checks current authorization and the stored deadline.
+The assigned Organizer team directory uses the roster for team selection
+and this endpoint for the verified profile (CN-063).
 
 ### DELETE `/teams/{team_id}`
 

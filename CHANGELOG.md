@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Organizer team directory (BIO-706; CN-063)** shows verified team slots,
+  bracket standing, validation history and audited source downloads.
+
 - **Organizer round controls (BIO-706; CN-062)** select a map pool, confirm
   a separate bracket draw and queue each ready round on request.
 

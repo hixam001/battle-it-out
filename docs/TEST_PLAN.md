@@ -429,6 +429,12 @@ deadline and confirms the ready round separately. It verifies round
 queueing and refusal for an unassigned Organizer. The browser fixture
 uses a synthetic map catalogue and leaves the worker stopped.
 
+### Organizer teams and source download (BIO-706 / CN-063)
+
+Playwright switches between assigned teams, checks verified roster and
+bracket standing, downloads a bot and verifies the exact fixture bytes
+and associated audit event. A foreign tournament shows no download.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

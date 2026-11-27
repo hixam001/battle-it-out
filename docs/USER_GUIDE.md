@@ -104,10 +104,11 @@ deadline and confirm the draw after it passes. The draw pins bot versions.
 Confirm **Start round** separately for a ready round. Refresh the controls
 for current round state or open **Bracket & results** to review progression.
 
-Use the account assigned to the tournament. **Match room** and **Analytics** are
-scoped to that assignment. In **Bot submissions**, use the team's registered
-ID to review its versions or download its submission. Captains upload and
-activate through validation. Organizer source access is read-only.
+Use the account assigned to the tournament. **Match room** and **Analytics**
+are scoped to that assignment. Open **View teams** from tournament
+management to select an official team, review its verified roster and
+submission findings, and download its bot. The server records staff
+source reads. Captains upload and activate through validation.
 
 Use **Match disputes** to review comments and record resolutions for assigned
 tournaments. An Admin handles approvals, deadline extensions and emergency

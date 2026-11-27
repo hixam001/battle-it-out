@@ -22,6 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-706 / CN-063 adds the Organizer team directory and audited source
+  download, completing the local BIO-706 screens. The production build
+  and all 23 Playwright tests passed. PR #70 merged at `77ee8da`.
 - BIO-706 / CN-062 adds Organizer map and round controls. The production
   build and all 22 Playwright tests passed. PR #69 merged into main at
   `377940d`.
@@ -450,11 +453,12 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
-   Admin tournament creation and incident controls, Organizer team
-   management, browser replay
+   Admin tournament creation and incident controls, staff initial code
+   issuance, browser replay
    playback and Admin mutation screens. Public landing and the private
    live/analytics/submission/dispute/operations console now exist. CN-053 adds
    direct team and submission routes, bracket standing and validation details.
+   CN-063 adds the equivalent assigned Organizer team and source view.
    Branding,
    usability, formal accessibility/nonvisual play-by-play and full FLOW-01–08
    acceptance remain; production capacity/outage/concurrency/multi-host tests,
@@ -1007,3 +1011,18 @@ refusal. The browser fixture uses a synthetic catalogue and queues
 without running matches. All 91 statuses, nine backlog categories and
 43 open Jira items remain. Dedicated team management, staff invitation
 issuance and full acceptance remain open.
+
+## CN-063 continuation evidence
+
+BIO-706 starts from merged main at `77ee8da` on
+`BIO-706-organizer-team-source`. The assigned Organizer team directory
+uses the official roster for team selection, current team scope for
+verified profiles and bracket standings, and the existing submission
+check and download views. It completes the local BIO-706 screen scope.
+
+The production build and all 23 Playwright tests passed (35.2 s). The
+browser checks two team profiles, exact source bytes, the staff audit
+entry and foreign scope. All 91 requirement statuses and nine backlog
+categories remain, with 42 tracked Jira items open. Initial invitation
+issuance is BIO-502, team deletion is BIO-609 and formal acceptance is
+BIO-708.

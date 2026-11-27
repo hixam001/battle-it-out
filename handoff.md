@@ -1231,3 +1231,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   changelog, coverage and memory. All 91 statuses, nine backlog categories
   and 43 open Jira items remain. Dedicated team management and staff
   invitation issuance remain open.
+
+### 2026-11-27 — BIO-706 Organizer teams and source downloads
+
+- PR #70 merged into main at `77ee8da`. Started
+  `BIO-706-organizer-team-source` from that commit. Added the Organizer
+  team directory and reused the verified roster, bracket standing and
+  submission history views. Only assigned tournaments enter the page.
+- The source link uses the current private download and audit
+  checks. Participant history and upload screens reuse the same
+  history rendering. No API or schema change was needed.
+- The production build and all 23 Playwright tests (35.2 s) passed.
+  The new browser case verifies team selection, exact fixture source
+  bytes, staff download audit and refusal of an unassigned tournament.
+- Updated the API, user and frontend guides, test plan, Jira, CN-063,
+  changelog, coverage and project memory. All 91 statuses and nine backlog
+  categories remain. Local BIO-706 screens are complete, leaving 42
+  tracked Jira items open. Initial issuance, deletion and formal
+  acceptance are tracked under BIO-502, BIO-609 and BIO-708.

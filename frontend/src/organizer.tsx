@@ -137,7 +137,8 @@ function ManagedTournament({ id, userId, onChange }: { id: string; userId: numbe
               <button className="text-button" onClick={refresh} disabled={busy}>Refresh tournament</button>
             </div>
             <p><a href={managePath(record.id) + "/roster"}>Manage roster</a>{" · "}
-              <a href={managePath(record.id) + "/rounds"}>Manage rounds</a></p>
+              <a href={managePath(record.id) + "/rounds"}>Manage rounds</a>{" · "}
+              <a href={managePath(record.id) + "/teams"}>View teams</a></p>
             <p role="status">{formatStatus(record.status)}</p>
             {!editable.includes(record.status) && record.description && <p>{record.description}</p>}
             {record.status === "rejected" && <p><strong>Rejection reason:</strong> {record.rejection_reason}</p>}

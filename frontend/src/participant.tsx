@@ -64,7 +64,7 @@ export function Team({ cup }: { cup: Tournament }) {
   );
 }
 
-function TeamRoster({ cup, team }: { cup: Tournament; team: string }) {
+export function TeamRoster({ cup, team }: { cup: Tournament; team: string }) {
   const path = teamPath(cup, team);
   const [profile, setProfile] = useState<TeamProfile>();
   const [error, setError] = useState("");
@@ -156,18 +156,16 @@ function TeamSubmissions({ cup, team, captain, refreshTournament }: {
   cup: Tournament; team: string; captain: boolean; refreshTournament: () => Promise<void>;
 }) {
   const path = teamPath(cup, team) + "submissions/";
-  const [versions, setVersions] = useState<Version[] | null>(null);
   const [catalog, setCatalog] = useState<Catalog>();
   const [file, setFile] = useState<{ data: File; key: string }>();
   const [message, setMessage] = useState("");
   const [uploadError, setUploadError] = useState("");
-  const [historyError, setHistoryError] = useState("");
   const [catalogError, setCatalogError] = useState("");
   const [busy, setBusy] = useState(false);
   const [revision, setRevision] = useState(0);
   const [clock, setClock] = useState(() => Date.now() / 1000);
   const locked = clock >= cup.deadlines.submission;
-  const active = versions?.find((version) => version.is_active);
+  const history = useSubmissionHistory(path, revision);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -176,19 +174,6 @@ function TeamSubmissions({ cup, team, captain, refreshTournament }: {
       .catch((error: Error) => { if (!controller.signal.aborted) setCatalogError(error.message); });
     return () => controller.abort();
   }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setHistoryError("");
-    api<{ items: Version[] }>(path, { signal: controller.signal })
-      .then((data) => setVersions(data.items))
-      .catch((error: Error) => {
-        if (controller.signal.aborted) return;
-        setVersions(null);
-        setHistoryError(error.message);
-      });
-    return () => controller.abort();
-  }, [path, revision]);
 
   useEffect(() => {
     if (locked) return;
@@ -273,43 +258,76 @@ function TeamSubmissions({ cup, team, captain, refreshTournament }: {
           {catalog?.items[0] && <pre>{JSON.stringify({ [catalog.items[0].name]: catalog.items[0].version }, null, 2)}</pre>}
         </section>
       </div>
-      <section className="panel" aria-labelledby="submission-history">
-        <div className="panel-toolbar">
-          <h2 id="submission-history">Submission history</h2>
-          <button className="text-button" onClick={refresh}>Refresh submissions</button>
-        </div>
-        {historyError ? <p className="error" role="alert">{historyError}</p> :
-          !versions ? <p role="status">Loading submission history…</p> :
-          versions.length === 0 ? <p>No stored versions for this team.</p> : (
-            <>
-              <p>Active version: <strong>{active ? `v${active.version}` : "None"}</strong></p>
-              <div className="table-wrap">
-                <table aria-label="Submission versions">
-                  <thead><tr>
-                    <th scope="col">Version</th>
-                    <th scope="col">Format</th>
-                    <th scope="col">Validation</th>
-                    <th scope="col">Active</th>
-                    <th scope="col">Download</th>
-                  </tr></thead>
-                  <tbody>
-                    {versions.map((version) => (
-                      <tr key={version.id}>
-                        <th scope="row">v{version.version}</th>
-                        <td>{version.format === "python-bundle" ? "Python ZIP" : "Python"}</td>
-                        <td><Validation version={version} /></td>
-                        <td>{version.is_active ? "Active" : "—"}</td>
-                        <td><a href={`/api/v1/tournaments/${encodeURIComponent(cup.id)}/submissions/${encodeURIComponent(version.id)}/download/`}
-                          aria-label={`Download v${version.version}`}>Download</a></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-      </section>
+      <SubmissionHistory cup={cup} {...history} refresh={refresh} />
     </>
+  );
+}
+
+function useSubmissionHistory(path: string, revision: number) {
+  const [versions, setVersions] = useState<Version[] | null>(null);
+  const [historyError, setHistoryError] = useState("");
+  useEffect(() => {
+    const controller = new AbortController();
+    setHistoryError("");
+    api<{ items: Version[] }>(path, { signal: controller.signal })
+      .then((data) => { if (!controller.signal.aborted) setVersions(data.items); })
+      .catch((error: Error) => {
+        if (controller.signal.aborted) return;
+        setVersions(null);
+        setHistoryError(error.message);
+      });
+    return () => controller.abort();
+  }, [path, revision]);
+  return { versions, historyError };
+}
+
+export function ReadOnlySubmissions({ cup, team }: { cup: Tournament; team: string }) {
+  const [revision, setRevision] = useState(0);
+  const history = useSubmissionHistory(teamPath(cup, team) + "submissions/", revision);
+  return <SubmissionHistory cup={cup} {...history} refresh={() => setRevision((value) => value + 1)} />;
+}
+
+function SubmissionHistory({ cup, versions, historyError, refresh }: {
+  cup: Tournament; versions: Version[] | null; historyError: string; refresh: () => void;
+}) {
+  const active = versions?.find((version) => version.is_active);
+  return (
+    <section className="panel" aria-labelledby="submission-history">
+      <div className="panel-toolbar">
+        <h2 id="submission-history">Submission history</h2>
+        <button className="text-button" onClick={refresh}>Refresh submissions</button>
+      </div>
+      {historyError ? <p className="error" role="alert">{historyError}</p> :
+        !versions ? <p role="status">Loading submission history…</p> :
+        versions.length === 0 ? <p>No stored versions for this team.</p> : (
+          <>
+            <p>Active version: <strong>{active ? `v${active.version}` : "None"}</strong></p>
+            <div className="table-wrap">
+              <table aria-label="Submission versions">
+                <thead><tr>
+                  <th scope="col">Version</th>
+                  <th scope="col">Format</th>
+                  <th scope="col">Validation</th>
+                  <th scope="col">Active</th>
+                  <th scope="col">Download</th>
+                </tr></thead>
+                <tbody>
+                  {versions.map((version) => (
+                    <tr key={version.id}>
+                      <th scope="row">v{version.version}</th>
+                      <td>{version.format === "python-bundle" ? "Python ZIP" : "Python"}</td>
+                      <td><Validation version={version} /></td>
+                      <td>{version.is_active ? "Active" : "—"}</td>
+                      <td><a href={`/api/v1/tournaments/${encodeURIComponent(cup.id)}/submissions/${encodeURIComponent(version.id)}/download/`}
+                        aria-label={`Download v${version.version}`}>Download</a></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+    </section>
   );
 }
 
