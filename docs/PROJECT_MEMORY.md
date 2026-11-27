@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-604 / CN-068 adds Admin Operations triage at `/admin`, with attempt
+  and alert state, dead jobs and refresh. The build and 27 browser tests passed.
 - BIO-707 / CN-067 adds Admin roster and team management links, including
   audited source downloads. The production build and 27 browser tests passed.
+  PR #75 merged into `main` at `28dd7c5`.
 - BIO-606 / CN-066 adds the shared staff archive panel and replay purge
   receipts. The production build and all 26 Playwright tests passed.
   PR #74 merged into `main` at `c3971ec`.
@@ -430,7 +433,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    audit retained. Feature match disputes now support private comments/staff
    review/version/idempotency and immutable history; appeals/reopening/outcome
    correction policy and automatic notices remain. The Admin operations reader
-   is implemented; additional action controls remain open. CN-034 delivers
+   includes attempt and alert details and dead jobs (CN-068). Recovery
+   action controls await their policy. CN-034 delivers
    current-scope bracket and game result reads, including archived history. CN-035 adds confirmed archive for current
    Admins and assigned Organizers. CN-054 adds bracket, game details and
    recorded tie resolution in the console. CN-038 delivers staff map-pool selection,
@@ -1101,3 +1105,19 @@ the Admin download audit and route refusal before scoped requests. All
 91 statuses, nine backlog categories and 42 open Jira items remain.
 The Admin Operations reader can surface existing stuck-job details;
 recovery mutations still need their policy decisions.
+
+## CN-068 continuation evidence
+
+BIO-604 starts from merged main at `28dd7c5` on
+`BIO-604-admin-operations-triage`. The Admin Operations console uses
+the existing read-only API to display incident attempts and alert state,
+dead job IDs and failures, and recent audit events. It supports refresh
+and has a direct `/admin` address alongside the earlier hash address.
+
+The production build and all 27 Playwright tests passed (44.1 s).
+The local fixture uses the existing libraries to record a paused match
+and dead job without running an engine or worker. Browser coverage
+checks both records, refresh, and participant refusal on both addresses.
+All 91 statuses, nine backlog categories and 42 Jira items remain.
+Recovery authority remains open. The linked participant settings page
+can reuse the inbox email preference next.

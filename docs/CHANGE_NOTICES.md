@@ -912,3 +912,11 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - The production build and all 27 Playwright tests passed on disposable
   services. The browser verified import and source bytes, the Admin audit
   event and the guard on the new Admin routes.
+
+## CN-068 — Admin Operations triage (2026-11-28)
+
+- **BIO-604:** The Admin Operations console at `/admin` shows open
+  incidents with attempt and alert details, dead jobs and recent audit.
+  Staff can refresh the read-only snapshot.
+- The production build and 27 Playwright tests passed with a disposable
+  paused match and dead job. Participants are refused on both addresses.

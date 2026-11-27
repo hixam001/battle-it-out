@@ -14,7 +14,7 @@ def main():
     from django.conf import settings
     from django.contrib.auth import get_user_model
     from django.db import transaction
-    from backend.match_orchestrator import bracket, maps, replays
+    from backend.match_orchestrator import bracket, maps, orchestrator, replays
     from backend.match_orchestrator.tests.test_bracket import MAPS, teams
     from backend.match_orchestrator.tests.test_maps import ENGINE, FILES, GOOD, make_jar
     from backend.match_orchestrator.tests.test_tiebreak import COIN, Coin, won
@@ -24,6 +24,7 @@ def main():
     from backend.tournaments import tournaments
     from backend.webapp.models import OrganizerAssignment
     from backend.webapp.tests import ADM, BOT, FeatureAPI, verdict
+    from backend.work_queue import jobs
 
     connection = settings.DATABASES['default']
     host = connection['HOST']
@@ -65,6 +66,14 @@ def main():
             registry.record_verdict(stored, registry.claim_check(stored, source['id']), verdict(BOT))
             fixture.make_cup('tied-fixture', fixture.now - 3000, fixture.now - 1000)
             store = fixture.rt.flow.store
+            orchestrator.create_match(store, 'paused-fixture-match', 'ta', 'tb', 'one', 'ta-v1', 'tb-v1', max_attempts=1)
+            orchestrator.queue_match(store, 'paused-fixture-match')
+            _, attempt = orchestrator.claim(store, 'paused-fixture-match', 'fixture-worker')
+            orchestrator.finish(store, 'paused-fixture-match', attempt.attempt, 'fixture-worker',
+                                {'outcome': 'platform_failure', 'kind': 'fixture_error'})
+            queue = fixture.rt.flow.queue
+            jobs.enqueue(queue, jobs.RUN_ROUND, {'bracket_id': 'operations-fixture', 'round_no': 1})
+            jobs.fail(queue, jobs.claim_next(queue, 'fixture-worker'), 'Fixture dead job', permanent=True)
             bracket.create_bracket(store, 'tied-fixture', teams(2), MAPS)
             with store.transaction() as data:
                 data['brackets']['tied-fixture']['tournament_id'] = 'tied-fixture'

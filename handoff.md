@@ -1323,3 +1323,20 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   CN-067, changelog, coverage and memory. The 91 statuses, nine backlog
   categories and 42 tracked Jira items remain. Admin incident triage can
   proceed using the available read-only data.
+
+### 2026-11-28 — BIO-604 Admin Operations triage
+
+- Confirmed PR #75 merged into `main` at `28dd7c5`. Started
+  `BIO-604-admin-operations-triage` from the fetched commit.
+- The Admin Operations screen now has a direct `/admin` address, a
+  refresh button, incident attempts and alert state, and dead job IDs,
+  types and failure counts. It uses the existing read-only API and
+  retains the earlier hash route and global audit link.
+- The production build and all 27 Playwright tests passed (44.1 s).
+  Browser fixtures recorded a synthetic paused match and dead job via
+  existing libraries, checked refresh and role denial, and used only
+  temporary state. Desktop and mobile views were inspected.
+- Updated the Admin guide, runbook, frontend guide, test plan, Jira,
+  CN-068, changelog, coverage and memory. The 91 statuses, nine backlog
+  categories and 42 tracked Jira items remain. Mutation authority stays
+  open. Participant email preferences can be exposed at account settings.

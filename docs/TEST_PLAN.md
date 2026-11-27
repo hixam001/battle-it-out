@@ -465,6 +465,13 @@ imports a disposable roster entry and checks a verified team profile, source
 bytes and the Admin download audit event. An Organizer opening the Admin
 URLs receives an access error before the page requests scoped data.
 
+### Admin Operations triage (BIO-604 / CN-068)
+
+The browser checks incident attempts and pending alerts for a disposable
+paused match, a dead job's type and failure count, and a fresh response after
+refresh. A participant is refused before operations data is requested at
+either console address.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

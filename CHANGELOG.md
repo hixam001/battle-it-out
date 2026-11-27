@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Admin Operations triage (BIO-604, CN-068)** shows incident attempts,
+  alert state and dead-job details at `/admin`.
+
 - **Admin roster and teams (BIO-707, CN-067)** connects tournament settings
   to roster import and correction, verified team profiles and audited source
   downloads.
