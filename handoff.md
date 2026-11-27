@@ -1100,3 +1100,24 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   requirements, changelog and memory. All 91 statuses, nine backlog
   categories and 43 open Jira items remain. Other Admin controls and
   formal acceptance stay open.
+
+### 2026-11-27 — BIO-706 Organizer tournament management
+
+- PR #63 merged into main at `88594e1`. Started
+  `BIO-706-organizer-tournament-management` from that commit. Added
+  Organizer list, draft creation and versioned tournament detail routes
+  in the React console. The form validates deadlines through the existing
+  API and puts local times on the wire as UTC.
+- The creating Organizer can submit or revise a rejected draft and
+  resubmit it. Assigned Organizers can open registration after approval.
+  Server scope, locks and versions remain authoritative. No API or schema
+  change was needed.
+- The production build and all 16 Playwright tests (23.5 s) passed.
+  New browser tests cover both Organizer and Admin lifecycle steps and
+  direct link refusals. The first run's populated textarea selector was
+  corrected to use its accessible name. Fixtures and sessions were
+  disposable.
+- Updated the user, Admin and frontend guides, test plan, Jira, CN-056,
+  changelog, coverage and memory. All 91 statuses, nine backlog categories
+  and 43 open Jira items remain. Roster, round and dedicated team screens
+  remain under BIO-706.

@@ -800,3 +800,14 @@ Decisions from the owner that change or narrow what the requirement documents (P
   leave the queue. Registration opening stays a separate action.
 - The production build and all 14 Playwright tests passed, including
   approval, rejection, concurrent review and participant refusal.
+
+## CN-056 — Organizer tournament management (2026-11-27)
+
+- **BIO-706:** Assigned Organizers can list and open their tournaments,
+  create and edit drafts, submit or resubmit for approval, and open
+  registration after approval.
+- The form uses browser-local deadline entry, version-checked mutations,
+  idempotent creation and the server's deadline locks. The management
+  screen displays the rejection reason for revision.
+- The production build and all 16 Playwright cases passed, including the
+  Organizer/Admin lifecycle and role and assignment refusals.

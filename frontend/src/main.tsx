@@ -5,6 +5,7 @@ import { Inbox, TournamentNotices } from "./notifications";
 import { Submissions, Team } from "./participant";
 import { BracketResults, MatchResult, Replay } from "./results";
 import { Approvals } from "./approvals";
+import { Organizer } from "./organizer";
 import "./style.css";
 
 type User = { id: number; username: string; admin: boolean };
@@ -396,6 +397,7 @@ const consoleLinks = [
   { page: "disputes", href: "/#disputes", label: "Match disputes", icon: "☷" },
   { page: "operations", href: "/#operations", label: "Operations", icon: "⚙" },
   { page: "approvals", href: "/admin/approvals", label: "Approvals", icon: "✓" },
+  { page: "organizer", href: "/organizer", label: "Manage tournaments", icon: "▤" },
 ] as const;
 type ConsolePage = (typeof consoleLinks)[number]["page"] | "match" | "replay";
 type ConsoleRoute = { page: ConsolePage; id?: string };
@@ -405,11 +407,13 @@ function currentRoute(address: string): ConsoleRoute | null {
   if (normalized === "/#submissions") return { page: "submissions" };
   const bracket = normalized.match(/^\/participant\/tournaments\/([^/#]+)\/bracket$/);
   const game = normalized.match(/^\/matches\/([^/#]+)(\/replay)?$/);
-  if (bracket || game) {
+  const organizer = normalized.match(/^\/organizer\/tournaments\/([^/#]+)$/);
+  const route = bracket ?? game ?? organizer;
+  if (route) {
     try {
       return {
-        page: bracket ? "bracket" : game?.[2] ? "replay" : "match",
-        id: decodeURIComponent((bracket ?? game)![1]),
+        page: organizer ? "organizer" : bracket ? "bracket" : game?.[2] ? "replay" : "match",
+        id: decodeURIComponent(route[1]),
       };
     } catch {
       return null;
@@ -608,14 +612,33 @@ function Console({ user, route, navigate, logout }: {
     setError("");
     setSelected((id) => data.items.some((item) => item.id === id) ? id : data.items[0]?.id || "");
   }, []);
+  const applyTournament = useCallback((record: {
+    id: string; name: string; description: string; status: string;
+    registration_deadline: string | null; submission_deadline: string | null;
+  }) => {
+    setCups((items) => {
+      const prior = items.find((cup) => cup.id === record.id);
+      const summary = {
+        id: record.id, name: record.name, description: record.description, status: record.status,
+        deadlines: {
+          registration: record.registration_deadline ? Date.parse(record.registration_deadline) / 1000
+            : prior?.deadlines.registration ?? 0,
+          submission: record.submission_deadline ? Date.parse(record.submission_deadline) / 1000
+            : prior?.deadlines.submission ?? 0,
+        },
+      };
+      return prior ? items.map((cup) => cup.id === record.id ? summary : cup) : [...items, summary];
+    });
+  }, []);
   useEffect(() => {
     refreshTournament().catch((e) => setError(e.message)).finally(() => setLoading(false));
   }, [refreshTournament]);
   const scopedBracket = page === "bracket" && id;
   const cup = cups.find((c) => c.id === (scopedBracket || selected));
-  const showTournament = !["notifications", "operations", "approvals", "match", "replay"].includes(page);
+  const showTournament = !["notifications", "operations", "approvals", "organizer", "match", "replay"].includes(page);
   const canOpen = (target: ConsolePage) => {
     if (target === "operations" || target === "approvals") return user.admin;
+    if (target === "organizer") return role === "organizer" || (loading && !user.admin);
     if (target === "notifications") return !user.admin && role !== "organizer";
     if (target === "team") return role === "participant" || (loading && !user.admin);
     return true;
@@ -632,7 +655,7 @@ function Console({ user, route, navigate, logout }: {
         </a>
         <p className="eyebrow">COMPETITION CONSOLE</p>
         <nav aria-label="Console">
-          {consoleLinks.filter((link) => canOpen(link.page) && (!loading || !["notifications", "team"].includes(link.page))).map((link) => (
+          {consoleLinks.filter((link) => canOpen(link.page) && (!loading || !["notifications", "team", "organizer"].includes(link.page))).map((link) => (
             <a key={link.page} href={link.href} aria-current={page === link.page ? "page" : undefined}
               onClick={(event) => {
                 if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -683,6 +706,7 @@ function Console({ user, route, navigate, logout }: {
             <p role="alert">{page === "operations"
               ? "Admin access is required to open Operations."
               : page === "approvals" ? "Admin access is required to review tournaments."
+              : page === "organizer" ? "Organizer access is required to manage tournaments."
               : page === "team" ? "My team is available to participant accounts."
               : "Notifications are available to linked participant accounts."}</p>
             <a href="/dashboard">Open Dashboard</a>
@@ -696,6 +720,10 @@ function Console({ user, route, navigate, logout }: {
           <Approvals tournaments={cups} loading={loading} loadError={error} refreshQueue={refreshTournament}
             onReview={(review) => setCups((items) => items.map((cup) => cup.id === review.id
               ? { ...cup, status: review.status } : cup))} />
+        ) : page === "organizer" ? (
+          loading ? <p role="status">Loading Organizer access…</p> :
+            <Organizer key={id ?? "list"} id={id} userId={user.id} tournaments={cups}
+              navigate={navigate} onChange={applyTournament} />
         ) : page === "match" ? (
           id && <MatchResult key={id} matchId={id} />
         ) : page === "replay" ? (

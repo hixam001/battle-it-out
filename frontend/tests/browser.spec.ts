@@ -258,15 +258,13 @@ test("private console opens by keyboard and guards a direct Operations link", as
   expect(adminRequests).toEqual([]);
 });
 
-test("staff notification route is guarded before fetching a participant inbox", async ({ page }) => {
+test("staff notification route is guarded before fetching a participant inbox", async ({ page, useSession }) => {
   const inboxRequests: string[] = [];
   page.on("request", (request) => {
     if (new URL(request.url()).pathname === "/api/v1/notifications/") inboxRequests.push(request.url());
   });
+  await useSession(page, "organizer");
   await page.goto("/notifications");
-  await page.getByLabel("Username", { exact: true }).fill("organizer");
-  await page.getByLabel("Password", { exact: true }).fill("test-fixture-passphrase");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("alert")).toHaveText("Notifications are available to linked participant accounts.");
   await expect(page.getByRole("link", { name: "Notifications", exact: true })).toHaveCount(0);
   expect(inboxRequests).toEqual([]);
@@ -432,4 +430,74 @@ test("a participant cannot open the Admin approval queue", async ({ page, useSes
   await expect(page.getByRole("alert")).toHaveText("Admin access is required to review tournaments.");
   await expect(page.getByRole("link", { name: "Approvals", exact: true })).toHaveCount(0);
   await expect(page.getByLabel("Pending tournament")).toHaveCount(0);
+});
+
+test("Organizer creates, revises and opens an approved tournament", async ({ page, browser, useSession }) => {
+  await useSession(page, "organizer");
+  await page.goto("/organizer");
+  await page.getByRole("link", { name: "New tournament", exact: true }).click();
+  await page.getByLabel("Tournament name").fill("Organizer browser fixture");
+  await page.getByLabel("Description", { exact: true }).fill("Initial fixture description.");
+  const deadlines = await page.evaluate(() => [2, 3].map((days) => {
+    const date = new Date(Date.now() + days * 86_400_000);
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  }));
+  await page.getByLabel("Registration deadline").fill(deadlines[0]);
+  await page.getByLabel("Submission deadline").fill(deadlines[1]);
+  await page.getByRole("button", { name: "Create draft" }).click();
+  await expect(page.getByRole("heading", { name: "Organizer browser fixture" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /^Draft$/ })).toBeVisible();
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
+  await page.getByRole("button", { name: "Submit for approval", exact: true }).click();
+  await expect(page.getByText("The Admin is reviewing this version.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open registration" })).toHaveCount(0);
+
+  const admin = await browser.newPage({ baseURL: new URL(page.url()).origin });
+  try {
+    await useSession(admin, "admin");
+    await admin.goto("/admin/approvals");
+    await admin.getByLabel("Pending tournament").selectOption(id);
+    await admin.getByLabel("Decision").selectOption("reject");
+    await admin.getByLabel("Rejection reason").fill("Update the fixture description.");
+    await admin.getByRole("button", { name: "Reject tournament" }).click();
+    await expect(admin.getByText(/Organizer browser fixture rejected/)).toBeVisible();
+
+    await page.getByRole("button", { name: "Refresh tournament" }).click();
+    await expect(page.getByText("Update the fixture description.")).toBeVisible();
+    await page.getByRole("textbox", { name: "Description", exact: true }).fill("Revised fixture description.");
+    await page.getByRole("button", { name: "Save settings" }).click();
+    await expect(page.getByText("Tournament settings saved.")).toBeVisible();
+    await page.getByRole("button", { name: "Resubmit for approval" }).click();
+    await expect(page.getByText("Revised fixture description.")).toBeVisible();
+
+    await admin.getByRole("button", { name: "Refresh queue" }).click();
+    await admin.getByLabel("Pending tournament").selectOption(id);
+    await expect(admin.getByText("Revised fixture description.")).toBeVisible();
+    await admin.getByLabel("Confirm tournament approval").check();
+    await admin.getByRole("button", { name: "Approve tournament" }).click();
+    await expect(admin.getByText(/Organizer browser fixture approved/)).toBeVisible();
+    await page.getByRole("button", { name: "Refresh tournament" }).click();
+    await page.getByRole("button", { name: "Open registration" }).click();
+    await expect(page.getByText("Registration is open.")).toBeVisible();
+    await expect(page.getByText("Registration open", { exact: true })).toBeVisible();
+  } finally {
+    await admin.close();
+  }
+
+  await page.getByRole("link", { name: "All tournaments" }).click();
+  const created = page.getByRole("row").filter({ hasText: "Organizer browser fixture" });
+  await expect(created.getByText("Registration open", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("Organizer routes enforce role and tournament assignment", async ({ page, useSession }) => {
+  await useSession(page, "organizer");
+  await page.goto("/organizer/tournaments/tied-fixture");
+  await expect(page.getByRole("alert")).toContainText("The requested resource was not found.");
+  await expect(page.getByRole("heading", { name: "Edit tournament" })).toHaveCount(0);
+  await useSession(page, "captain-a");
+  await page.goto("/organizer/tournaments/new");
+  await expect(page.getByRole("alert")).toHaveText("Organizer access is required to manage tournaments.");
+  await expect(page.getByRole("button", { name: "Create draft" })).toHaveCount(0);
 });

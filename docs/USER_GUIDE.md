@@ -82,6 +82,13 @@ configuration. Self-service account requests and deletion are planned.
 
 ## 5. For Organizers
 
+Open **Manage tournaments** to list assigned tournaments or create a draft.
+Set the registration and submission deadlines in your browser's timezone.
+Submit the draft for Admin review. If it is rejected, open the tournament
+to read the reason, save revised settings and resubmit. Use **Refresh
+tournament** to pick up a decision or reload after an edit conflict. After
+approval, select **Open registration** while the deadline is still open.
+
 Use the account assigned to the tournament. **Match room** and **Analytics** are
 scoped to that assignment. In **Bot submissions**, use the team's registered
 ID to review its versions or download its submission. Captains upload and

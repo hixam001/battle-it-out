@@ -6,6 +6,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Organizer tournament management (BIO-706; CN-056)** shows assigned
+  tournaments and supports draft creation, version-checked edits, approval
+  submission and resubmission, and opening registration after approval.
+
 - **Admin approval queue (BIO-707; CN-055)** shows pending Organizer
   tournaments, requires confirmation or a rejection reason, and reloads
   stale settings before a review can be submitted again.

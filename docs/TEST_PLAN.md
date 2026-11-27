@@ -382,6 +382,13 @@ review against the actual tournament API. It verifies that decided
 tournaments leave the queue, a stale review requires reloading and a
 participant cannot open the Admin screen.
 
+### Organizer tournament management (BIO-706 / CN-056)
+
+Separate Organizer and Admin browser sessions exercise the real draft,
+submit, reject, edit, resubmit, approve and manual registration-opening
+flow. The browser suite also verifies that an unassigned Organizer's
+direct tournament link is refused and a participant cannot open draft creation.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.
