@@ -100,6 +100,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET | `/dependencies/` | Public curated dependency names, versions and hashes |
 | GET | `/tournaments/{id}/live/` | Authoritative match metadata and allowlisted numeric latest boards; authorization on every poll; archived returns 410 |
 | GET | `/matches/{match_id}/replay/` | Current-scope `.bc26` attachment from the private replay vault; hidden/missing 404, archived 410, unavailable 503 |
+| GET | `/matches/{match_id}/replay-status/` | Official game scope, replay availability from the vault index and current tournament state |
 | GET | `/matches/{match_id}/logs/` | Official game's verified structured attempt log, redacted by current team or staff scope |
 | GET | `/tournaments/{id}/analytics/` | Team win rates/byes, series decisions, failures, maps, version results, round progress and median/p95 attempt time |
 | GET | `/tournaments/{id}/bracket/` | Current-scope recorded bracket, with `null` before draw, game IDs and progression |

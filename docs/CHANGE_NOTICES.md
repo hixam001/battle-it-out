@@ -777,3 +777,16 @@ Decisions from the owner that change or narrow what the requirement documents (P
   permissions, deadline and activation.
 - The production build, all 10 Playwright tests and all 145 Django tests
   passed. Formal accessibility and full flow acceptance remain open.
+
+## CN-054 — Bracket, game results and replay pages (2026-11-27)
+
+- **BIO-705:** The console publishes scoped bracket progression, game win
+  counts, pinned bot versions, tie-break maps and recorded tournament coin
+  flips using the existing result APIs.
+- A game's replay page reads current state and vault availability from
+  the new status route. Available replays use the verified native download.
+  Archive removes the download and retains result history.
+- The production build, all 12 Playwright tests and all 147 Django tests
+  passed. The orchestrator unit selection had 153 passes and 11 integration
+  skips. Raw engine scores, browser playback and production acceptance remain
+  open.

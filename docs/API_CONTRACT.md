@@ -805,6 +805,16 @@ The archive boundary blocks new downloads. A download admitted before the
 archive boundary may already be in progress. Object storage and browser
 playback remain follow-up work.
 
+### GET `/matches/{match_id}/replay-status/`
+
+**Implemented (BIO-705 / CN-054):** The caller must have current access to the
+official game. Returns an object with `status` set to `available`, `pending`,
+`unavailable` or `archived`. An unfinished game without an indexed replay
+returns `pending`; a finished game without a usable index entry returns
+`unavailable`. Current tournament archive returns `archived`. Foreign,
+deleted and unknown matches share `404`. This status reads the vault index.
+The download route verifies the actual bytes and records damaged-file incidents.
+
 ### GET `/matches/{match_id}/logs/`
 
 **Implemented (BIO-605 / CN-046):** Returns the official game's redacted

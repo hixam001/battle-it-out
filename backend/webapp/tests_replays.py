@@ -103,6 +103,30 @@ class ReplayAPI(TestCase):
         get_user_model().objects.filter(pk=self.org.pk).update(is_active=False)
         self.error(organizer.get(self.url), 401, 'UNAUTHENTICATED')
 
+    def test_status_uses_official_scope_and_authoritative_archive(self):
+        url = f'/api/v1/matches/{self.match}/replay-status/'
+        participant = self.reader(self.a)
+        before = self.rt.vault.index.snapshot()
+        response = participant.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Cache-Control'], 'private, no-store')
+        self.assertEqual(response.json(), {'status': 'available'})
+        self.assertEqual(self.rt.vault.index.snapshot(), before)
+        self.error(self.reader(None).get(url), 401, 'UNAUTHENTICATED')
+        self.error(self.reader(self.outsider).get(url), 404, 'NOT_FOUND')
+        with self.rt.tournaments.store.transaction() as state:
+            state['tournaments']['cup']['status'] = T.ARCHIVED
+        self.assertEqual(participant.get(url).json(), {'status': 'archived'})
+        self.assertTrue(self.vault_file.exists())
+        self.error(self.reader(self.outsider).get(url), 404, 'NOT_FOUND')
+
+    def test_unavailable_status_after_failed_verification(self):
+        self.vault_file.unlink()
+        client = self.reader(self.a)
+        self.error(client.get(self.url), 503, 'SERVICE_UNAVAILABLE')
+        response = client.get(f'/api/v1/matches/{self.match}/replay-status/')
+        self.assertEqual(response.json(), {'status': 'unavailable'})
+
     def test_archive_purges_file_but_retains_match_history(self):
         before = self.rt.flow.store.snapshot()
         with self.rt.tournaments.store.transaction() as state:

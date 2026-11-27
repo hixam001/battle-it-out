@@ -25,6 +25,7 @@ urlpatterns = [
     path('api/v1/dependencies/', V.dependencies), path('api/v1/admin/operations/', V.operations),
     path('api/v1/admin/audit-logs/', audit.admin_audit),
     path('api/v1/matches/<str:mid>/replay/', V.replay),
+    path('api/v1/matches/<str:mid>/replay-status/', results.replay_status),
     path('api/v1/matches/<str:mid>/logs/', match_logs.match_logs),
     path('api/v1/notifications/', V.notifications),
     path('api/v1/notifications/<str:nid>/', V.notification_detail),

@@ -65,11 +65,12 @@ Organizer for help with a permission error. Other teams' source stays private.
   existing operations workflow. Normal ties use one tie-break map. Final ties
   use three, followed by a recorded 50/50 coin flip if the tie persists.
 
-Authorized users can download native `.bc26` files before archive through the
-[replay API](API_CONTRACT.md). Archive purges the vault files and keeps match
-history. The same API contract describes authorized bracket and game result
-reads. A browser replay player, a complete bracket and a match-history screen
-are still planned console features.
+Open **Bracket & results** to see round progression, byes and game win counts.
+Open a match for its pinned versions, game order, tie-break maps and recorded
+coin flip. From **Replay**, download the native `.bc26` file while it is
+available and open it in the Battlecode client. Archive removes the download
+and retains match history. Browser playback and raw engine point totals
+remain open.
 
 ## 4. Notifications and account lifecycle
 

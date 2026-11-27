@@ -5,7 +5,8 @@ from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
-from backend.match_orchestrator import bracket as B, tiebreak as TB
+from backend.match_orchestrator import bracket as B, orchestrator as O, replays as P, tiebreak as TB
+from backend.tournaments import tournaments as T
 from . import domain as D
 
 
@@ -78,3 +79,23 @@ def match_detail(request, mid):
     view['wins'] = series_wins(series)
     view['tiebreak_maps'] = series['tiebreak_maps']
     return Response({'tournament_id': tid, 'match_id': mid, 'round_number': round_number, 'series': view})
+
+
+@api_view(['GET'])
+def replay_status(request, mid):
+    rt = D.runtime()
+    state = rt.flow.store.snapshot()
+    tid, _, _ = locate_match(state, mid)
+    who, tournament = D.tournament(request.user, tid)
+    if tournament['status'] == T.ARCHIVED:
+        return Response({'status': 'archived'})
+
+    viewer = P.Viewer(who.role, who.tournament_ids)
+    try:
+        replay = P.replay_status(rt.vault, mid, viewer, tournament_id=tid)
+    except P.NotFound:
+        game_status = state['matches'][mid]['status']
+        status = 'unavailable' if game_status in (O.COMPLETED, O.BOT_FORFEIT) else 'pending'
+    else:
+        status = 'archived' if replay['status'] == P.PURGED else replay['status']
+    return Response({'status': status})

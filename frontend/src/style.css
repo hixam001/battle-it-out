@@ -928,6 +928,57 @@ textarea {
 .validation-details ul {
   padding-inline-start: 1rem;
 }
+.bracket-overview {
+  margin: 0 0 1.5rem;
+}
+.bracket-rounds {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+.bracket-round ol,
+.series-games {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bracket-pairing,
+.series-games li {
+  border-top: 1px solid #dedee9;
+  padding: 1rem 0;
+  overflow-wrap: anywhere;
+}
+.bracket-pairing:last-child,
+.series-games li:last-child {
+  padding-bottom: 0;
+}
+.bracket-pairing h3,
+.series-games h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.bracket-pairing p,
+.series-games p {
+  margin: 0.35rem 0;
+  color: var(--muted);
+}
+.series-games li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+.recorded-coin {
+  border-left: 3px solid #786797;
+  background: #f5f1ff;
+  padding: 0.75rem 1rem;
+  margin-top: 1rem;
+}
+.recorded-coin h3 {
+  margin: 0;
+  font-size: 1rem;
+}
 table {
   border-collapse: collapse;
   width: 100%;

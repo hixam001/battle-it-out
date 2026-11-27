@@ -22,6 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-705 / CN-054 adds scoped bracket, game results and a native replay
+  page. The production build, all 12 Playwright and all 147 Django cases
+  passed. PR #61 merged into main at `3158801`.
 - BIO-704 / CN-053 delivers the participant team and submissions screens.
   The production build, 10 Playwright tests and 145 Django tests passed.
   The announcement API in PR #60 merged into main at `9255e2a`.
@@ -377,8 +380,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    additional languages follow compatibility work, and arbitrary participant
    installs/custom runtimes remain unapproved.
 5. **Tournament operations and deletion:** approval and rejection notices,
-   management screens and cross-store deletion; full results UI, engine point
-   display and paused-job mutation controls; queued/
+   management screens and cross-store deletion; raw engine point display
+   and paused-job mutation controls; queued/
    cancelable account deletion, historical-roster removal without changed
    results, captain transfer/no successor (DEC-07), team delete/restore after
    archive, permanent tournament deletion across every legacy/new package with
@@ -387,7 +390,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    correction policy and automatic notices remain. The Admin operations reader
    is implemented; additional action controls remain open. CN-034 delivers
    current-scope bracket and game result reads, including archived history. CN-035 adds confirmed archive for current
-   Admins and assigned Organizers. CN-038 delivers staff map-pool selection,
+   Admins and assigned Organizers. CN-054 adds bracket, game details and
+   recorded tie resolution in the console. CN-038 delivers staff map-pool selection,
    bracket draw and sequential round-start actions. CN-047 adds draft creation,
    detail, edit, submit, approve, reject and open registration over HTTP.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
@@ -409,11 +413,12 @@ with current code and the coverage matrix; nothing here is closed by intake.
    archive. Full viewer overlays/traps/animations and production reconnect/load
    evidence remain. CN-032 adds current-scope native replay downloads from the
    private vault. CN-046 exposes verified role-scoped structured attempt logs.
+   CN-054 adds the replay availability and download screen.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
-   tournament creation/approval/deadline/round management, full bracket/
-   replay/coin-flip and Admin mutation screens. Public landing and the private
+   tournament creation/approval/deadline/round management, browser replay
+   playback and Admin mutation screens. Public landing and the private
    live/analytics/submission/dispute/operations console now exist. CN-053 adds
    direct team and submission routes, bracket standing and validation details.
    Branding,
@@ -832,3 +837,21 @@ cases (16.980 s), system and migration-drift checks passed on disposable
 state. The invalid and queued uploads in the browser kept the previous
 active version. All 91 requirement statuses and nine backlog categories
 remain. BIO-704 is implemented locally; 43 tracked Jira items remain.
+
+## CN-054 continuation evidence
+
+BIO-705 starts from merged main at `3158801` on
+`BIO-705-bracket-match-results`. Bracket and game links use recorded round,
+pairing, game win, bot version, tie-break and coin-flip fields. The replay
+page checks current game scope and vault index status and streams the
+retained native attachment through the existing download endpoint.
+Browser playback still depends on DEC-10, and raw engine points remain open.
+
+All 147 Django tests passed in 17.727 s with system and migration checks.
+The production build and all 12 Playwright tests passed (18.4 s) on
+disposable services. The tests exercised a recorded four-game final, a
+native-extension fixture attachment and archive with preserved history.
+Worker-scoped fixture sessions reduced repeated loopback sign-ins after the
+first browser run reached the existing login limiter. The orchestrator
+selection ran 164 cases, with 153 passes and 11 expected integration skips.
+All 91 statuses, nine backlog categories and 43 open Jira items remain.

@@ -548,9 +548,11 @@ def tournament_state(vault: Vault, tournament_id: str) -> dict | None:
         return copy.deepcopy(state["tournaments"].get(tournament_id))
 
 
-def replay_status(vault: Vault, match_id: str, viewer: Viewer | None) -> dict:
+def replay_status(vault: Vault, match_id: str, viewer: Viewer | None, *, tournament_id: str | None = None) -> dict:
     """What a results page needs without serving the file: `available`, `unavailable` or `purged`.
     Same safe not-found rule as `fetch_replay`."""
     with vault.index.transaction() as state:
         rep = _visible_replay(state, match_id, viewer)
+        if tournament_id is not None and rep["tournament_id"] != tournament_id:
+            raise NotFound("no such replay")
         return {"match_id": match_id, "status": rep["status"], "format": rep["format"], "bytes": rep["bytes"]}

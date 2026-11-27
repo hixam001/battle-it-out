@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { api, setCsrfToken } from "./api";
 import { Inbox, TournamentNotices } from "./notifications";
 import { Submissions, Team } from "./participant";
+import { BracketResults, MatchResult, Replay } from "./results";
 import "./style.css";
 
 type User = { id: number; username: string; admin: boolean };
@@ -45,6 +46,7 @@ type Board = {
 };
 type Match = {
   series_id: string;
+  match_id: string;
   round: number;
   a: string;
   b: string;
@@ -386,18 +388,33 @@ const consoleLinks = [
   { page: "dashboard", href: "/dashboard", label: "Dashboard", icon: "⌂" },
   { page: "notifications", href: "/notifications", label: "Notifications", icon: "◈" },
   { page: "live", href: "/#console", label: "Match room", icon: "◉" },
+  { page: "bracket", href: "/bracket", label: "Bracket & results", icon: "▦" },
   { page: "analytics", href: "/#analytics", label: "Analytics", icon: "▥" },
   { page: "team", href: "/participant/team", label: "My team", icon: "◇" },
   { page: "submissions", href: "/participant/submissions", label: "Bot submissions", icon: "⌘" },
   { page: "disputes", href: "/#disputes", label: "Match disputes", icon: "☷" },
   { page: "operations", href: "/#operations", label: "Operations", icon: "⚙" },
 ] as const;
-type ConsolePage = (typeof consoleLinks)[number]["page"];
+type ConsolePage = (typeof consoleLinks)[number]["page"] | "match" | "replay";
+type ConsoleRoute = { page: ConsolePage; id?: string };
 
-function currentPage() {
-  if (location.pathname === "/" && location.hash === "#submissions") return "submissions";
-  const address = location.pathname === "/" ? `/${location.hash}` : location.pathname.replace(/\/$/, "");
-  return consoleLinks.find(({ href }) => href === address)?.page ?? null;
+function currentRoute(address: string): ConsoleRoute | null {
+  const normalized = address.replace(/\/$/, "");
+  if (normalized === "/#submissions") return { page: "submissions" };
+  const bracket = normalized.match(/^\/participant\/tournaments\/([^/#]+)\/bracket$/);
+  const game = normalized.match(/^\/matches\/([^/#]+)(\/replay)?$/);
+  if (bracket || game) {
+    try {
+      return {
+        page: bracket ? "bracket" : game?.[2] ? "replay" : "match",
+        id: decodeURIComponent((bracket ?? game)![1]),
+      };
+    } catch {
+      return null;
+    }
+  }
+  const link = consoleLinks.find(({ href }) => href === normalized);
+  return link ? { page: link.page } : null;
 }
 
 function SkipToContent() {
@@ -417,10 +434,11 @@ function SkipToContent() {
 function App() {
   const [user, setUser] = useState<User | null>(null),
     [checking, setChecking] = useState(true),
-    [page, setPage] = useState(currentPage);
+    [address, setAddress] = useState(() => location.pathname + location.hash);
+  const route = currentRoute(address);
   const [error, setError] = useState("");
   useEffect(() => {
-    const onLocation = () => setPage(currentPage());
+    const onLocation = () => setAddress(location.pathname + location.hash);
     window.addEventListener("hashchange", onLocation);
     window.addEventListener("popstate", onLocation);
     return () => {
@@ -445,7 +463,7 @@ function App() {
     location.hash = "console";
     window.scrollTo(0, 0);
   };
-  if (!page)
+  if (!route)
     return (
       <>
         <SkipToContent />
@@ -479,10 +497,10 @@ function App() {
       )}
       <Console
         user={user}
-        page={page}
+        route={route}
         navigate={(href) => {
           if (location.pathname + location.hash !== href) history.pushState(null, "", href);
-          setPage(currentPage());
+          setAddress(location.pathname + location.hash);
           window.scrollTo(0, 0);
         }}
         logout={async () => {
@@ -572,9 +590,10 @@ function Login({ done, back }: { done: (u: User) => void; back: () => void }) {
     </main>
   );
 }
-function Console({ user, page, navigate, logout }: {
-  user: User; page: ConsolePage; navigate: (href: string) => void; logout: () => void;
+function Console({ user, route, navigate, logout }: {
+  user: User; route: ConsoleRoute; navigate: (href: string) => void; logout: () => void;
 }) {
+  const { page, id } = route;
   const [cups, setCups] = useState<Cup[]>([]),
     [selected, setSelected] = useState(""),
     [role, setRole] = useState(""),
@@ -589,8 +608,9 @@ function Console({ user, page, navigate, logout }: {
   useEffect(() => {
     refreshTournament().catch((e) => setError(e.message)).finally(() => setLoading(false));
   }, [refreshTournament]);
-  const cup = cups.find((c) => c.id === selected);
-  const showTournament = page !== "notifications" && page !== "operations";
+  const scopedBracket = page === "bracket" && id;
+  const cup = cups.find((c) => c.id === (scopedBracket || selected));
+  const showTournament = !["notifications", "operations", "match", "replay"].includes(page);
   const canOpen = (target: ConsolePage) => {
     if (target === "operations") return user.admin;
     if (target === "notifications") return !user.admin && role !== "organizer";
@@ -634,9 +654,13 @@ function Console({ user, page, navigate, logout }: {
             Tournament
             <select
               aria-label="Tournament"
-              value={selected}
-              onChange={(e) => setSelected(e.target.value)}
+              value={cup?.id ?? ""}
+              onChange={(e) => {
+                setSelected(e.target.value);
+                if (scopedBracket) navigate("/bracket");
+              }}
             >
+              {!cup && <option value="" disabled>Select a tournament</option>}
               {cups.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -664,10 +688,20 @@ function Console({ user, page, navigate, logout }: {
             <Inbox tournaments={new Map(cups.map((item) => [item.id, item.name]))} />
         ) : page === "operations" ? (
           <Operations />
+        ) : page === "match" ? (
+          id && <MatchResult key={id} matchId={id} />
+        ) : page === "replay" ? (
+          id && <Replay key={id} matchId={id} />
         ) : loading ? (
           <p role="status">Loading tournaments…</p>
         ) : page === "dashboard" ? (
           <Dashboard cup={cup} role={role} unavailable={Boolean(error)} />
+        ) : page === "bracket" ? (
+          cup ? <BracketResults key={cup.id} tournament={cup} /> :
+            <section className="empty">
+              <h1>Bracket &amp; results</h1>
+              <p>{scopedBracket ? "This tournament is unavailable." : "No tournaments yet."}</p>
+            </section>
         ) : cup ? (
           <>
             <div className="workspace-heading">
@@ -829,6 +863,7 @@ function Live({ cup }: { cup: Cup }) {
               <i className="legend b" />
             </div>
           </div>
+          <p><a href={`/matches/${encodeURIComponent(match.match_id)}`}>Match details</a></p>
           <div className="live-board">
             {board ? (
               <Arena board={board} />

@@ -367,6 +367,14 @@ deadline, and the captain-only upload form. It submits an invalid replacement
 and a queued version to the local API, expands the validation finding and
 checks that the previous valid version stays active.
 
+### Bracket, results and replay (BIO-705 / CN-054)
+
+The browser fixture opens a scoped bracket, navigates to a recorded final,
+checks its four games and displayed 50/50 result, and downloads a disposable
+native-format attachment. It archives the fixture and verifies that the
+download disappears while the recorded result remains. A participant sees
+only their available tournaments and can open a pending bracket.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.
