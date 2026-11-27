@@ -22,6 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-706 / CN-062 adds Organizer map and round controls. The production
+  build and all 22 Playwright tests passed. PR #69 merged into main at
+  `377940d`.
 - BIO-706 / CN-061 adds the Organizer roster screen. The production build
   and all 21 Playwright tests passed. PR #68 merged into main at `8271400`.
 - BIO-707 / CN-060 adds Admin invitation controls. The production build
@@ -422,6 +425,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    draft creation/edit, approval workflow and manual registration opening.
    CN-058 adds the paginated global audit screen for Admins. CN-059 adds
    the Admin extension and emergency override forms with notice receipts.
+   CN-062 adds the Organizer map selection, draw and round-start console.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; Organizer approval/rejection
    and dispute notices; mandatory security
@@ -446,7 +450,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
-   Admin tournament creation and incident controls, Organizer round and team
+   Admin tournament creation and incident controls, Organizer team
    management, browser replay
    playback and Admin mutation screens. Public landing and the private
    live/analytics/submission/dispute/operations console now exist. CN-053 adds
@@ -989,3 +993,17 @@ The production build and all 21 Playwright cases passed (29.8 s), including
 both imports, correction, report and scope. All 91 statuses, nine backlog
 categories and 43 open Jira items remain. Initial invitation issuance in
 the console and dedicated round and team management remain open.
+
+## CN-062 continuation evidence
+
+BIO-706 starts from merged main at `377940d` on
+`BIO-706-organizer-round-controls`. The assigned Organizer screen shows
+map pools and bracket readiness and invokes existing confirmed draw and
+idempotent round-start APIs. The draw and queueing are separate actions.
+
+The production build and all 22 Playwright tests passed (32.2 s),
+including map selection, scoped draw, separate start and a foreign-link
+refusal. The browser fixture uses a synthetic catalogue and queues
+without running matches. All 91 statuses, nine backlog categories and
+43 open Jira items remain. Dedicated team management, staff invitation
+issuance and full acceptance remain open.

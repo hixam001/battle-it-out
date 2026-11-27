@@ -689,3 +689,32 @@ test("Organizer imports CSV and JSON rosters, corrects an unlocked row and sees 
   await expect(page.getByText("This tournament is unavailable.")).toBeVisible();
   await expect(entries).toHaveCount(0);
 });
+
+test("Organizer selects maps, generates a bracket and separately queues the ready round", async ({ page, useSession }) => {
+  await useSession(page, "organizer");
+  await page.goto("/organizer/tournaments/roster-fixture/rounds");
+  await page.getByRole("combobox", { name: "Available map pools", exact: true }).selectOption("browser-map-pool");
+  await page.getByRole("button", { name: "Save map pool", exact: true }).click();
+  await expect(page.getByText("Map pool selected.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Selected pool: browser-map-pool", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generate bracket" })).toHaveCount(0);
+
+  await page.goto("/organizer/tournaments/round-fixture");
+  await page.getByRole("link", { name: "Manage rounds" }).click();
+  const draw = page.getByRole("button", { name: "Generate bracket", exact: true });
+  await expect(draw).toBeDisabled();
+  await page.getByRole("checkbox", { name: "Confirm bracket generation" }).check();
+  await draw.click();
+  await expect(page.getByText("Bracket generated. No rounds have been started.")).toBeVisible();
+  const start = page.getByRole("button", { name: "Start round 1", exact: true });
+  await expect(start).toBeDisabled();
+  await page.getByRole("checkbox", { name: "Confirm start of round 1" }).check();
+  await start.click();
+  await expect(page.getByText("Round 1 queued.", { exact: true })).toBeVisible();
+  await expect(page.getByText("running · 1 pairing", { exact: true })).toBeVisible();
+  await expect(start).toHaveCount(0);
+
+  await page.goto("/organizer/tournaments/invite-fixture/rounds");
+  await expect(page.getByText("This tournament is unavailable.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generate bracket" })).toHaveCount(0);
+});

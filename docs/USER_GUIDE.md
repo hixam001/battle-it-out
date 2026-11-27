@@ -99,6 +99,11 @@ counts and the exclusion report. Import a UTF-8 CSV or a JSON file with a
 `rows` array. The import receipt identifies rejected rows. Use **Correct**
 on an unlocked entry while the tournament accepts roster changes.
 
+Open **Manage rounds** to select a stored map pool before the submission
+deadline and confirm the draw after it passes. The draw pins bot versions.
+Confirm **Start round** separately for a ready round. Refresh the controls
+for current round state or open **Bracket & results** to review progression.
+
 Use the account assigned to the tournament. **Match room** and **Analytics** are
 scoped to that assignment. In **Bot submissions**, use the team's registered
 ID to review its versions or download its submission. Captains upload and
@@ -106,8 +111,8 @@ activate through validation. Organizer source access is read-only.
 
 Use **Match disputes** to review comments and record resolutions for assigned
 tournaments. An Admin handles approvals, deadline extensions and emergency
-overrides. Initial invitation issuance, round start and confirmed archive
-are available through their scoped APIs. Follow the event's authorized
+overrides. Initial invitation issuance and confirmed archive are available
+through their scoped APIs. Follow the event's authorized
 operator process for actions outside the current console.
 
 ## 6. Troubleshooting

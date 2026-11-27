@@ -23,7 +23,7 @@ Production static assets are generated into ignored `frontend/dist/`. Serve
 `/matches/{id}/replay`, `/admin/approvals`, `/admin/audit`,
 `/admin/tournaments`, `/admin/tournaments/{id}`, `/admin/invitations`, `/organizer`,
 `/organizer/tournaments/new`, `/organizer/tournaments/{id}`,
-`/organizer/tournaments/{id}/roster` and
+`/organizer/tournaments/{id}/roster`, `/organizer/tournaments/{id}/rounds` and
 `/announcements/new`; retain the same-origin
 `/api` route to Django. Hosting,
 TLS, reverse proxy and public deployment remain operator/deployment work; no
@@ -85,6 +85,8 @@ The form shows rejection reasons and applies existing deadline and version
 checks. Refresh tournament loads a new decision or reloads stale settings.
 **Manage roster** shows registration progress, imports CSV or JSON and
 corrects unlocked entries with a version check.
+**Manage rounds** selects a stored map pool, confirms the bracket draw and
+queues each ready round separately.
 
 **Post announcement** lets current tournament staff publish a headline and
 message to the selected tournament's verified roster. The form reports
@@ -107,7 +109,10 @@ backend/.venvs/web/bin/python backend/webapp/manage.py migrate
 backend/.venvs/web/bin/python -m frontend.tests.seed_fixture
 ```
 
-Start both servers and run the browser suite:
+Start Django with `BIO_ENGINE_JAR="$BIO_DATA_DIR/fixture-engine.jar"` for
+this disposable test environment, then start Vite and run the browser suite.
+The seed script creates the synthetic catalogue for the draw test. Leave
+the match worker stopped.
 
 ```bash
 cd frontend

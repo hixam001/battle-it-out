@@ -856,3 +856,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
   JSON format, see rejected row numbers and correct an unlocked entry.
 - The production build and all 21 Playwright tests passed. Browser
   coverage checks both formats, correction and assignment scope.
+
+## CN-062 — Organizer round controls (2026-11-27)
+
+- **BIO-706:** The Organizer console selects a version-checked map pool,
+  confirms the bracket draw after the submission deadline and confirms each
+  ready round separately. Round receipts report queueing and link to results.
+- The production build and 22 Playwright cases passed on disposable state.
+  The round browser case uses a synthetic map catalogue and leaves execution
+  to the existing worker path.

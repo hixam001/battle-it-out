@@ -14,8 +14,9 @@ def main():
     from django.conf import settings
     from django.contrib.auth import get_user_model
     from django.db import transaction
-    from backend.match_orchestrator import bracket, replays
+    from backend.match_orchestrator import bracket, maps, replays
     from backend.match_orchestrator.tests.test_bracket import MAPS, teams
+    from backend.match_orchestrator.tests.test_maps import ENGINE, FILES, GOOD, make_jar
     from backend.match_orchestrator.tests.test_tiebreak import COIN, Coin, won
     from backend.notifications import notifications
     from backend.registration import registration
@@ -101,6 +102,19 @@ def main():
             fixture.make_cup('roster-fixture', fixture.now + 3600, fixture.now + 7200)
             fixture.register('roster-fixture', [('a', 'registered-roster-team')])
             OrganizerAssignment.objects.create(user=FeatureAPI.org, tournament_id='roster-fixture')
+            jar = make_jar(fixture.root / 'fixture-engine.jar', FILES)
+            maps.create_pool(store, 'browser-map-pool', maps.load_engine_maps(jar), ENGINE, **GOOD)
+            fixture.make_cup('round-fixture', fixture.now - 3600, fixture.now - 1800)
+            fixture.register('round-fixture', [('a', 'round-a'), ('b', 'round-b')])
+            OrganizerAssignment.objects.create(user=FeatureAPI.org, tournament_id='round-fixture')
+            tournaments.edit(fixture.rt.tournaments, ADM, 'round-fixture', {'map_pool_id': 'browser-map-pool'},
+                             now=fixture.clock)
+            for team, person in (('round-a', 'roster-a'), ('round-b', 'roster-b')):
+                actor = registration.actor_for(fixture.rt.registration, person)
+                submission = registry.submit(stored, actor, team, 'round-fixture', 'bot.py', BOT,
+                                             idempotency_key=f'fixture-{team}', deadline_at=fixture.now - 1800,
+                                             now=fixture.clock)
+                registry.record_verdict(stored, registry.claim_check(stored, submission['id']), verdict(BOT))
             for i in range(1, 24):
                 cup = 'cup' if i <= 22 else 'historical'
                 title = f'Fixture notice {i:02d}' if i <= 22 else 'Historical fixture notice'

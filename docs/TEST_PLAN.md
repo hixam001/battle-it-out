@@ -422,6 +422,13 @@ redacted row rejection, corrects an unlocked entry and sees the
 registration report. A claimed entry stays locked and a foreign
 Organizer link shows no roster.
 
+### Organizer round controls (BIO-706 / CN-062)
+
+Playwright selects a stored map pool, confirms a draw after the fixture
+deadline and confirms the ready round separately. It verifies round
+queueing and refusal for an unassigned Organizer. The browser fixture
+uses a synthetic map catalogue and leaves the worker stopped.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.
