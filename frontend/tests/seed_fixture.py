@@ -90,6 +90,8 @@ def main():
                                fixture.now + 7200, fixture.now + 10800, idempotency_key='retired-fixture')
             tournaments.delete(fixture.rt.tournaments, ADM, 'retired-fixture',
                                'Private approval-suite deletion reason', confirm=True)
+            fixture.make_cup('deadline-fixture', fixture.now - 3600, fixture.now - 1800)
+            fixture.register('deadline-fixture', [('a', 'deadline-a'), ('b', 'deadline-b')])
             for i in range(1, 24):
                 cup = 'cup' if i <= 22 else 'historical'
                 title = f'Fixture notice {i:02d}' if i <= 22 else 'Historical fixture notice'

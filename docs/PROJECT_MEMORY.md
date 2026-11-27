@@ -22,6 +22,10 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-707 / CN-059 adds Admin deadline controls. The production build,
+  all 19 Playwright tests and all 147 Django tests passed. Backend unit
+  mode had 738 passes and 48 expected skips. PR #66 merged into main at
+  `8077df2`.
 - BIO-707 / CN-058 adds the global audit screen. The production build
   and all 18 Playwright tests passed. PR #65 merged into main at
   `4c19c20`.
@@ -409,7 +413,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    detail, edit, submit, approve, reject and open registration over HTTP.
    CN-055 adds the Admin approval queue. CN-056 adds the Organizer list,
    draft creation/edit, approval workflow and manual registration opening.
-   CN-058 adds the paginated global audit screen for Admins.
+   CN-058 adds the paginated global audit screen for Admins. CN-059 adds
+   the Admin extension and emergency override forms with notice receipts.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; Organizer approval/rejection
    and dispute notices; mandatory security
@@ -434,7 +439,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
-   Admin tournament creation and deadline controls, Organizer roster and
+   Admin tournament creation, invitation and incident controls, Organizer roster and
    round management, browser replay
    playback and Admin mutation screens. Public landing and the private
    live/analytics/submission/dispute/operations console now exist. CN-053 adds
@@ -934,3 +939,19 @@ retained deletion history, metadata disclosure and role refusal. All 91
 statuses, nine backlog categories and 43 open Jira items remain. Admin
 deadline, invitation and incident actions and permanent audit migration
 remain open.
+
+## CN-059 continuation evidence
+
+BIO-707 starts from merged main at `8077df2` on
+`BIO-707-admin-deadline-controls`. The Admin tournament console reuses
+the existing deadline API to extend dates or override locked settings.
+The forms require a reason and confirmation, reuse the key on the same
+payload retry, and display the affected count and notice state.
+
+The production build and 19 Playwright cases passed on disposable state.
+The browser checked a locked override, a deadline extension and both
+participant notices. All 147 Django tests passed with system and migration
+checks. Python 3.15 unit mode found 786 tests, with 738 passes and 48
+expected integration skips. All 91 statuses, nine backlog categories and
+43 open Jira items remain. Admin invitation and incident controls and
+formal acceptance remain.

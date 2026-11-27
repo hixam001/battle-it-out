@@ -829,3 +829,13 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - The production build and all 18 Playwright tests passed. The browser
   verifies retained deletion history, role refusal and exclusion of the
   stored free-form reason.
+
+## CN-059 — Admin deadline controls (2026-11-27)
+
+- **BIO-707:** Admins select a tournament and submit an extension or locked
+  name, description or map-pool override through the existing deadline API.
+  Requests require confirmation and a reason. The console reports the
+  affected-account count and notice state.
+- The production build, all 19 Playwright tests and all 147 Django tests
+  passed. Backend unit mode passed 738 of 786 tests, with 48 expected skips.
+  Browser tests verify both mutations and their participant notices.

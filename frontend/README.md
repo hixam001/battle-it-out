@@ -20,7 +20,8 @@ Production static assets are generated into ignored `frontend/dist/`. Serve
 `index.html` for `/dashboard`, `/notifications`, `/participant/team` and
 `/participant/submissions`, `/bracket`,
 `/participant/tournaments/{id}/bracket`, `/matches/{id}` and
-`/matches/{id}/replay`, `/admin/approvals`, `/admin/audit`, `/organizer`,
+`/matches/{id}/replay`, `/admin/approvals`, `/admin/audit`,
+`/admin/tournaments`, `/admin/tournaments/{id}`, `/organizer`,
 `/organizer/tournaments/new`, `/organizer/tournaments/{id}` and
 `/announcements/new`; retain the same-origin
 `/api` route to Django. Hosting,
@@ -71,6 +72,9 @@ The queue reuses the server's confirmation, required rejection reasons
 and version checks. Open registration separately after approval.
 **Audit log** pages through role-filtered events and accepts an exact
 tournament ID, including one whose tournament has been deleted.
+**Deadline controls** shows the current deadlines and supports confirmed
+extensions and locked-setting overrides with a reason. The receipt reports
+affected accounts and the dashboard notice state.
 
 Organizers use **Manage tournaments** to create drafts, revise assigned
 tournaments, send them for approval and open registration upon approval.

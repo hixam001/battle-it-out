@@ -401,6 +401,13 @@ Playwright pages through real audit results, filters by a deleted
 tournament ID, expands its retained action and verifies that the
 participant route refuses access and raw audit reasons stay private.
 
+### Admin deadline controls (BIO-707 / CN-059)
+
+The browser checks confirmation for an override, records an extension,
+verifies unchanged and updated dates through the API, and opens both
+notices in a verified participant inbox. A participant cannot open the
+Admin controls.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.
