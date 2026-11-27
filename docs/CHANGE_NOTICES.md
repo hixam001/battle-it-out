@@ -944,3 +944,11 @@ Decisions from the owner that change or narrow what the requirement documents (P
   team output supplied by the existing authorized API.
 - The production build and all 29 Playwright tests passed. Browser coverage
   checks attempt selection and the participant, Organizer and Admin projections.
+
+## CN-072 — Console navigation accessibility (2026-11-28)
+
+- **BIO-708:** Console navigation marks the current section and keeps its
+  link visible inside the scrolling area. Keyboard activation moves focus
+  to the page, and inset focus rings remain visible at the strip edges.
+- The production build and all 30 Playwright tests passed, including a
+  narrow nested route and short desktop after resize.

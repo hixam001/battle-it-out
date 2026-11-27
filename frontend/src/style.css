@@ -572,10 +572,14 @@ textarea {
 .sidebar nav .nav-icon {
   font-size: 1.1rem;
 }
-.sidebar nav a[aria-current="page"],
+.sidebar nav a[aria-current],
 .sidebar nav a:hover {
   background: #303140;
   color: var(--lime);
+}
+.sidebar nav a:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: -2px;
 }
 .account {
   margin-top: auto;

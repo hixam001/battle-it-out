@@ -494,6 +494,13 @@ requests a missing attempt and returns to the latest log. Disposable data
 shows own-team output to a participant, both sides to an assigned Organizer,
 and allowlisted diagnostics to an Admin.
 
+### Console navigation accessibility (BIO-708 / CN-072)
+
+The browser opens a nested Admin screen on a narrow viewport and verifies
+that its current navigation section is fully visible without scrolling the
+page. Keyboard activation moves focus to the main content. A short desktop
+viewport keeps the current section and Sign out visible after resizing.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

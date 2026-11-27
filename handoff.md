@@ -1394,3 +1394,19 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   categories and 42 tracked Jira items remain. Browser replay playback,
   raw engine scores and log retention are open. Mobile console navigation
   has a ready accessibility improvement for the next PR.
+
+### 2026-11-28 — BIO-708 Console navigation accessibility
+
+- Confirmed PR #79 merged into `main` at `0a1e028`. Started
+  `BIO-708-console-navigation-accessibility` from the fetched commit.
+- The shared navigation marks the current section on nested pages and
+  scrolls the navigation area to keep the link visible. Keyboard activation
+  moves focus to the main content. Focus outlines stay within the link bounds.
+- The production build and all 30 Playwright tests passed (45.5 s).
+  The browser verifies deep-link visibility on mobile, keyboard focus,
+  current navigation and Sign out on a short desktop after resizing.
+  Desktop and mobile renders used disposable services.
+- Updated the frontend guide, test plan, Jira, CN-072, changelog,
+  coverage and memory. The 91 statuses, nine backlog categories and 42
+  Jira items remain. The scoped tournament audit endpoint is ready for
+  its Organizer console link and view.

@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Console navigation accessibility (BIO-708, CN-072)** keeps the current
+  section visible on narrow or short viewports and preserves keyboard focus.
+
 - **Structured match log view (BIO-705, CN-071)** displays verified attempt
   events and team output according to the current viewer's scope.
 
