@@ -110,8 +110,7 @@ def tournaments(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def dependencies(request):
-    return Response({'items': [{'name': name, **{k: info[k] for k in ('version', 'sha256', 'description')}}
-                               for name, info in BU.CATALOGUE.items()], 'max_files': BU.MAX_FILES, 'max_bytes': BU.MAX_BYTES})
+    return Response({'items': BU.dependency_catalogue(), 'max_files': BU.MAX_FILES, 'max_bytes': BU.MAX_BYTES})
 
 
 @api_view(['GET'])

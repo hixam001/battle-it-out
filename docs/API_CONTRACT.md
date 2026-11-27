@@ -865,7 +865,12 @@ Canonical new paths use a trailing slash except `analytics.csv`.
 
 - GET/HEAD `/health/` implements process liveness; §1.1 records the shared error/request-ID behavior.
 - Session lifecycle: GET `/auth/session/`, POST `/auth/login/`, POST `/auth/logout/`.
-- GET `/tournaments/` lists current accessible records; GET `/dependencies/` is a public pinned catalogue.
+- GET `/tournaments/` lists current accessible records.
+- GET `/dependencies/` is public. It returns `items` with a `name`, exact
+  `version`, reviewed `sha256` and `description` for each verified release,
+  plus the interim `max_files` and `max_bytes` limits. A bundle may declare
+  one version per name in `requirements.json`. Stored bundles keep their
+  original release pins.
 - GET `/tournaments/{id}/live/` supplies numeric board snapshots and safe match metadata, with current authorization on every poll, private/no-store cache policy and 410 after archive.
 - GET `/tournaments/{id}/analytics/` and `/analytics.csv` expose results-derived team/version/map/round and failure/timing statistics. No source, host path or bot output is included.
 - GET/POST `/tournaments/{id}/teams/{team}/submissions/` and GET `/tournaments/{id}/submissions/{version}/download/` implement team-private history, captain upload using the stored deadline, queued validation and authorized source/bundle delivery. POST accepts one multipart `file` and requires `Idempotency-Key`.

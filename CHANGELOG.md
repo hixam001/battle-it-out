@@ -7,6 +7,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 ### Added
 
 - **Console foundation (BIO-701; CN-037):** keyboard skip navigation, access screens for restricted direct links, and server request IDs on API errors.
+- **Exact dependency release pins (BIO-510; CN-039)** verify published source
+  against a recorded SHA-256. Adding a new version preserves older snapshots
+  and exports. The existing `biohelpers` 1.0.0 pin and bundle hashes are unchanged.
 
 - **Private replay download (BIO-605; CN-032):** authenticated `.bc26` attachment from the existing vault after current tournament authorization and digest verification. Archive denies new downloads for every role, and hidden replays share the missing response. The live match list now exposes the game ID for downloads.
 
