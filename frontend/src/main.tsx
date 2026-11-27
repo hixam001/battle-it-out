@@ -6,6 +6,7 @@ import { Submissions, Team } from "./participant";
 import { BracketResults, MatchResult, Replay } from "./results";
 import { Approvals } from "./approvals";
 import { Organizer } from "./organizer";
+import { AnnouncementForm } from "./announcements";
 import "./style.css";
 
 type User = { id: number; username: string; admin: boolean };
@@ -398,6 +399,7 @@ const consoleLinks = [
   { page: "operations", href: "/#operations", label: "Operations", icon: "⚙" },
   { page: "approvals", href: "/admin/approvals", label: "Approvals", icon: "✓" },
   { page: "organizer", href: "/organizer", label: "Manage tournaments", icon: "▤" },
+  { page: "announce", href: "/announcements/new", label: "Post announcement", icon: "◈" },
 ] as const;
 type ConsolePage = (typeof consoleLinks)[number]["page"] | "match" | "replay";
 type ConsoleRoute = { page: ConsolePage; id?: string };
@@ -638,6 +640,7 @@ function Console({ user, route, navigate, logout }: {
   const showTournament = !["notifications", "operations", "approvals", "organizer", "match", "replay"].includes(page);
   const canOpen = (target: ConsolePage) => {
     if (target === "operations" || target === "approvals") return user.admin;
+    if (target === "announce") return user.admin || role === "organizer" || loading;
     if (target === "organizer") return role === "organizer" || (loading && !user.admin);
     if (target === "notifications") return !user.admin && role !== "organizer";
     if (target === "team") return role === "participant" || (loading && !user.admin);
@@ -655,7 +658,7 @@ function Console({ user, route, navigate, logout }: {
         </a>
         <p className="eyebrow">COMPETITION CONSOLE</p>
         <nav aria-label="Console">
-          {consoleLinks.filter((link) => canOpen(link.page) && (!loading || !["notifications", "team", "organizer"].includes(link.page))).map((link) => (
+          {consoleLinks.filter((link) => canOpen(link.page) && (!loading || !["notifications", "team", "organizer", "announce"].includes(link.page))).map((link) => (
             <a key={link.page} href={link.href} aria-current={page === link.page ? "page" : undefined}
               onClick={(event) => {
                 if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -707,6 +710,7 @@ function Console({ user, route, navigate, logout }: {
               ? "Admin access is required to open Operations."
               : page === "approvals" ? "Admin access is required to review tournaments."
               : page === "organizer" ? "Organizer access is required to manage tournaments."
+              : page === "announce" ? "Tournament staff access is required to post announcements."
               : page === "team" ? "My team is available to participant accounts."
               : "Notifications are available to linked participant accounts."}</p>
             <a href="/dashboard">Open Dashboard</a>
@@ -732,6 +736,11 @@ function Console({ user, route, navigate, logout }: {
           <p role="status">Loading tournaments…</p>
         ) : page === "dashboard" ? (
           <Dashboard cup={cup} role={role} unavailable={Boolean(error)} />
+        ) : page === "announce" ? (
+          cup ? <AnnouncementForm key={cup.id} tournament={cup} /> :
+            <section className="empty"><h1>Post announcement</h1>
+              {!error && <p>No tournaments are available to your account.</p>}
+            </section>
         ) : page === "bracket" ? (
           cup ? <BracketResults key={cup.id} tournament={cup} /> :
             <section className="empty">

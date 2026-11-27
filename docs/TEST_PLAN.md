@@ -308,7 +308,7 @@ recipient, rollback on audit capacity failure, archived-state refusal and
 deletion of announcement content with retained audit metadata.
 
 Full TC-08 still requires a real provider, production outage and backup/restore
-drill. Staff recipients, approval/dispute notices, announcement UI and
+drill. Staff recipients, approval/dispute notices and
 notification-store migration remain open. Web tests require explicit module
 labels in the webapp README.
 
@@ -388,6 +388,12 @@ Separate Organizer and Admin browser sessions exercise the real draft,
 submit, reject, edit, resubmit, approve and manual registration-opening
 flow. The browser suite also verifies that an unassigned Organizer's
 direct tournament link is refused and a participant cannot open draft creation.
+
+### Staff announcement screen (BIO-607 / CN-057)
+
+The browser test drops the HTTP response after the disposable API publishes
+an announcement. The unchanged retry keeps the same key and counts. The
+verified participant sees one copy and cannot open the staff form.
 
 ### Scaffold / execution demo
 

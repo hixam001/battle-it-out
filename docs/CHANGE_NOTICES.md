@@ -811,3 +811,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
   screen displays the rejection reason for revision.
 - The production build and all 16 Playwright cases passed, including the
   Organizer/Admin lifecycle and role and assignment refusals.
+
+## CN-057 — Staff announcement screen (2026-11-27)
+
+- **BIO-607:** Admins and assigned Organizers select a tournament and
+  publish a plain-text announcement to its verified roster. The form
+  reports notices posted and optional emails queued.
+- An unchanged retry after a lost response uses the same idempotency
+  key and returns the original counts. The production build and all 17
+  Playwright tests passed on disposable state.

@@ -501,3 +501,41 @@ test("Organizer routes enforce role and tournament assignment", async ({ page, u
   await expect(page.getByRole("alert")).toHaveText("Organizer access is required to manage tournaments.");
   await expect(page.getByRole("button", { name: "Create draft" })).toHaveCount(0);
 });
+
+test("Organizer publishes one announcement despite a lost response", async ({ page, useSession }) => {
+  await useSession(page, "organizer");
+  await page.goto("/announcements/new");
+  const tournament = page.getByLabel("Tournament", { exact: true });
+  await tournament.selectOption("approval-changed");
+  await expect(page.getByText("Announcements are available after approval and before archive.")).toBeVisible();
+  await tournament.selectOption("cup");
+
+  const keys: string[] = [];
+  await page.route("**/api/v1/tournaments/cup/announcements/", async (route) => {
+    keys.push(route.request().headers()["idempotency-key"]);
+    if (keys.length === 1) {
+      const response = await route.fetch();
+      expect(response.status()).toBe(201);
+      await route.abort("failed");
+    } else {
+      await route.continue();
+    }
+  });
+  await page.getByRole("textbox", { name: "Headline" }).fill("Fixture captain briefing");
+  await page.getByRole("textbox", { name: "Message" }).fill("Meet in the fixture lobby before the round.");
+  const publish = page.getByRole("button", { name: "Publish announcement" });
+  await publish.click();
+  await expect(page.getByRole("alert")).toBeVisible();
+  await publish.click();
+  await expect(page.getByRole("status")).toHaveText("Inbox notices posted: 2. Emails queued: 2.");
+  expect(keys).toHaveLength(2);
+  expect(keys[1]).toBe(keys[0]);
+
+  await useSession(page, "captain-a");
+  await page.goto("/notifications");
+  await expect(page.getByRole("heading", { name: "Fixture captain briefing" })).toHaveCount(1);
+  await expect(page.getByText("Meet in the fixture lobby before the round.")).toBeVisible();
+  await page.goto("/announcements/new");
+  await expect(page.getByRole("alert")).toHaveText("Tournament staff access is required to post announcements.");
+  await expect(page.getByRole("button", { name: "Publish announcement" })).toHaveCount(0);
+});

@@ -13,6 +13,8 @@ triage, deadline requests, purge checks and a staging recovery rehearsal. The
 console is read-only for those operational incidents. Use **Approvals** to
 approve or reject Organizer-submitted tournaments. **Match disputes** lets
 you review cases in the selected tournament and record a resolution.
+**Post announcement** sends a dashboard notice to the verified roster of
+the selected tournament and shows how many optional emails were queued.
 
 The rest of this guide describes the planned Admin workflow and the current
 library behavior where identified. Deployment and owner decisions are tracked

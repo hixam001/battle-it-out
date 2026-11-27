@@ -21,7 +21,8 @@ Production static assets are generated into ignored `frontend/dist/`. Serve
 `/participant/submissions`, `/bracket`,
 `/participant/tournaments/{id}/bracket`, `/matches/{id}` and
 `/matches/{id}/replay`, `/admin/approvals`, `/organizer`,
-`/organizer/tournaments/new` and `/organizer/tournaments/{id}`; retain the same-origin
+`/organizer/tournaments/new`, `/organizer/tournaments/{id}` and
+`/announcements/new`; retain the same-origin
 `/api` route to Django. Hosting,
 TLS, reverse proxy and public deployment remain operator/deployment work; no
 external Site has been created or published. Native session cookies and masked
@@ -73,6 +74,10 @@ Organizers use **Manage tournaments** to create drafts, revise assigned
 tournaments, send them for approval and open registration upon approval.
 The form shows rejection reasons and applies existing deadline and version
 checks. Refresh tournament loads a new decision or reloads stale settings.
+
+**Post announcement** lets current tournament staff publish a headline and
+message to the selected tournament's verified roster. The form reports
+inbox and email-queue counts and retries unchanged text with the same key.
 
 Direct console links preserve the destination through sign-in. Operations is
 Admin-only, and the personal inbox uses participant scope. The API remains

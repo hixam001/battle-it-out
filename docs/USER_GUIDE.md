@@ -89,6 +89,11 @@ to read the reason, save revised settings and resubmit. Use **Refresh
 tournament** to pick up a decision or reload after an edit conflict. After
 approval, select **Open registration** while the deadline is still open.
 
+Open **Post announcement** for a published, unarchived tournament. Review
+the selected tournament, enter a headline and a plain-text message, then
+publish to its verified roster. The dashboard and queued-email counts
+appear after publication.
+
 Use the account assigned to the tournament. **Match room** and **Analytics** are
 scoped to that assignment. In **Bot submissions**, use the team's registered
 ID to review its versions or download its submission. Captains upload and
