@@ -1478,3 +1478,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated the backend guide, project and test plans, Jira, CN-076, coverage
   and memory. All 91 statuses, nine backlog categories and 42 Jira items
   remain. Hosted web, browser and real-engine checks and deployment stay open.
+
+### 2026-11-28 — BIO-804 Web and browser CI
+
+- Confirmed PR #84 merged into `main` at `0ba1ce6` after the
+  [hosted unit matrix](https://github.com/hixam001/battle-it-out/actions/runs/46114109966)
+  passed. CPython 3.12.16, 3.13.18, 3.14.10 and 3.15.2 each passed
+  729 of 786 cases with 57 skips. Started `BIO-804-web-and-browser-ci`
+  from the fetched commit.
+- Added `.github/workflows/web-tests.yml`. It runs Django system,
+  migration and HTTP tests with disposable PostgreSQL 18.7. It seeds
+  synthetic browser data and runs Chromium Playwright against loopback
+  Django and Vite. Signing material is generated per job. CI uses the
+  runner's installed Chromium and prints its version in the log.
+- Shell syntax passed locally. Hosted results are in the PR check.
+  CN-074 records the matching local Django and Playwright evidence.
+- Updated web and frontend guides, project and test plans, Jira, CN-077
+  and memory. All 91 statuses, nine backlog categories and 42 Jira items
+  remain. Hosted real-engine verification and deployment remain open.

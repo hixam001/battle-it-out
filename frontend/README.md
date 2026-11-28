@@ -131,6 +131,9 @@ The console keeps the current section visible inside its navigation strip.
 Keyboard activation of a console link moves focus to the main content.
 
 Browser fixtures must target loopback and use disposable seeded accounts/data.
+The **Web and browser tests** workflow provisions those services and runs
+the Chromium suite for frontend and backend changes to `main`.
+See [the workflow](../.github/workflows/web-tests.yml).
 Use the [Django local environment](../backend/webapp/README.md#install-and-run)
 with `BIO_WEB_DEBUG=1`, a fresh PostgreSQL database named `bio_qa_*`, and a new
 absolute `BIO_DATA_DIR`. Run the fixture commands from the repository root:
@@ -152,7 +155,8 @@ npm test
 ```
 
 `BIO_WEB_BASE_URL` overrides the loopback test URL. `BIO_BROWSER_PATH` can point
-to an already installed compatible Chromium executable. Screenshots go to
+to an installed compatible Chromium executable. CI uses the runner's version
+and prints it in the test log. Screenshots go to
 ignored test-results. Desktop/mobile layout, keyboard navigation, real login,
 analytics, dispute/comment, submissions catalogue, logout, Admin operations,
 the dashboard and private inbox are exercised using local test data. Additional
