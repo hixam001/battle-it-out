@@ -862,8 +862,8 @@ below use canonical trailing slashes and the existing shared notification store.
 The session account must have the explicit operator-provisioned participant
 roster link described in CN-028. No recipient ID comes from the request or from
 the Django account's numeric ID. Staff privileges do not grant inbox access.
-Unlinked and staff accounts return `403`; their recipient provisioning and
-approval/rejection notices remain follow-up work. Anonymous requests return
+Unlinked and staff accounts return `403` on the participant inbox routes.
+The Organizer decision feed has its own scope below. Anonymous requests return
 `401`. Link changes take effect on the next request. Personal notices remain
 recipient-owned after tournament scope ends; filtering a nonexistent tournament
 returns an empty feed without disclosing its existence.
@@ -920,6 +920,18 @@ Both PATCH routes set an absolute state and are naturally idempotent; this
 slice needs no idempotency-key receipt. Every response uses CN-029's fresh
 request ID and `private, no-store`; errors use the shared envelope. No SQL/JSON
 cross-store transaction or full notification database migration is claimed.
+
+### GET `/organizer/approval-notices/`
+
+The creating Organizer can read up to 20 recent decisions for tournaments
+with a current explicit assignment. Approvals and rejection reasons come
+from the saved review history. An approval after resubmission leaves prior
+rejections in the recent history. Each item includes `id`, `tournament_id`,
+`tournament_name`, `decision`, `created_at` and nullable `reason`. Reviewer
+IDs are excluded. Results are newest first, with tournament ID and review
+sequence breaking timestamp ties. Other authenticated roles receive `403`.
+Decisions on deleted tournaments or revoked assignments are omitted. This
+dashboard feed is read-only and uses `private, no-store` (CN-088).
 The participant inbox and account settings use these endpoints (CN-031/069).
 See the [frontend guide](../frontend/README.md).
 Deadline changes publish participant notices (CN-041). Real email providers

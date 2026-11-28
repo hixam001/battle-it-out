@@ -92,6 +92,11 @@ configuration. Self-service account requests and deletion are planned.
 
 ## 5. For Organizers
 
+Open **Manage tournaments** to see **Recent approval decisions** for
+tournaments you created and still manage. Rejection notices include the
+recorded reason and link to the tournament settings. Select **Refresh
+decisions** after a new review.
+
 Open **Manage tournaments** to list assigned tournaments or create a draft.
 Set the registration and submission deadlines in your browser's timezone.
 Submit the draft for Admin review. If it is rejected, open the tournament

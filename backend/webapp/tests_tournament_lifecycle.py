@@ -16,6 +16,7 @@ from .models import AuditEvent, Identity, OrganizerAssignment
 
 class TournamentLifecycleAPI(TestCase):
     collection = '/api/v1/tournaments/'
+    notice_feed = '/api/v1/organizer/approval-notices/'
 
     @classmethod
     def setUpTestData(cls):
@@ -97,6 +98,32 @@ class TournamentLifecycleAPI(TestCase):
         self.change(admin, path+'approve/', 5, T.APPROVED, confirm=True)
         self.change(creator, path+'open-registration/', 6, T.OPEN)
         self.assertEqual(self.send(creator, path+'open-registration/', {'expected_version': 6}).status_code, 409)
+
+        notices = creator.get(self.notice_feed)
+        self.assertEqual(notices.status_code, 200)
+        self.assertEqual(notices['Cache-Control'], 'private, no-store')
+        approved, rejected = notices.json()['items']
+        self.assertEqual([item['decision'] for item in (approved, rejected)], ['approved', 'rejected'])
+        self.assertIsNone(approved['reason'])
+        self.assertEqual(rejected['reason'], reason)
+        self.assertEqual(rejected['tournament_name'], 'Updated contest')
+        self.assertEqual(set(rejected), {'id', 'tournament_id', 'tournament_name', 'decision', 'created_at', 'reason'})
+        self.assertEqual(creator.get(self.notice_feed).json(), notices.json())
+
+    def test_approval_decisions_require_the_creators_current_assignment(self):
+        creator, admin = self.session(self.organizer), self.session(self.admin)
+        tid = self.create(creator)['id']
+        path = f'{self.collection}{tid}/'
+        self.change(creator, path+'submit-for-approval/', 1, T.PENDING)
+        self.change(admin, path+'reject/', 2, T.REJECTED, reason='Private review reason')
+        self.assertEqual(len(creator.get(self.notice_feed).json()['items']), 1)
+        self.assertEqual(Client().get(self.notice_feed).status_code, 401)
+        self.assertEqual(admin.get(self.notice_feed).status_code, 403)
+        self.assertEqual(self.session(self.participant).get(self.notice_feed).status_code, 403)
+        OrganizerAssignment.objects.create(user=self.other, tournament_id=tid)
+        self.assertEqual(self.session(self.other).get(self.notice_feed).json(), {'items': []})
+        OrganizerAssignment.objects.filter(user=self.organizer, tournament_id=tid).update(active=False)
+        self.assertEqual(creator.get(self.notice_feed).json(), {'items': []})
 
     def test_retry_repairs_assignment_after_postgres_rollback(self):
         creator = self.session(self.organizer)

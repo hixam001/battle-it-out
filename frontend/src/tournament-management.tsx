@@ -14,6 +14,14 @@ type Tournament = Summary & {
 };
 type Fields = { name: string; description: string; registration_deadline: string; submission_deadline: string };
 type Apply = (record: Tournament) => void;
+type ApprovalNotice = {
+  id: string;
+  tournament_id: string;
+  tournament_name: string;
+  decision: "approved" | "rejected";
+  created_at: string;
+  reason: string | null;
+};
 
 const blank: Fields = { name: "", description: "", registration_deadline: "", submission_deadline: "" };
 const editable = ["draft", "rejected", "approved", "registration_open"];
@@ -79,7 +87,53 @@ export function TournamentManagement({ id, userId, admin, create, tournaments, n
           </div>
         ) : !loadError && <p>{admin ? "Create a tournament to get started." : "No tournaments are assigned to this account."}</p>}
       </section>
+      {!admin && <ApprovalNotices />}
     </>
+  );
+}
+
+function ApprovalNotices() {
+  const [notices, setNotices] = useState<ApprovalNotice[]>();
+  const [error, setError] = useState("");
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    api<{ items: ApprovalNotice[] }>("/organizer/approval-notices/", { signal: controller.signal })
+      .then(({ items }) => { if (!controller.signal.aborted) setNotices(items); })
+      .catch((error: Error) => { if (!controller.signal.aborted) setError(error.message); });
+    return () => controller.abort();
+  }, [revision]);
+
+  function refresh() {
+    setNotices(undefined);
+    setError("");
+    setRevision((value) => value + 1);
+  }
+
+  return (
+    <section className="panel" aria-labelledby="approval-notices-heading">
+      <div className="panel-toolbar">
+        <h2 id="approval-notices-heading">Recent approval decisions</h2>
+        <button className="text-button" onClick={refresh} disabled={!notices && !error}>Refresh decisions</button>
+      </div>
+      {error ? <p className="error" role="alert">{error}</p> : !notices ?
+        <p role="status">Loading approval decisions…</p> : notices.length ? (
+          <ul className="notice-list">
+            {notices.map((notice) => (
+              <li key={notice.id} className="notice-item">
+                <div>
+                  <div className="notice-meta">
+                    <span>{formatStatus(notice.decision)}</span>
+                    <time dateTime={notice.created_at}>{new Date(notice.created_at).toLocaleString()}</time>
+                  </div>
+                  <h3><a href={organizerTournamentPath(notice.tournament_id)}>{notice.tournament_name}</a></h3>
+                  {notice.reason && <p>{notice.reason}</p>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : <p>No approval decisions yet.</p>}
+    </section>
   );
 }
 

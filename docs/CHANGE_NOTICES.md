@@ -1094,3 +1094,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
   with engine 1.2.6. Median match time was 4.3 seconds for the reference
   pairing and 5.3 seconds with the CPU-load fixture. These are local control
   results. DEC-04 still requires a representative target-hardware benchmark.
+
+## CN-088 — Organizer approval notices (2026-11-28)
+
+- **BIO-607:** The Organizer console shows recent approval and rejection
+  decisions from the saved review history. Only the creator with an active
+  assignment receives the notice, including the rejection reason when recorded.
+- The feed reads existing decision records and provides a link to the
+  tournament. General staff inbox state, disputes and email delivery still
+  need their documented work and decisions.

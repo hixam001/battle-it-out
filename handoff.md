@@ -1662,3 +1662,18 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated the runner guide, test plan, Jira, coverage, CN-087, changelog
   and memory. All nine backlog categories and 42 Jira items remain.
   DEC-04 needs an approved target and representative bots and maps.
+
+### 2026-11-28 — BIO-607 Organizer approval notices
+
+- Confirmed PR #95 merged to `main` at `fdb8203` after all three hosted
+  checks passed. All 792 backend cases also passed locally in real-engine
+  mode on Python 3.15.2 in 457.594 seconds. Started this task from the merge.
+- The Organizer console lists recent review decisions and rejection reasons
+  for the creating Organizer's current assignments. Decisions come from the
+  saved review history and link back to the tournament.
+- The production build, all 150 Django tests plus system and migration
+  checks, and all 32 browser tests passed with disposable services.
+- Updated the HTTP and browser tests, API and user guides, test plan, Jira,
+  coverage, CN-088, changelog and memory. All nine backlog categories and
+  42 Jira items remain. General staff inbox, preferences, dispute notices
+  and production delivery remain open.

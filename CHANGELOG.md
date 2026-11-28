@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Organizer approval notices (BIO-607, CN-088)** show recent approvals
+  and rejection reasons to the creating Organizer while assigned.
+
 - **Sandbox resource measurement (BIO-204, CN-087)** reports repeated
   reference and CPU-load control results with runtime and input identity.
 
