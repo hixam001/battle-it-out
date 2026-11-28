@@ -47,6 +47,7 @@ jobs:
           bwrap --version
           "${JAVA_HOME_21_X64:?}/bin/java" -version
           printf 'JAVA_HOME=%s\n' "$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+          printf '%s/bin\n' "$JAVA_HOME_21_X64" >> "$GITHUB_PATH"
       - name: Install the locked Python launcher environments
         run: |
           versions=$(python3 -c 'from backend.run_tests import tested_versions; print(" ".join(tested_versions()))')
@@ -109,6 +110,7 @@ jobs:
           BIO_CI_FULL_PYTHON: ${{ inputs.full_python }}
         run: |
           ss -V
+          javac --version
           launcher_python="backend/.venvs/py$BIO_CI_FULL_PYTHON/bin/python"
           "$launcher_python" --version
           "$launcher_python" backend/run_tests.py --integration --require-no-skips --verbose

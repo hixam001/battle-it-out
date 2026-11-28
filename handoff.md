@@ -1708,3 +1708,8 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated the backend guide, test and project plans, coverage, Jira, CN-090,
   changelog and memory. All nine backlog categories and 42 Jira items remain.
   A pinned worker image, deployment and further OS support remain open.
+- Local full integration passed all 794 cases with zero skips in 500.570
+  seconds. The first hosted run failed live transport and the configured
+  service lifecycle. The workflow now selects JDK 21 for both Gradle and
+  the live adapter compiler, and the live test includes bounded server-log
+  diagnostics if another fixture start fails.

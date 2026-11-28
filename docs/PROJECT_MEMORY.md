@@ -1585,3 +1585,10 @@ skip refusal and propagation through the matrix. The seven workflow shell
 blocks passed syntax checks. All 91 requirement statuses, nine backlog
 categories and 42 Jira items remain. Target deployment, pinned worker image
 and approved supported OSes remain open.
+
+The initial local Python 3.15.2 full run passed all 794 cases with zero
+skips in 500.570 seconds. The first hosted run failed live transport and
+service lifecycle. Ubuntu 26.04 ships Java 25 as its PATH default while
+the workflow selected `JAVA_HOME` 21 for Gradle. A local mixed-JDK
+fixture confirmed that incompatible compiler output cannot load on JDK
+21. The job now selects the same JDK for both Gradle and `javac`.
