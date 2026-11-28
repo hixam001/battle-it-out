@@ -2,6 +2,7 @@
 """Session-scoped tournament drafts, settings and approval transitions."""
 from contextlib import contextmanager
 from datetime import UTC, datetime
+from heapq import nlargest
 from uuid import NAMESPACE_URL, uuid5
 
 from django.contrib.auth import get_user_model
@@ -21,6 +22,7 @@ from .views import body_fields, private, timestamp
 DEADLINES = ('registration_deadline', 'submission_deadline')
 SETTINGS = ('name', 'description', *DEADLINES)
 PARTICIPANT_STATUSES = (T.OPEN, T.RUNNING, T.COMPLETED, T.ARCHIVED)
+APPROVAL_NOTICE_LIMIT = 20
 TRANSITIONS = {
     'submit-for-approval': (T.submit_for_approval, ('organizer',), ()),
     'approve': (T.approve, ('admin',), ('confirm',)),
@@ -88,6 +90,30 @@ def list_tournaments(user):
         items.append({**{key: record[key] for key in ('id', 'name', 'description', 'status', 'deadlines')},
                       'teams': sorted(teams), 'captain_teams': sorted(who.captain_of.intersection(teams))})
     return private({'items': items, 'role': who.role})
+
+
+def approval_notice_rows(who, tournaments):
+    for tid in who.tournament_ids:
+        record = tournaments.get(tid)
+        if (not record or record['status'] == T.DELETED or record['created_by_role'] != 'organizer'
+                or record['created_by'] != who.user_id):
+            continue
+        for sequence, review in enumerate(record['approvals']):
+            notice = {
+                'id': f'{tid}:{sequence}', 'tournament_id': tid, 'tournament_name': record['name'],
+                'decision': review['decision'], 'created_at': review['at'], 'reason': review['reason'],
+            }
+            yield (review['at'], tid, sequence), notice
+
+
+@api_view(['GET'])
+def approval_notices(request):
+    who = D.actor(request.user)
+    if who.role != 'organizer':
+        raise PermissionDenied('Organizer access is required.')
+    records = D.runtime().tournaments.store.snapshot()['tournaments']
+    newest = nlargest(APPROVAL_NOTICE_LIMIT, approval_notice_rows(who, records), key=lambda row: row[0])
+    return private({'items': [notice for _, notice in newest]})
 
 
 def assign_creator(user, tid):

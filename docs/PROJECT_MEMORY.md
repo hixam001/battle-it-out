@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-607 / CN-088 shows recent approval and rejection decisions in the
+  current creating Organizer's console.
 - BIO-204 / CN-087 adds a sandboxed reference and CPU-load measurement
   command. The local control sample completed six matches.
+  PR #95 merged into `main` at `fdb8203` after all three hosted checks passed.
 - BIO-404 / CN-086 includes model table visibility in PostgreSQL readiness.
   PR #94 merged into `main` at `fdd473c` after all three hosted checks passed.
 - BIO-408 / CN-085 streams verified private source and bundle attachments.
@@ -483,8 +486,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    (BIO-510). More packages require source and module collision review and pins,
    additional languages follow compatibility work, and arbitrary participant
    installs/custom runtimes remain unapproved.
-5. **Tournament operations and deletion:** approval and rejection notices,
-   management screens and cross-store deletion; raw engine point display
+5. **Tournament operations and deletion:** remaining management screens
+   and cross-store deletion; raw engine point display
    and paused-job mutation controls; queued/
    cancelable account deletion, historical-roster removal without changed
    results, captain transfer/no successor (DEC-07), team delete/restore after
@@ -511,9 +514,9 @@ with current code and the coverage matrix; nothing here is closed by intake.
    receipts and a link to retained results. CN-067 adds Admin roster import
    and team review with audited source downloads. CN-074 verifies that
    archived replay URLs return `410` and official results stay identical.
+   CN-088 adds Organizer dashboard approval and rejection notices.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
-   store migration, real provider and deployment; Organizer approval/rejection
-   and dispute notices; mandatory security
+   store migration, real provider and deployment; dispute notices; mandatory security
    email policy, owner wording/retry review, expiry alerts and real outage drill.
    Check/round/draw adapters and failed-email alert retry hooks already exist.
    CN-030 supplies linked-participant feed/read/preferences HTTP endpoints with
@@ -523,7 +526,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    scoped announcement publishing to the verified roster. CN-057 adds
    staff authoring and receipt counts in the console. Staff inboxes and a
    final pagination contract remain open. CN-069 adds the linked participant
-   account settings route for the same email preference.
+   account settings route for the same email preference. CN-088 adds a
+   read-only dashboard feed for the current creating Organizer.
 7. **Replays/logs/privacy:** object storage,
    short-lived URLs, full browser replay player (DEC-10), deployed purge schedule,
    backups/restore, indicator-text exposure review, durable log retention and
@@ -1520,3 +1524,20 @@ The report check verified per-side usage, reversed sides and both case
 counts. The CLI help and invalid repetition check passed. DEC-04 still
 needs representative bots, maps and target hardware. All 91 requirement
 statuses, nine backlog categories and 42 Jira items remain.
+
+PR #95 merged into `main` at `fdb8203` after the hosted unit, engine smoke
+and web/browser checks passed. All 792 cases in the local Python 3.15.2
+whole-backend integration suite passed in 457.594 seconds on the PR head.
+
+## CN-088 continuation evidence
+
+BIO-607 starts `BIO-607-organizer-approval-notices` from verified `main` at
+`fdb8203`. The Organizer console shows up to 20 saved decisions while the
+creator still holds the tournament assignment. The private feed projects
+approval and rejection history directly from the committed tournament record.
+Historic rejection reasons survive resubmission and subsequent approval.
+Current role and assignment govern each read.
+
+The production build, 150 Django cases plus system and migration checks,
+and 32 browser cases (46.6 seconds) passed on disposable services. The nine
+backlog categories, 42 Jira items and all 91 requirement statuses remain.

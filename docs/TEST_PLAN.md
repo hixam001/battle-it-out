@@ -333,9 +333,15 @@ checks the exact downloaded fixture replay, HTTP `410` after confirmed purge,
 and equality of the official result payload before and after archive.
 
 Full TC-08 still requires a real provider, production outage and backup/restore
-drill. Staff recipients, approval/dispute notices and
+drill. General staff recipients, dispute notices and
 notification-store migration remain open. Web tests require explicit module
 labels in the webapp README.
+
+The Organizer decision feed (BIO-607 / CN-088) reads recent approvals and
+rejections from committed history. HTTP tests verify order, rejection reason,
+other-role denial, another assigned Organizer's empty feed and revocation.
+The browser exercises rejection, resubmission and approval before verifying
+the decision history in the Organizer console.
 
 ## 4. Additional test categories
 

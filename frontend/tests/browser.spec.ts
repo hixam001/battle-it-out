@@ -672,6 +672,12 @@ test("Organizer creates, revises and opens an approved tournament", async ({ pag
   await page.getByRole("link", { name: "All tournaments" }).click();
   const created = page.getByRole("row").filter({ hasText: "Organizer browser fixture" });
   await expect(created.getByText("Registration open", { exact: true })).toBeVisible();
+  const decisions = page.getByRole("region", { name: "Recent approval decisions" });
+  const reviews = decisions.getByRole("listitem").filter({ hasText: "Organizer browser fixture" });
+  await expect(reviews).toHaveCount(2);
+  await expect(reviews.nth(0).getByText("Approved", { exact: true })).toBeVisible();
+  await expect(reviews.nth(1).getByText("Update the fixture description.")).toBeVisible();
+  await expect(reviews.nth(0).getByRole("link")).toHaveAttribute("href", `/organizer/tournaments/${id}`);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

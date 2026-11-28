@@ -17,6 +17,7 @@ urlpatterns = [
     path('api/v1/auth/session/', V.session), path('api/v1/auth/login/', V.login_view),
     path('api/v1/auth/logout/', V.logout_view),
     path('api/v1/tournaments/', tournament_lifecycle.tournaments),
+    path('api/v1/organizer/approval-notices/', tournament_lifecycle.approval_notices),
     path('api/v1/tournaments/<str:tid>/', tournament_lifecycle.tournament),
     path('api/v1/tournaments/<str:tid>/submit-for-approval/', tournament_lifecycle.transition, {'action': 'submit-for-approval'}),
     path('api/v1/tournaments/<str:tid>/approve/', tournament_lifecycle.transition, {'action': 'approve'}),

@@ -84,6 +84,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET | `/auth/session/` | Current user or null and masked CSRF token; private/no-store |
 | POST | `/auth/login/`, `/auth/logout/` | CSRF-protected session lifecycle |
 | GET | `/notifications/` | Linked recipient's bounded feed, unread/tournament filters and counts |
+| GET | `/organizer/approval-notices/` | Recent review history for the creating Organizer with a current assignment |
 | PATCH | `/notifications/{id}/` | Recipient-only read/unread setter; same-team notices remain private |
 | GET/PATCH | `/me/notification-preferences/` | Shared worker email preference; dashboard always enabled |
 | POST | `/tournaments/{id}/announcements/` | Current staff publish to the verified roster with session CSRF and an idempotency key |
