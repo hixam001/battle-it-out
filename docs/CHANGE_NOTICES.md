@@ -1015,3 +1015,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - A disposable PostgreSQL 18.7 and service-state restore removed a stale
   archived replay, returned `410` before and after the sweep and kept bracket
   and game responses equal. Target-host backup and restore remain open.
+
+## CN-080 — Round map verification (2026-11-28)
+
+- **BIO-304:** The round-start route and configured worker recheck the stored
+  pool against the local engine catalogue. A changed or missing map blocks
+  a new game. The HTTP request can be retried with the same key after repair.
+- Worker failures follow queue backoff before opening a match attempt. A
+  completed round remains safe to redeliver. The configured JAR must match
+  the launcher's runtime. Custom maps remain separate work.

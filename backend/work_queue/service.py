@@ -24,7 +24,7 @@ import sys
 import threading
 from pathlib import Path
 
-from backend.match_orchestrator import orchestrator as O
+from backend.match_orchestrator import maps as M, orchestrator as O
 from backend.match_orchestrator.store import JsonFileStore
 from backend.match_runner import launcher as L
 from backend.notifications import notifications as N
@@ -52,7 +52,8 @@ def notification_hooks(data_dir: Path, reg: R.Registry, store: JsonFileStore):
 
 def build_worker(data_dir: Path, *, python_version: str | None = None, python: Path | None = None, name: str | None = None,
                  lease: float = J.DEFAULT_LEASE, alert=None, sandbox: bool = True, play=None, run_fn=None,
-                 max_attempts: int = J.DEFAULT_MAX_ATTEMPTS, notify: bool = False, live_dir: Path | None = None, **worker_kw) -> Worker:
+                 max_attempts: int = J.DEFAULT_MAX_ATTEMPTS, notify: bool = False, live_dir: Path | None = None,
+                 engine_jar: Path | None = None, **worker_kw) -> Worker:
     """Wire the real launcher to both handlers. `play` and `run_fn` can be replaced (tests). `notify=True` adds
     the notification hooks (`notification_hooks`); off by default, so a data dir without a roster keeps working."""
     data_dir = Path(data_dir)
@@ -68,10 +69,16 @@ def build_worker(data_dir: Path, *, python_version: str | None = None, python: P
             run_fn = O.launcher_run_fn(L.DEFAULT_SCAFFOLD, py, reg.root, data_dir / "out" / "matches",
                                        lock_path=lock_path, sandbox=sandbox, live_dir=live_dir)
     on_decided, on_round = notification_hooks(data_dir, reg, store) if notify else (None, None)
+
+    def verify_map_pool(pool_id: str) -> None:
+        if engine_jar is not None:
+            M.verified_pool(store, pool_id, M.load_engine_maps(engine_jar), L.load_lock()["engine_version"])
+
     handlers = {
         J.CHECK_SUBMISSION: H.check_submission_handler(reg, lambda folder: T.check_submission(folder, play=play),
                                                        on_decided=on_decided),
-        J.RUN_ROUND: H.run_round_handler(store, run_fn, alert=alert, on_round=on_round),
+        J.RUN_ROUND: H.run_round_handler(store, run_fn, alert=alert, on_round=on_round,
+                                        verify_map_pool=verify_map_pool),
     }
     return Worker(queue, handlers, name=name, lease=lease, alert=alert, **worker_kw)
 

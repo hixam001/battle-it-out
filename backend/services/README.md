@@ -36,9 +36,11 @@ remains an incident for the next pass; it does not stop other tournaments.
 
 Copy [config.example.json](config.example.json) to an operator-owned location
 and set paths. Paths are absolute or relative to the **configuration file**.
-`engine_jar` must be the installed **1.2.6** engine JAR used by the launcher;
-the service reads map bytes directly and checks stored map-pool hashes at draw
-time. It does not provision or download the JAR or prove its provenance.
+`engine_jar` must point to the installed **1.2.6** engine JAR used by the
+launcher. The service checks stored map-pool hashes at draw time and before
+the worker plays a pooled round. A mismatch fails the queue job under its
+normal retry policy before recording a game attempt. Restore the expected
+JAR to let the next retry run. The service reads the configured JAR directly.
 `python_version` must be a tested minor in `versions.lock.json` and defaults to
 its primary. Worker startup checks the installed packages/scaffold through
 `launcher.verify`; each bot still runs under the existing sandbox/limits.

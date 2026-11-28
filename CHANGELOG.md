@@ -163,6 +163,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Fixed
 
+- **Round map verification (BIO-304, CN-080)** checks pinned map bytes at
+  round start and before the configured worker plays. Staff can retry the
+  same request after restoring the expected engine catalogue.
+
 - **Archived replay recovery (BIO-803, CN-079)** sweeps replay files that
   reappear after a restore. Archived downloads stay blocked and official
   match and bracket history stays intact.

@@ -1530,3 +1530,20 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated backend guides, test plan, coverage, Jira, CN-079, changelog and
   memory. BIO-NFR-09 moves to PARTIAL. All nine backlog categories and
   42 Jira items remain, including target-host backups, retention and restore.
+
+### 2026-11-28 — BIO-304 Recheck map pools before a round
+
+- Confirmed PR #87 merged into `main` at `43a178f` after all three hosted
+  checks passed. Started `BIO-304-verify-maps-before-rounds` from that merge.
+- The round-start API and configured worker recheck the stored immutable
+  pool against the engine catalogue. A mismatch leaves the round ready or
+  retries the queued job before a match attempt. A restored catalogue can
+  be retried with the same HTTP key. Completed rounds remain idempotent.
+- Python 3.15.2 passed 741 backend unit cases with 48 expected skips. All
+  148 Django cases and the system and migration checks passed. Tests use
+  a disposable PostgreSQL cluster and temporary fixtures. All 52 service
+  and map cases passed with real-engine integration in 65.656 seconds.
+- Updated the worker and orchestrator guides, API and test plans, Jira,
+  coverage, CN-080, changelog and memory. All 91 statuses, nine backlog
+  categories and 42 Jira items remain. The engine JAR configuration must
+  point at the launcher's installed runtime.
