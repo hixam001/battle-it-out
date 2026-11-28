@@ -3,7 +3,7 @@ id: battle-it-out-project-memory
 type: project
 status: active
 created: 2026-11-26
-updated: 2026-11-27
+updated: 2026-11-28
 confidence: high
 source: Claude project memory and sessions, repository sources, and GitHub PR status
 tags:
@@ -22,7 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-804 / CN-078 adds the primary-Python Battlecode engine smoke workflow.
 - BIO-804 / CN-077 adds hosted Django and Chromium Playwright checks.
+  PR #85 merged into `main` at `874e567` after all three hosted checks passed.
 - BIO-804 / CN-076 adds the Python backend unit matrix on GitHub Actions.
   PR #84 merged into `main` at `0ba1ce6` after all four hosted unit runs passed.
 - BIO-804 / CN-075 adds a clean frontend build check on GitHub Actions.
@@ -426,7 +428,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    house-bot algorithm (DEC-06), qualification-cutoff draw/audit (DEC-14), and
    complete TC-05 including these scenarios. Map pools exist; custom-map safety,
    suitability, per-round re-verification and production persistence remain.
-   Other OSes, 3.16/free-threaded builds and real-engine CI remain open. New
+   Other OSes, 3.16/free-threaded builds and wider real-engine CI remain open. New
    native bundle/live tests do not close any of these execution gates.
 4. **Registration/submissions:** public claim and verification endpoints and
    invitation delivery; remaining registration API contracts; locked-entry
@@ -511,12 +513,12 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Branding,
    usability, formal accessibility/nonvisual play-by-play and full FLOW-01–08
    acceptance remain; production capacity/outage/concurrency/multi-host tests,
-   target-host backups/recovery, deployment/TLS, real-engine CI,
+   target-host backups/recovery, deployment/TLS, wider real-engine CI,
    runbook adoption/sign-off, pilot and go-live approval remain open. CN-033
    supplies an interim runbook and console guide with disposable restore and
    web signing-key rehearsal. CN-075–077 add CI for the frontend build,
-   backend unit matrix, Django and browser tests. No release dates before
-   the benchmark.
+   backend unit matrix, Django and browser tests. CN-078 adds a primary-Python
+   real-engine replay smoke workflow. No release dates before the benchmark.
 9. **Owner/legal and follow-up scope:** written Battlecode Java-engine license
    clarification, copyright holder, participant terms and network source offer;
    reconcile proposed Jira numbering/create real issues; decide client pin
@@ -1288,3 +1290,15 @@ Shell blocks passed syntax checks. The PR's Web and browser tests check
 records hosted verification. The current local evidence is in CN-074.
 All 91 statuses, nine backlog categories and 42 Jira items remain.
 Hosted real-engine checks and deployment are open.
+
+## CN-078 continuation evidence
+
+BIO-804 starts from merged main at `874e567` on
+`BIO-804-hosted-engine-smoke`. It carries forward the earlier local draft
+workflow, selecting JDK 21, installing the primary Python launcher
+environment, starting the sandbox and resolving the Gradle runtime. It
+runs the replay integration module with sample bots and temporary output.
+All 40 replay cases passed locally on Python 3.15.2 in 20.362 seconds.
+All five workflow shell steps passed `bash -n`.
+Wider hosted integration coverage and deployment remain open. All 91
+requirement statuses, nine backlog categories and 42 Jira items remain.

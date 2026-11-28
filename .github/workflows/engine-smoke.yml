@@ -1,0 +1,86 @@
+name: Battlecode engine smoke test
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - backend/**
+      - .github/workflows/engine-smoke.yml
+  push:
+    branches: [main]
+    paths:
+      - backend/**
+      - .github/workflows/engine-smoke.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engine-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      UV_MANAGED_PYTHON: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: '0.13.10'
+          enable-cache: false
+      - name: Install bubblewrap and select JDK 21
+        run: |
+          sudo apt-get -o Acquire::Retries=2 update -qq
+          sudo apt-get -o Acquire::Retries=2 install -y --no-install-recommends bubblewrap
+          bwrap --version
+          "${JAVA_HOME_21_X64:?}/bin/java" -version
+          printf 'JAVA_HOME=%s\n' "$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+      - name: Install the primary Python launcher environment
+        run: |
+          primary=$(python3 -c 'from backend.match_runner.launcher import load_lock; print(load_lock()["primary_python"])')
+          uv python install "$primary"
+          python3 backend/match_runner/setup_env.py "$primary"
+          launcher_python="$GITHUB_WORKSPACE/backend/.venvs/py$primary/bin/python"
+          "$launcher_python" --version
+          printf 'BIO_CI_LAUNCHER_PYTHON=%s\n' "$launcher_python" >> "$GITHUB_ENV"
+      - name: Start Python through the match sandbox
+        run: |
+          "$BIO_CI_LAUNCHER_PYTHON" - <<'PYTHON'
+          import os
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          from backend.match_runner import sandbox
+
+          fd = sandbox.seccomp_pipe()
+          try:
+              command = sandbox.build_probe_command(Path(sys.executable), "print('Sandbox started')", fd)
+              subprocess.run(command, pass_fds=(fd,), check=True, timeout=30)
+          finally:
+              os.close(fd)
+          PYTHON
+      - name: Resolve the locked Java engine runtime
+        run: |
+          resolver="$RUNNER_TEMP/resolve-engine-runtime.gradle"
+          cat > "$resolver" <<'GRADLE'
+          gradle.projectsEvaluated {
+              def scaffold = gradle.rootProject
+              scaffold.tasks.register('resolveEngineRuntime') {
+                  doLast {
+                      scaffold.configurations.runtimeClasspath.files.each { println it.name }
+                  }
+              }
+          }
+          GRADLE
+          cd backend/battlecode26-scaffold
+          ./gradlew --console=plain --init-script "$resolver" resolveEngineRuntime
+      - name: Verify result and replay from the real Battlecode engine
+        run: |
+          "$BIO_CI_LAUNCHER_PYTHON" backend/run_tests.py --integration --verbose \
+            backend.match_orchestrator.tests.test_replays
