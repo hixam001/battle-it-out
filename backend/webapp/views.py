@@ -55,10 +55,23 @@ def readiness(request):
     params.update(connect_timeout=3, options=f'{options} -c statement_timeout=2000', autocommit=True)
     tables = [model._meta.db_table for model in apps.get_models(include_auto_created=True)
               if model._meta.managed and not model._meta.proxy]
+    history_tables = [AuditEvent._meta.db_table, DisputeEvent._meta.db_table]
     try:
         with connect(**params) as probe, probe.cursor() as cursor:
-            cursor.execute('SELECT bool_and(pg_catalog.to_regclass(name) IS NOT NULL) '
-                           'FROM unnest(%s::text[]) AS expected(name)', (tables,))
+            cursor.execute('''
+                WITH expected AS (
+                    SELECT pg_catalog.to_regclass(name) AS relation, name = ANY(%s::text[]) AS history
+                    FROM unnest(%s::text[]) AS tables(name)
+                )
+                SELECT bool_and(relation IS NOT NULL AND (NOT history OR EXISTS (
+                    SELECT 1 FROM pg_catalog.pg_trigger
+                    WHERE tgrelid = relation AND tgname = 'immutable_history'
+                      AND tgfoid = pg_catalog.to_regprocedure('bio_reject_history_change()')
+                      AND (tgenabled = 'A' OR (
+                          tgenabled = 'O' AND pg_catalog.current_setting('session_replication_role') <> 'replica'
+                      ))
+                ))) FROM expected
+            ''', (history_tables, tables))
             if not cursor.fetchone()[0]:
                 return JsonResponse({}, status=503)
     except OperationalError:

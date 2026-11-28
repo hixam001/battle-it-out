@@ -178,6 +178,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Fixed
 
+- **Append-only history readiness (BIO-407, CN-094)** reports unavailable
+  when visible PostgreSQL audit or dispute history lacks its active trigger.
+
 - **PostgreSQL readiness (BIO-404, CN-086)** reports `503` when the web
   connection can reach PostgreSQL but cannot see its required model tables.
 
