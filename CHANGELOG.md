@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Match result notice links (BIO-705, CN-091)** open the recorded result
+  from the dashboard and inbox while the recipient has team access.
+
 - **Full engine integration (BIO-804, CN-090)** adds an on-demand hosted
   backend suite with one job per locked Python family.
 
@@ -180,6 +183,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 - **Append-only history readiness (BIO-407, CN-094)** reports unavailable
   when visible PostgreSQL audit or dispute history lacks its active trigger.
+
+- **Sign-in failure limits (BIO-405, CN-093)** count failed authentication
+  while allowing successful sign-ins to share a connection source.
 
 - **PostgreSQL readiness (BIO-404, CN-086)** reports `503` when the web
   connection can reach PostgreSQL but cannot see its required model tables.

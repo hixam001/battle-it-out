@@ -1713,3 +1713,72 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   service lifecycle. The workflow now selects JDK 21 for both Gradle and
   the live adapter compiler, and the live test includes bounded server-log
   diagnostics if another fixture start fails.
+- All 794 hosted integration cases passed with zero skips on each locked
+  Python family after the JDK repair. PR #98 merged into `main` at `ac5236d`
+  after all eight hosted jobs passed.
+
+### 2026-11-28 — BIO-705 Match result links from notices
+
+- Started `BIO-705-match-result-notice-links` from verified `main` at
+  `bec3e2b` while PR #98 was running its engine matrix. Incorporated `ac5236d`
+  after its verified merge.
+- The dashboard and inbox link match-result notices to the official series
+  and its last recorded game. The HTTP projection resolves saved notice IDs
+  with current team access, including archived results. Personal notice text
+  remains available after a participant loses that access.
+- The production build, all 152 Django cases plus system and migration
+  checks, 101 notification library cases and 32 browser cases (49.2 seconds)
+  passed using disposable data.
+- Updated the notification source, result projection, React notice item,
+  tests, API and user guides, test plan, coverage, Jira, CN-091, changelog
+  and memory. All nine backlog categories and 42 Jira items remain. Raw
+  engine points, browser replay playback and formal acceptance remain open.
+
+- PR #99 merged into `main` at `53d947e` after all four hosted checks passed.
+
+### 2026-11-28 — BIO-802 Two-tournament worker rehearsal
+
+- Started `BIO-802-two-tournament-worker-rehearsal` at `bec3e2b` during
+  PRs #98 and #99's hosted checks. Incorporated `53d947e` after both merged.
+- The existing real-service test runs four bot checks and two queued rounds
+  on the same configured worker with different main maps. It verifies scoped
+  results, notices, live boards and replay files. Archive removes the first
+  tournament's artifacts and retains the other tournament's replay digests,
+  live boards and both official brackets. The next delivery is idle.
+- All 47 local service, scheduler and live-view cases passed with real-engine
+  integration on Python 3.15.2 and JDK 21 in 101.069 seconds.
+- Updated the regression fixtures, test plan, coverage, Jira, CN-092 and
+  memory. All nine backlog categories and 42 Jira items remain. Target-host
+  capacity, outages and multi-host operation remain open.
+
+- PR #100 merged into `main` at `1e50004` after all three hosted checks passed.
+
+### 2026-11-28 — BIO-405 Count failed sign-ins
+
+- Started `BIO-405-count-login-failures` from verified `main` at `bec3e2b`.
+  Incorporated `1e50004` after the earlier PRs merged.
+- The Django login route checks and records failures inside the existing
+  PostgreSQL source and account locks. Valid credentials leave failure
+  counts intact. The interim threshold and time window still apply.
+- All 152 Django tests and system and migration checks passed, including
+  twelve successful sign-ins from one source and the existing refusal tests.
+- Updated the web guide, API and test plans, Jira, CN-093, changelog and
+  memory. All nine backlog categories and 42 Jira items remain. Public
+  registration, verification email and account recovery remain open.
+
+- PR #101 merged into `main` at `5717a60` after all three hosted checks passed.
+
+### 2026-11-28 — BIO-407 / BIO-404 Audit and dispute history readiness
+
+- Started `BIO-407-audit-trigger-readiness` at `ac5236d` and incorporated
+  `5717a60` after the earlier backlog PRs merged.
+- The bounded read-only PostgreSQL query checks for enabled append-only
+  triggers on the visible audit and dispute history tables. Unprotected
+  test tables return redacted `503`; liveness stays `200` and restoring the
+  search path recovers readiness.
+- All 154 Django cases and system and migration checks passed on the
+  reconciled branch with isolated disposable PostgreSQL.
+- Updated the web and API guides, runbook, test plan, coverage, Jira,
+  CN-094, changelog and memory. All nine backlog categories and 42 Jira
+  items remain. Permanent legacy audit, deletion and production recovery
+  remain open.

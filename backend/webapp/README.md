@@ -49,8 +49,8 @@ and production provider/image/deployment work remain open.
 Native Django password hashing and session authentication are the reversible
 initial implementation. Session reads and login issue CSRF tokens; login,
 logout and authenticated mutations enforce CSRF. Login failure limits are
-PostgreSQL-backed: 10 attempts per source/account in 15 minutes, an **interim**
-operator policy. Public account registration, recovery and verification-email
+PostgreSQL-backed. The interim limit is ten failed attempts per source or
+account in 15 minutes. Successful sign-ins leave the failure counts intact. Public account registration, recovery and verification-email
 delivery are still part of the wider backend backlog. The landing page accurately
 directs users to their Organizer for account access.
 
@@ -185,6 +185,11 @@ preferences returns `email_enabled` and always-true `dashboard_enabled`.
 Delivery errors and provider fields stay private. The existing inbox shows
 announcements, deadline changes and emergency overrides. Real providers and
 the PostgreSQL migration of notification state remain open.
+
+Match-result notices include `result_match_id` when the recipient's verified
+team still has access to the official series. The dashboard and inbox link
+to its last recorded game, including after replay archive. The ordinary
+notice text stays readable in the personal inbox after access ends.
 
 Admins and assigned Organizers can publish an announcement with JSON
 `headline` and `message` fields and an `Idempotency-Key`. The route targets

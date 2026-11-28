@@ -393,7 +393,9 @@ default-runtime fixtures exercise the configured primary launcher.
 -   Secret/environment-variable exposure.
 -   Cross-team/cross-tournament IDOR.
 -   Unauthorized file download.
--   Rate limiting on login and invitation validation.
+-   Rate limiting on login and invitation validation. The PostgreSQL API
+    suite checks independent source and account failure limits and twelve
+    valid sign-ins on one source (BIO-405 / CN-093).
 -   SQL injection/XSS/CSRF as applicable to selected auth model.
 -   Audit tampering attempts.
 
@@ -419,6 +421,13 @@ using the pinned map and submissions. A second delivery writes no new
 results or advancements. Simulated game results keep the case independent
 of engine process timing. Target-host engine cleanup and throughput still
 need separate evidence.
+
+The real-service rehearsal (BIO-802 / CN-092) uploads four bots and queues
+two tournaments with distinct pinned map pools on one worker. It verifies
+sequential completions, tournament-specific match notices and live/replay
+artifacts, an idle redelivery check and an archive that preserves both
+official brackets and the other tournament's artifacts. The rehearsal uses
+fixture bots and disposable local state. Target capacity remains open.
 
 ## 5. Pre-demo checklist
 
@@ -747,3 +756,12 @@ after a failed audit. The browser flow opens a dispute, finds the filing on
 the assigned Organizer's dashboard and records a review. The participant sees
 the update at a mobile viewport and opens the selected tournament's dispute
 queue to read the review reason.
+
+### Match result notice links (BIO-705 / CN-091)
+
+The Django fixture generates a normal match-result event through the round
+notice source. It checks resolution to the last official game, unchanged
+read-state behavior, archive access and removal of the link after membership
+ends. A second event without a matching official series stays readable in
+the feed. Chromium checks that the dashboard and inbox use the same link,
+read-state changes preserve it and the participant can open the game by keyboard.

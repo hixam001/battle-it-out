@@ -87,7 +87,10 @@ archive.
 ## 4. Notifications and account lifecycle
 
 Open **Notifications** to read personal notices, filter to unread, mark a notice
-read or unread, or update your email preference. **Account settings** shows
+read or unread, or update your email preference. Select **View match result**
+from a result notice on the dashboard or in the inbox to open the recorded
+series and its last game. The link follows your current team access.
+**Account settings** shows
 the same email control. The inbox is available to linked participant accounts
 and includes past notices. Dashboard notices stay
 available when email is disabled. Email delivery depends on the event's provider

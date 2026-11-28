@@ -270,7 +270,8 @@ def _email_on(state: dict, user: str) -> bool:
     return state["preferences"].get(user, {}).get("email_enabled", True) is True
 
 
-def _nid(event_key: str, user: str) -> str:
+def notification_id(event_key: str, user: str) -> str:
+    """Stable identifier for a saved event and one recipient."""
     return "n-" + hashlib.sha256(f"{event_key}\0{user}".encode()).hexdigest()[:24]
 
 
@@ -312,7 +313,7 @@ def notify(center: Notifications, event_type: str, tournament_id: str, recipient
 def _create_notifications(state, event_type, tid, key, users, title, body, at):
     created = existing = queued = 0
     for user in users:
-        nid = _nid(key, user)
+        nid = notification_id(key, user)
         if nid in state["notifications"]:
             existing += 1
             continue

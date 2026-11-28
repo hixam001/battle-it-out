@@ -32,6 +32,7 @@ from backend.work_queue import jobs as J
 from backend.notifications import notifications as N
 from backend.tournaments import tournaments as T
 from . import domain as D
+from . import results as Results
 from .models import AuditEvent, Dispute, DisputeEvent, LoginAttempt, Receipt
 
 
@@ -101,12 +102,12 @@ def login_view(request):
             raise ValueError()
     except (ValueError, UnicodeError):
         return JsonResponse({'error': {'message': 'Enter a username and password.'}}, status=400)
-    # Durable per-source/account limiter. Values themselves are never stored or returned.
+    # Durable per-source/account failure limiter. Only digests are stored.
     keys = sorted(hashlib.sha256(value.encode()).hexdigest() for value in
                   ('source\0' + request.META.get('REMOTE_ADDR', ''), 'account\0' + body['username'].casefold()))
     since = timezone.now() - timedelta(minutes=15)
     with transaction.atomic():
-        # Independently bound source and account attempts, including unknown names; stable lock order.
+        # Serialize the limit check and failure count in stable lock order.
         from django.db import connection
         if connection.vendor == 'postgresql':
             with connection.cursor() as cursor:
@@ -115,10 +116,10 @@ def login_view(request):
         LoginAttempt.objects.filter(at__lt=since).delete()
         if any(LoginAttempt.objects.filter(key=key, at__gte=since).count() >= 10 for key in keys):
             return JsonResponse({'error': {'message': 'Too many attempts. Try again later.'}}, status=429)
-        LoginAttempt.objects.bulk_create([LoginAttempt(key=key) for key in keys])
-    user = authenticate(request, username=body['username'], password=body['password'])
-    if user is None:
-        return JsonResponse({'error': {'message': 'Invalid username or password.'}}, status=401)
+        user = authenticate(request, username=body['username'], password=body['password'])
+        if user is None:
+            LoginAttempt.objects.bulk_create([LoginAttempt(key=key) for key in keys])
+            return JsonResponse({'error': {'message': 'Invalid username or password.'}}, status=401)
     login(request, user)
     response = JsonResponse({'csrf': get_token(request), 'user': {'id': user.pk, 'username': user.username, 'admin': user.is_superuser}})
     response['Cache-Control'] = 'private, no-store'
@@ -285,10 +286,13 @@ def notifications(request):
     unread = query.get('unread_only', 'false')
     if unread not in ('true', 'false'):
         raise ValidationError('unread_only must be true or false.')
-    return private(N.list_notifications(
-        D.runtime().notifications, who, unread_only=unread == 'true',
+    rt = D.runtime()
+    feed = N.list_notifications(
+        rt.notifications, who, unread_only=unread == 'true',
         tournament_id=query.get('tournament_id'),
-        limit=integer('limit', 50, 1, N.MAX_PAGE), offset=integer('offset', 0, 0, 2_147_483_647)))
+        limit=integer('limit', 50, 1, N.MAX_PAGE), offset=integer('offset', 0, 0, 2_147_483_647))
+    Results.add_notice_result_links(rt, who.user_id, feed['items'])
+    return private(feed)
 
 
 @api_view(['PATCH'])
@@ -296,7 +300,10 @@ def notifications(request):
 def notification_detail(request, nid):
     who = D.notification_recipient(request.user)
     body = body_fields(request, {'read'}, {'read'})
-    return private(N.mark_read(D.runtime().notifications, who, nid, read=body['read']))
+    rt = D.runtime()
+    notice = N.mark_read(rt.notifications, who, nid, read=body['read'])
+    Results.add_notice_result_links(rt, who.user_id, [notice])
+    return private(notice)
 
 
 @api_view(['GET', 'PATCH'])

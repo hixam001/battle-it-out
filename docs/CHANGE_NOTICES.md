@@ -1124,3 +1124,43 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - Each job runs its games sequentially. The replay fixture checks its real
   interpreter. Tests of default launcher behavior use the lock's primary
   runtime. The regular PR smoke workflow remains available.
+
+## CN-091 — Match result notice links (2026-11-28)
+
+- **BIO-705:** Existing result notices can open the last recorded game in
+  their series. The API uses the same stable participant notice identifier
+  as the round publisher, verified roster membership and the official
+  bracket history. The dashboard and the inbox share that link.
+- The result path keeps the normal game access check and survives replay
+  archive. Historical notice text stays visible when the link is unavailable.
+  Browser replay playback and raw engine points remain open.
+
+## CN-092 — Two-tournament service rehearsal (2026-11-28)
+
+- **BIO-802:** The existing real-service integration test now queues two
+  tournaments with four checked bots and distinct pinned map pools on one
+  worker. Both complete and publish scoped result notices and game artifacts.
+- Archiving one removes its replays and boards and preserves both official
+  brackets and the other tournament's replay digests and boards. The test
+  uses fixture bots, one engine host and disposable state. Production
+  capacity and multi-host behavior remain open.
+
+## CN-093 — Login failure limits (2026-11-28)
+
+- **BIO-405:** The PostgreSQL login limiter records failed authentication
+  under the existing source and account locks. Each successful sign-in leaves
+  both counters intact. The interim ten-failure threshold and 15-minute
+  window still apply.
+- The test signs in two provisioned fixture accounts twelve times through
+  one source. The existing failure test verifies the `401` and `429` paths,
+  independent source and account blocking and absent failed sessions.
+
+## CN-094 — Audit history readiness (2026-11-28)
+
+- **BIO-407 / BIO-404:** PostgreSQL readiness checks for the active
+  append-only triggers on the visible audit and dispute event tables.
+  The existing bounded catalogue query returns unavailable if either guard
+  is missing or disabled for the configured connection.
+- A disposable schema fixture provides visible history tables without the
+  guards. GET and HEAD return a redacted `503`; liveness stays `200`.
+  Restoring the configured search path recovers readiness.

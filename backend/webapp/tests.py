@@ -16,12 +16,13 @@ from backend.registration import registration as G
 from backend.submission_registry import registry as R
 from backend.match_orchestrator import bracket as B, maps as M
 from backend.match_orchestrator.tests.test_bracket import lower_wins
+from backend.notifications import notifications as N, sources
 from backend.tournament_flow import flow as F
 from backend.tournaments import tournaments as T
 from backend.work_queue import jobs as J
 from backend.work_queue.tests.test_handlers import verdict
 from . import domain as D
-from .models import Identity, OrganizerAssignment, Dispute, AuditEvent, Receipt
+from .models import Identity, OrganizerAssignment, Dispute, AuditEvent, LoginAttempt, Receipt
 
 BOT=b'def turn():\n    pass\n'
 ADM=R.Actor('staff','admin')
@@ -94,6 +95,38 @@ class FeatureAPI(TestCase):
         self.assertIn('cup',D.actor(self.a).tournament_ids)
         identity=Identity.objects.get(user=self.a);identity.roster_user_id='unregistered';identity.save()
         self.assertEqual(self.client.get(self.url('analytics/')).status_code,404)
+
+    def test_result_notice_links_follow_the_current_roster_and_official_game(self):
+        sources.round_results(self.rt.notifications, self.rt.registration, self.rt.flow.store, 'cup', 1)
+        N.notify(self.rt.notifications, 'match_result', 'cup', ['roster-a'],
+                 {'team': 'ta', 'opponent': 'tb', 'result': 'won', 'round': 1, 'match_id': self.sid},
+                 event_key='fixture-without-an-official-link')
+        game = self.rt.flow.store.snapshot()['series'][self.sid]['games'][-1]['match_id']
+        path = '/api/v1/notifications/'
+        rows = self.client.get(path).data['items']
+        results = [item for item in rows if item['event_type'] == 'match_result']
+        self.assertEqual(len(results), 2)
+        linked, = [item for item in results if 'result_match_id' in item]
+        self.assertEqual(linked['result_match_id'], game)
+        notice_path = path + linked['id'] + '/'
+        updated = self.client.patch(notice_path, {'read': True}, format='json')
+        self.assertEqual(updated.status_code, 200)
+        self.assertEqual(updated.data['result_match_id'], game)
+        with self.rt.tournaments.store.transaction() as state:
+            state['tournaments']['cup']['status'] = T.ARCHIVED
+        archived = {item['id']: item for item in self.client.get(path).data['items']}
+        self.assertEqual(archived[linked['id']]['result_match_id'], game)
+        self.assertEqual(self.client.get(f'/api/v1/matches/{game}/').status_code, 200)
+
+        with self.rt.registration.store.transaction() as state:
+            for entry in state['tournaments']['cup']['entries'].values():
+                if entry['user_id'] == 'roster-a':
+                    entry['status'] = G.PENDING
+        historical = {item['id']: item for item in self.client.get(path).data['items']}
+        self.assertEqual(historical[linked['id']]['title'], linked['title'])
+        self.assertNotIn('result_match_id', historical[linked['id']])
+        self.assertEqual(self.client.get(f'/api/v1/matches/{game}/').status_code, 404)
+
     def test_organizer_assignment_revocation_applies_to_next_poll(self):
         self.client.force_authenticate(self.org)
         self.assertEqual(self.client.get(self.url('live/')).status_code,200)
@@ -255,6 +288,17 @@ class FeatureAPI(TestCase):
         self.assert_upload_error(self.upload_file(path, key='one'), 404, 'NOT_FOUND')
         self.assert_upload_error(self.upload_file(path, key='new'), 404, 'NOT_FOUND')
         self.assertEqual(len(self.rt.flow.registry.store.snapshot()['submissions']), 2)
+
+    def test_successful_logins_do_not_use_the_shared_failure_budget(self):
+        for user in (self.a, self.b) * 6:
+            browser = Client(enforce_csrf_checks=True)
+            csrf = browser.get('/api/v1/auth/session/').json()['csrf']
+            response = browser.post('/api/v1/auth/login/', {
+                'username': user.username, 'password': 'test-fixture-passphrase',
+            }, content_type='application/json', HTTP_X_CSRFTOKEN=csrf)
+            self.assertEqual(response.status_code, 200, response.content)
+            self.assertEqual(browser.get('/api/v1/auth/session/').json()['user']['id'], user.pk)
+        self.assertFalse(LoginAttempt.objects.exists())
 
     def test_login_rate_limit_is_durable_and_failure_does_not_create_a_session(self):
         client=Client(enforce_csrf_checks=True)

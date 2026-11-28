@@ -260,18 +260,24 @@ class ServiceFlow(ServiceFixture):
 @unittest.skipUnless(os.environ.get("BIO_INTEGRATION") == "1" and REAL_JARS,
                      "set BIO_INTEGRATION=1 with the pinned engine jar for real service processes")
 class RealServiceLifecycle(ServiceFixture):
-    def test_service_processes_from_upload_to_archive(self):
-        self.register(("ta", "tb", "tc"))
+    def test_service_processes_run_two_tournaments_and_archive_one(self):
         real_jar = REAL_JARS[0]
         catalogue = M.load_engine_maps(real_jar)
-        M.create_pool(self.flow.store, "real-service", catalogue, ENGINE, play=["DefaultSmall"],
-                      tiebreak_normal=["jail"], tiebreak_final=["jail", "pipes", "keepout"])
-        T.edit(self.treg, ORG, "t1", {"map_pool_id": "real-service"}, now=self.clock)
+        teams = {"t1": ("ta", "tb"), "t2": ("td", "te")}
+        main_maps = {"t1": "DefaultSmall", "t2": "DefaultMedium"}
+        self.make("t2")
+        self.register((*teams["t1"], "tc"))
+        self.register(teams["t2"], tid="t2")
         bot = (REPO / "backend/battlecode26-scaffold/src/examplefuncsplayer_py/bot.py").read_bytes()
-        for team in ("ta", "tb"):
-            actor = R.Actor(self.users[team], "participant", frozenset({team}), frozenset({team}))
-            F.upload(self.flow, actor, team, "t1", "bot.py", bot, idempotency_key=team,
-                     deadline_at=DEADLINE, now=self.clock)
+        for tid, entrants in teams.items():
+            pool = f"real-service-{tid}"
+            M.create_pool(self.flow.store, pool, catalogue, ENGINE, play=[main_maps[tid]],
+                          tiebreak_normal=["jail"], tiebreak_final=["jail", "pipes", "keepout"])
+            T.edit(self.treg, ORG, tid, {"map_pool_id": pool}, now=self.clock)
+            for team in entrants:
+                actor = R.Actor(self.users[team], "participant", frozenset({team}), frozenset({team}))
+                F.upload(self.flow, actor, team, tid, "bot.py", bot, idempotency_key=team,
+                         deadline_at=DEADLINE, now=self.clock)
         config = self.dir / "service.json"
         config.write_text(json.dumps({"data_dir": str(self.dir), "engine_jar": str(real_jar)}))
 
@@ -281,22 +287,43 @@ class RealServiceLifecycle(ServiceFixture):
             self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
             return json.loads(proc.stdout)
 
-        self.assertEqual(run("worker")["ran"], 2)
-        self.assertEqual(self.kinds("ta"), ["validation_accepted"])
-        self.assertEqual(run("maintenance")["opened"], 1)
-        self.assertEqual(B.get_bracket(self.flow.store, "t1")["rounds"][0]["status"], "ready")
+        self.assertEqual(run("worker"), {"ran": 4, "dead": 0})
+        for entrants in teams.values():
+            for team in entrants:
+                self.assertEqual(self.kinds(team), ["validation_accepted"])
+        self.assertEqual(run("maintenance")["opened"], 2)
         self.assertEqual(self.kinds("tc"), ["team_excluded"])
-        F.start_round(self.flow, "t1", 1, "org1")
-        self.assertEqual(run("worker")["ran"], 1)
-        self.assertEqual(run("maintenance")["completed"], 1)
+        for tid in teams:
+            self.assertEqual(B.get_bracket(self.flow.store, tid)["rounds"][0]["status"], "ready")
+            F.start_round(self.flow, tid, 1, "org1")
+        self.assertEqual(run("worker"), {"ran": 2, "dead": 0})
+        self.assertEqual(run("maintenance")["completed"], 2)
         before = self.flow.store.snapshot()
-        replay_files = list((self.dir / "replays" / "t1").glob("*.bc26"))
-        self.assertGreater(len(replay_files), 0)
-        self.assertEqual(run("worker")["ran"], 0)
+        replay_files = {}
+        live_files = {}
+        for tid, entrants in teams.items():
+            bracket = before["brackets"][tid]
+            self.assertIn(bracket["champion"], entrants)
+            pairing, = bracket["rounds"][0]["matches"]
+            series = before["series"][pairing["series_id"]]
+            self.assertEqual({series["submission_a"], series["submission_b"]}, {f"{team}-v1" for team in entrants})
+            self.assertEqual(series["games"][0]["map"], main_maps[tid])
+            for team in entrants:
+                self.assertEqual({n["tournament_id"] for n in self.feed(team)}, {tid})
+                self.assertEqual(self.kinds(team).count("match_result"), 1)
+            replay_files[tid] = {p: hashlib.sha256(p.read_bytes()).hexdigest()
+                                 for p in (self.dir / "replays" / tid).glob("*.bc26")}
+            live_files[tid] = {self.dir / "live" / (game["match_id"] + ".json") for game in series["games"]}
+            self.assertTrue(replay_files[tid])
+            self.assertTrue(all(p.is_file() for p in live_files[tid]))
+        self.assertEqual(run("worker"), {"ran": 0, "dead": 0})
         run("maintenance")
         self.assertEqual(self.flow.store.snapshot(), before)
-        T.archive(self.treg, ADMIN, "t1", self.runtime.vault, confirm=True)
+        self.assertTrue(T.archive(self.treg, ADMIN, "t1", self.runtime.vault, confirm=True)["replays_deleted"])
         run("maintenance")
         self.assertFalse((self.dir / "replays" / "t1").exists())
-        self.assertFalse(list((self.dir / "live").glob("*.json")))
+        self.assertTrue(all(not p.exists() for p in live_files["t1"]))
+        retained = {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in replay_files["t2"]}
+        self.assertEqual(retained, replay_files["t2"])
+        self.assertTrue(all(p.is_file() for p in live_files["t2"]))
         self.assertEqual(self.flow.store.snapshot(), before)

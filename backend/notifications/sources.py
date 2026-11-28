@@ -106,6 +106,15 @@ def validation_result(center: N.Notifications, registration: G.Registration, reg
 
 # ---------------------------------------------------------------------------------------------- rounds
 
+def _round_event_key(event: str, bracket_id: str, round_no: int, what: str, team: str) -> str:
+    return f"{event}:{bracket_id}:r{round_no}:{what}:{team}"
+
+
+def match_result_notice_id(bracket_id: str, round_no: int, index: int, team: str, recipient: str) -> str:
+    key = _round_event_key("match_result", bracket_id, round_no, f"m{index}", team)
+    return N.notification_id(key, recipient)
+
+
 def round_results(center: N.Notifications, registration: G.Registration, store: JsonFileStore, bracket_id: str,
                   round_no: int, *, now: Callable[[], float] = time.time) -> dict:
     """Notify the teams of every *decided* match of a round (so a round that is paused half way still tells the
@@ -128,7 +137,7 @@ def round_results(center: N.Notifications, registration: G.Registration, store: 
     out = _empty()
 
     def tell(event: str, team: str, params: dict, what: str) -> None:
-        key = f"{event}:{bracket_id}:r{round_no}:{what}:{team}"
+        key = _round_event_key(event, bracket_id, round_no, what, team)
         _sum(out, N.notify_audience(center, registration, event, tid, {"team": team, **params}, event_key=key,
                                     team_id=team, verified_only=True, now=now))
 
