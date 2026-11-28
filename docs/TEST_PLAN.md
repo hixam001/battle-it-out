@@ -382,6 +382,11 @@ with the existing local commands.
 -   SQL injection/XSS/CSRF as applicable to selected auth model.
 -   Audit tampering attempts.
 
+Private source and bundle downloads (BIO-408 / CN-085) verify exact
+streamed bytes, ZIP members, length, filename and `private, no-store`.
+Requests outside current scope receive JSON refusals. The browser suite
+checks the existing staff source download and audit flows.
+
 ### Reliability/load tests
 
 -   Repeated matches on one worker.

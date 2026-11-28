@@ -187,6 +187,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Changed
 
+- **Private submission downloads (BIO-408, CN-085)** stream the verified
+  source or ZIP through the scoped download route with its exact length.
+
 - **Security fixes (CN-008):** (1) a bot could send engine calls during the other team's turn and so change who won a match or make the victim forfeit; the router now accepts a call only from the runner whose turn it is. (2) A bot could freeze its own process and its guard and turn a loss into a retryable `platform_failure`; the router now has its own response deadline and charges the silent team (`runner_unresponsive`). (3) An engine method number that does not exist crashed the server and was a `platform_failure`; it is now refused and charged (`protocol_violation`). (4) The bot validator no longer follows symlinks, blocks on FIFOs, reads more than 2 MiB or crashes on deeply nested source. (5) Team folder names must be plain names.
 - **Security fix (CN-007):** a bot could forge the engine's own log lines through `log(...)` and so change its match's winner or reason, or force a `platform_failure` (and a replay) on a match it was losing. The router now rebuilds every runner frame and marks continuation lines in all text, a malformed frame ends that team's connection, and the launcher's parsers are anchored and take the last match. Frames reach the engine as canonical JSON (same content).
 - `launcher.py run` now runs each team in its own sandboxed process with the limits profile **by default** and stops the Java server shortly after a runner dies. The JSON summary gains `classification`, `loser`, `winner_by_forfeit`, `violation`, `usage` (per team and per process), `router`, `sandbox`, `cgroup` and `limits_profile`; `runner_exit` is now per team and the runner log is split (`runner-A-*.log`, `runner-B-*.log`). `--no-sandbox`, `--no-limits`, `--no-cgroup` and `--require-cgroup` exist.

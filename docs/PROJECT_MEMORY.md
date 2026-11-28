@@ -22,8 +22,10 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-408 / CN-085 streams verified private source and bundle attachments.
 - BIO-606 / CN-084 continues replay maintenance when a tournament is archived
   during collection. The same pass completes pending purges.
+  PR #92 merged into `main` at `590fbd2` after all three hosted checks passed.
 - BIO-802 / CN-083 verifies queue and match lease recovery after an abrupt
   worker exit and one result and advancement per game after redelivery.
   PR #91 merged into `main` at `8237351` after all three hosted checks passed.
@@ -212,7 +214,7 @@ remaining backlog after every task.
   ran 20 times each on 3.13 and 3.15, totaling 120 real matches. Unit mode
   skips integration cases; three engine-dependent tests need the project venv.
   These are Claude's recorded results, not a new four-version run by Codex.
-- Coverage currently records **26 DONE / 55 PARTIAL / 10 TODO / 0 DEFERRED**
+- Coverage currently records **26 DONE / 56 PARTIAL / 9 TODO / 0 DEFERRED**
   across **91** requirements. DONE denotes the documented library/tool scope,
   not owner acceptance or an independent security review. Counts and row-level
   gaps live in [REQUIREMENTS_COVERAGE.md](REQUIREMENTS_COVERAGE.md).
@@ -433,6 +435,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    migration remains open. CN-048 and CN-050 add official series history and
    Admin-only match, queue and replay incidents to the existing feeds. Retention
    after full purge and recovery evidence remain open.
+   CN-085 streams scope-checked source and ZIP attachments. Private object
+   storage URLs and retention remain pending.
 2. **Service operation:** deploy/supervise the CN-027/028 worker, maintenance,
    email, alert and web processes; approve/implement real email/Admin adapters;
    target-host restart/outage drills; pinned worker/container image and runtime
@@ -1452,3 +1456,22 @@ on Python 3.15.2 in 81.662 seconds. On the updated branch 744 of 792 backend
 unit tests passed with 48 expected skips. All 91 requirement statuses, nine backlog
 categories and 42 Jira items remain. Production scheduling and retention
 still need their documented decisions and evidence.
+
+PR #92 merged into `main` at `590fbd2` after the backend unit matrix, engine
+smoke and web/browser checks passed.
+
+## CN-085 continuation evidence
+
+BIO-408 starts `BIO-408-stream-private-submissions` from `8237351` and
+fast-forwards to merged `main` at `590fbd2` before publication. Django
+streams the verified source or exported ZIP as a private attachment with
+its exact length. The existing upload cap bounds the source buffered for
+digest verification, and bundle export still assembles its bytes before
+streaming. Current access checks and staff audit continue to apply.
+
+All 148 Django cases and the system and migration checks passed. All 32
+browser cases also passed in 46.6 seconds with disposable services. Both
+response formats preserve their exact contents and normal browser downloads.
+BIO-NFR-08 advances to PARTIAL. All 91 requirements, nine backlog
+categories and 42 Jira items remain. Production storage, short-lived
+storage links, agreed caps and retention are open.

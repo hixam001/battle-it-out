@@ -112,7 +112,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET | `/tournaments/{id}/teams/{team}/` | Team member/assigned Organizer/Admin profile with verified slots and captain, private/no-store |
 | GET/POST | `/tournaments/{id}/teams/{team}/submissions/` | Team-private history with game references; one multipart bot.py or bounded flat ZIP, current captain and stored deadline, idempotent queued validation |
 | GET | `/tournaments/{id}/submissions/{version}/validation/` | Current validation status and ordered check details for a visible version |
-| GET | `/tournaments/{id}/submissions/{version}/download/` | Authorized source/bundle; staff reads audited; private/no-store |
+| GET | `/tournaments/{id}/submissions/{version}/download/` | Streams verified source or an exported ZIP after scope checks. Staff reads are audited. Private/no-store. |
 | GET/POST | `/tournaments/{id}/disputes/` | Team-private dispute list/create tied to a real match |
 | GET/POST | `/tournaments/{id}/disputes/{uuid}/` | Team/staff comments and review transitions with optimistic revision |
 | GET | `/admin/operations/` | Admin-only counts, safe incident metadata, dead jobs and recent feature audit events |

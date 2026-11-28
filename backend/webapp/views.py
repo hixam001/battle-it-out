@@ -391,7 +391,7 @@ def submission_validation(request, tid, sid):
 
 @api_view(['GET'])
 def download(request, tid, sid):
-    who, record = D.tournament(request.user, tid)
+    who, _ = D.tournament(request.user, tid)
     rt = D.runtime()
     rec = rt.flow.registry.store.snapshot()['submissions'].get(sid)
     if not rec or rec['tournament_id'] != tid:
@@ -405,8 +405,7 @@ def download(request, tid, sid):
         if hashlib.sha256(data).hexdigest() != handle.sha256:
             raise R.Unavailable('Stored source changed.')
         content_type, filename = 'text/x-python', 'bot.py'
-    response = HttpResponse(data, content_type=content_type)
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response = FileResponse(io.BytesIO(data), as_attachment=True, filename=filename, content_type=content_type)
     response['Cache-Control'] = 'private, no-store'
     return response
 

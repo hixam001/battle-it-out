@@ -1064,3 +1064,13 @@ Decisions from the owner that change or narrow what the requirement documents (P
   vault purges in the same pass.
 - A deterministic fixture archives during source verification and keeps
   official match and bracket records unchanged.
+
+## CN-085 — Stream private submission downloads (2026-11-28)
+
+- **BIO-408:** The scoped source download route sends a streaming attachment
+  after authorization, digest verification and any bundle export. The bounded
+  source or ZIP is buffered for verification before the HTTP stream starts.
+  Filenames, media types and audited staff access are retained.
+- HTTP tests check exact source and ZIP members, attachment metadata, length
+  and a private cache policy. Browser tests check existing Admin and Organizer
+  downloads. Production object storage and retention remain open.

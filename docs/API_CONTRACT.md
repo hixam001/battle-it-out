@@ -1062,6 +1062,9 @@ Canonical new paths use a trailing slash except `analytics.csv`.
 - GET `/tournaments/{id}/live/` supplies numeric board snapshots and safe match metadata, with current authorization on every poll, private/no-store cache policy and 410 after archive.
 - GET `/tournaments/{id}/analytics/` and `/analytics.csv` expose results-derived team/version/map/round and failure/timing statistics. No source, host path or bot output is included.
 - GET/POST `/tournaments/{id}/teams/{team}/submissions/` and GET `/tournaments/{id}/submissions/{version}/download/` implement team-private history, captain upload using the stored deadline, queued validation and authorized source/bundle delivery. POST accepts one multipart `file` and requires `Idempotency-Key`.
+  Successful downloads stream the bounded, verified bytes as `bot.py` or
+  `bot-bundle.zip` with an exact `Content-Length` and `private, no-store`
+  (CN-085). Staff access remains audited.
 - GET/POST `/tournaments/{id}/disputes/` and `/disputes/{uuid}/` support match-bound team-private review. Creation body: `series_id`, `title`, `description`. Update body: `expected_version` and either `message`, or staff `status` plus `resolution`. Both mutation forms require `Idempotency-Key`; state/event/audit/receipt persistence is one PostgreSQL transaction. Closing a review does not change match results or replay a game.
 - GET `/admin/operations/` is Admin-only and read-only, returning counts, incident metadata, dead jobs and recent feature audit events.
 
