@@ -1134,3 +1134,13 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - The result path keeps the normal game access check and survives replay
   archive. Historical notice text stays visible when the link is unavailable.
   Browser replay playback and raw engine points remain open.
+
+## CN-092 — Two-tournament service rehearsal (2026-11-28)
+
+- **BIO-802:** The existing real-service integration test now queues two
+  tournaments with four checked bots and distinct pinned map pools on one
+  worker. Both complete and publish scoped result notices and game artifacts.
+- Archiving one removes its replays and boards and preserves both official
+  brackets and the other tournament's replay digests and boards. The test
+  uses fixture bots, one engine host and disposable state. Production
+  capacity and multi-host behavior remain open.

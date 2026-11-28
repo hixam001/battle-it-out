@@ -1733,3 +1733,20 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   tests, API and user guides, test plan, coverage, Jira, CN-091, changelog
   and memory. All nine backlog categories and 42 Jira items remain. Raw
   engine points, browser replay playback and formal acceptance remain open.
+
+- PR #99 merged into `main` at `53d947e` after all four hosted checks passed.
+
+### 2026-11-28 — BIO-802 Two-tournament worker rehearsal
+
+- Started `BIO-802-two-tournament-worker-rehearsal` at `bec3e2b` during
+  PRs #98 and #99's hosted checks. Incorporated `53d947e` after both merged.
+- The existing real-service test runs four bot checks and two queued rounds
+  on the same configured worker with different main maps. It verifies scoped
+  results, notices, live boards and replay files. Archive removes the first
+  tournament's artifacts and retains the other tournament's replay digests,
+  live boards and both official brackets. The next delivery is idle.
+- All 47 local service, scheduler and live-view cases passed with real-engine
+  integration on Python 3.15.2 and JDK 21 in 101.069 seconds.
+- Updated the regression fixtures, test plan, coverage, Jira, CN-092 and
+  memory. All nine backlog categories and 42 Jira items remain. Target-host
+  capacity, outages and multi-host operation remain open.

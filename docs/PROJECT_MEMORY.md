@@ -22,8 +22,12 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-802 / CN-092 runs two tournaments sequentially through the real
+  configured service worker and verifies that archive affects its own artifacts.
+
 - BIO-705 / CN-091 links existing result notices to the recorded game from
   the participant dashboard and inbox after a current-scope check.
+  PR #99 merged into `main` at `53d947e` after all four hosted checks passed.
 - BIO-804 / CN-090 adds an on-demand full backend engine-integration workflow
   with a separate hosted job per locked Python family. PR #98 merged into
   `main` at `ac5236d` after all four full-suite jobs passed.
@@ -464,6 +468,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    retry-cap policy remain. Live adapter compilation needs the pinned JAR/JDK;
    operational failed-email alert receipt retention still needs policy.
    CN-083 exercises replacement across both expired leases with fixture games.
+   CN-092 verifies two queued tournaments on one real worker and isolated archive.
 3. **Execution gates:** realistic target-hardware limits benchmark (DEC-04),
    independent sandbox/security review, SR-06 Java-exception classification and
    SR-03 parameter-type residual, engine seed control or accepted TC-04 waiver,
@@ -1616,3 +1621,21 @@ checks, 101 notification library cases and all 32 Playwright cases passed.
 All 91 requirement statuses, nine backlog categories and 42 Jira items
 remain. Raw engine points, browser replay playback and formal acceptance
 remain open.
+
+PR #99 merged into `main` at `53d947e` after the build, backend unit matrix,
+engine smoke and web/browser checks passed.
+
+## CN-092 continuation evidence
+
+BIO-802 starts `BIO-802-two-tournament-worker-rehearsal` from verified `main`
+at `bec3e2b` while PRs #98 and #99 run CI and incorporates `53d947e` after
+their verified merges. The extended real-service test runs
+four upload checks and two queued rounds through one configured worker. It
+verifies distinct map pins, results, notices, replays and live boards. A
+repeat worker pass is idle. Archiving the first tournament keeps the second
+tournament's artifacts and both official brackets intact.
+
+All 47 service, scheduler and live-view cases passed with real-engine
+integration on Python 3.15.2 and JDK 21 in 101.069 seconds. All nine backlog
+categories, 91 requirement statuses and 42 Jira items remain. Target-host
+capacity, provider outages and multi-host execution remain open.
