@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Sandbox resource measurement (BIO-204, CN-087)** reports repeated
+  reference and CPU-load control results with runtime and input identity.
+
 - **Bracket map order (BIO-705, CN-081)** shows main-game maps, the normal
   tie-break map and the ordered final tie-break maps on the bracket page.
 
