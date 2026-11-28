@@ -14,6 +14,10 @@ npm run dev --prefix frontend
 npm run build --prefix frontend
 ```
 
+The **Frontend build** workflow uses Node.js 26.13.1 and runs these install
+and build steps for frontend or workflow changes on pull requests to `main`
+and pushes to `main`. See [the workflow](../.github/workflows/frontend.yml).
+
 Start Django on `127.0.0.1:8000` and Vite on `127.0.0.1:5173`; Vite proxies `/api`
 on the same origin. All service/data directories must be outside `frontend/`.
 Production static assets are generated into ignored `frontend/dist/`. Serve

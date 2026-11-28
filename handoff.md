@@ -1447,3 +1447,17 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   statuses, nine backlog categories and 42 Jira items remain. Deletion
   and production recovery still gate acceptance. The repository's enabled
   GitHub Actions can run the frontend build for the next CI slice.
+
+### 2026-11-28 — BIO-804 Frontend build CI
+
+- Confirmed PR #82 merged into `main` at `a299868`. Started
+  `BIO-804-frontend-build-ci` from the fetched commit.
+- Added `.github/workflows/frontend.yml`. It runs `npm ci` and
+  `npm run build` on Ubuntu 24.04 and Node.js 26.13.1 for frontend and
+  workflow updates to `main`. Checkout and Node setup use pinned commits.
+- A clean local export passed the install and build with Node.js 26.13.1
+  and npm 12.2.3. Hosted evidence is recorded by the PR's build check.
+- Updated the frontend guide, project and test plans, Jira, CN-075 and
+  project memory. All 91 statuses, nine backlog categories and 42 Jira
+  items remain. Backend matrix and real-engine CI, browser CI and deployment
+  remain open.
