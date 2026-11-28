@@ -1298,6 +1298,9 @@ BIO-804 starts from merged main at `874e567` on
 workflow, selecting JDK 21, installing the primary Python launcher
 environment, starting the sandbox and resolving the Gradle runtime. It
 runs the replay integration module with sample bots and temporary output.
+The first hosted run on Ubuntu 24.04 hit `RTM_NEWADDR` at bubblewrap
+startup. The job uses Ubuntu 26.04 for its packaged AppArmor support for
+bubblewrap's namespace setup.
 All 40 replay cases passed locally on Python 3.15.2 in 20.362 seconds.
 All five workflow shell steps passed `bash -n`.
 Wider hosted integration coverage and deployment remain open. All 91

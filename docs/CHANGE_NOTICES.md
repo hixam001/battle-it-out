@@ -999,7 +999,7 @@ Decisions from the owner that change or narrow what the requirement documents (P
 
 ## CN-078 — Battlecode engine smoke test (2026-11-28)
 
-- **BIO-804:** Adds an Ubuntu 24.04 workflow for the replay integration
+- **BIO-804:** Adds an Ubuntu 26.04 workflow for the replay integration
   module using the primary launcher environment, JDK 21 and the pinned
   Battlecode release. The preflight loads the existing sandbox configuration
   before the match. The smoke workflow covers the primary Python runtime.

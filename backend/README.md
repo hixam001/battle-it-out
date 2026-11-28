@@ -48,7 +48,7 @@ Home of the Battle It Out execution foundation and, later, the web backend.
 
 The [Battlecode engine smoke test](../.github/workflows/engine-smoke.yml)
 uses the Gradle wrapper, the pinned primary Python environment and the
-existing sandbox to play the sample Python bots on Ubuntu 24.04. The replay
+existing sandbox to play the sample Python bots on Ubuntu 26.04. The replay
 integration module writes its match and vault data to temporary directories.
 
 The **Backend unit matrix** workflow installs the Python families listed in

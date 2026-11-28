@@ -331,7 +331,7 @@ on Ubuntu 24.04 for backend and workflow changes to `main` (CN-076).
 The **Web and browser tests** workflow runs Django and Chromium Playwright
 with disposable PostgreSQL 18.7, Django and Vite services (CN-077).
 The **Battlecode engine smoke test** uses the pinned primary Python launcher,
-bubblewrap and JDK 21 on Ubuntu 24.04 (CN-078). It runs the replay integration
+bubblewrap and JDK 21 on Ubuntu 26.04 (CN-078). It runs the replay integration
 module, including a real fixture game, replay access and archive purge with
 the completed bracket retained. The wider real-engine suite can still be run
 with the existing local commands.

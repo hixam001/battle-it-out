@@ -1505,6 +1505,9 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - The CI workflow installs bubblewrap, selects JDK 21, prepares the locked
   primary Python launcher and resolves the pinned Java runtime. It verifies
   sandbox startup and runs the replay integration suite with disposable data.
+- The first GitHub attempt on Ubuntu 24.04 hit a permission error setting up
+  the sandbox loopback. The job now uses Ubuntu 26.04, which carries the
+  [distribution's bubblewrap namespace profile](https://documentation.ubuntu.com/release-notes/25.04/#apparmor-profile-for-bwrap).
 - All 40 replay cases passed on Python 3.15.2 in 20.362 seconds. All five
   workflow shell steps passed syntax checks. Hosted results are in the PR.
 - Updated the backend guide, test and project plans, Jira, coverage, CN-078
