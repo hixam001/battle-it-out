@@ -79,6 +79,14 @@ class Exit(unittest.TestCase):
                 mock.patch.object(R.os, "chdir"):
             self.assertEqual(R.main([]), 0)
 
+    def test_skip_fails_only_when_required(self):
+        name = self._module("zz_skipped", "import unittest\nclass T(unittest.TestCase):\n    def test_x(self):\n        self.skipTest('fixture')\n")
+        with mock.patch.object(R, "test_modules", return_value=[name]), \
+                mock.patch.object(sys, "stderr", new=io.StringIO()), \
+                mock.patch.object(R.os, "chdir"):
+            self.assertEqual(R.main([]), 0)
+            self.assertEqual(R.main(["--require-no-skips"]), 1)
+
     def test_a_run_of_zero_tests_is_not_a_pass(self):
         name = self._module("zz_empty", "x = 1\n")
         with mock.patch.object(R, "test_modules", return_value=[name]), \
@@ -109,7 +117,8 @@ class Matrix(unittest.TestCase):
         with mock.patch.object(R, "find_python", side_effect=lambda v: f"/py/{v}"), \
                 mock.patch.object(R.subprocess, "run", side_effect=fake_run), \
                 mock.patch("builtins.print"):
-            rc = R.run_matrix(["3.12", "3.13"], kwargs.get("prefixes", []), kwargs.get("integration", False))
+            rc = R.run_matrix(["3.12", "3.13"], kwargs.get("prefixes", []), kwargs.get("integration", False),
+                              require_no_skips=kwargs.get("require_no_skips", False))
         return rc, calls
 
     def test_all_pass(self):
@@ -133,6 +142,13 @@ class Matrix(unittest.TestCase):
         rc, calls = self._run({"/py/3.12": 0, "/py/3.13": 0})
         for cmd, _cwd, _env in calls:
             self.assertNotIn("--integration", cmd)
+            self.assertNotIn("--require-no-skips", cmd)
+
+    def test_require_no_skips_reaches_each_child(self):
+        rc, calls = self._run({"/py/3.12": 0, "/py/3.13": 1}, integration=True, require_no_skips=True)
+        self.assertEqual(rc, 1)
+        for cmd, _cwd, _env in calls:
+            self.assertIn("--require-no-skips", cmd)
 
     def test_prefixes_are_passed_on(self):
         rc, calls = self._run({"/py/3.12": 0, "/py/3.13": 0}, prefixes=["backend.registration"])

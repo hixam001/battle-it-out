@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Full engine integration (BIO-804, CN-090)** adds an on-demand hosted
+  backend suite with one job per locked Python family.
+
 - **Dispute notices (BIO-607, CN-089)** show new filings to tournament staff
   and team review updates to participants on the dashboard.
 
