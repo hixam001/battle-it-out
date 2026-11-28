@@ -14,8 +14,8 @@ worker's output folder. Everything else here is ours.
                        "unavailable" if the file is missing or damaged (and a staff incident is raised).
   * `open_replay`      return the verified binary stream for private HTTP delivery.
   * `archive_tournament` / `purge_tournament`  mark archived first, then delete the files, verify, record the
-                       result. A crash in between is finished by `purge_pending`. A purge never touches the
-                       match, series or bracket records.
+                       result. `purge_pending` finishes interrupted purges and checks for restored files.
+                       A purge never touches the match, series or bracket records.
 
 The caller derives the `Viewer` from authenticated scope. Backups, object storage (DEC-11), a browser player
 (DEC-10) and notification delivery live outside this module.
@@ -428,9 +428,13 @@ def _purge_files(vault: Vault, tournament_id: str) -> tuple[int, int, str | None
         return 0, 0, "the replay vault root is a link; not touching it"
     folder = vault._dir(tournament_id)
     deleted = swept = 0
-    if not folder.exists() and not folder.is_symlink():
+    try:
+        mode = folder.lstat().st_mode
+    except FileNotFoundError:
         return 0, 0, None
-    if folder.is_symlink() or not folder.is_dir():
+    except OSError as exc:
+        return 0, 0, f"inspect folder: {type(exc).__name__}"
+    if not stat.S_ISDIR(mode):
         return 0, 0, "the replay folder is not a plain folder; not touching it"
     with vault.index.transaction() as state:
         known = {Path(r["storage_key"]).name for r in state["replays"].values()
@@ -531,13 +535,23 @@ def archive_tournament(vault: Vault, tournament_id: str, actor: str, *, now: Cal
 
 
 def purge_pending(vault: Vault, *, now: Callable[[], float] = time.time) -> list[str]:
-    """Finish every archive whose purge did not complete (crash between the two steps, a failed delete).
-    Returns the tournaments it completed."""
+    """Finish interrupted purges and sweep files restored to archived tournaments.
+
+    Returns the tournaments whose purge completed in this pass.
+    """
     with vault.index.transaction() as state:
-        todo = [tid for tid, r in state["tournaments"].items()
-                if r["status"] == ARCHIVED and r["purge"]["status"] != PURGE_DONE]
+        archived = [(tid, r["purge"]["status"]) for tid, r in state["tournaments"].items()
+                    if r["status"] == ARCHIVED]
     done = []
-    for tid in todo:
+    for tid, status in archived:
+        if status == PURGE_DONE:
+            try:
+                vault._dir(tid).lstat()
+            except FileNotFoundError:
+                continue
+            except OSError:
+                # The purge records an incident if the folder still cannot be inspected.
+                pass
         if purge_tournament(vault, tid, now=now)["status"] == PURGE_DONE:
             done.append(tid)
     return done

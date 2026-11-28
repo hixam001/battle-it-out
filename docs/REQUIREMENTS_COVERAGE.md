@@ -18,8 +18,8 @@ It does **not** provide: users, roles, tournaments, brackets, byes, house bots, 
 | Status | Count | Meaning |
 |---|---|---|
 | DONE | 26 | built and tested here (library or tool level), nothing material missing |
-| PARTIAL | 54 | built in part; the gap column says what is still ours to develop |
-| TODO | 11 | not built; no code exists |
+| PARTIAL | 55 | built in part; the gap column says what is still ours to develop |
+| TODO | 10 | not built; no code exists |
 | DEFERRED | 0 | No whole requirement remains deferred; owner activated BIO-REQ-19–23 (CN-028) |
 | **Total** | **91** | 89 requirements are not wholly provided by Battlecode, so they are ours; 65 of the 91 still need development work |
 
@@ -86,7 +86,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | SRD-067 | Captaincy transfers on captain deletion | None | **TODO** | BIO-EPIC-06 | DEC-07 (no successor) |
 | SRD-068 | Team deletion after archive; Admin-only restore | None | **TODO** | BIO-EPIC-06 | - |
 | SRD-069 | Permanent tournament deletion, Admin only, audit kept | None | **TODO** | BIO-EPIC-06 | - |
-| SRD-070 | Archive deletes replays, keeps results and history | None (engine only writes the replay file) | **PARTIAL** | Vault recovery and serialized purge (CN-012/027/035); staff archive and purge receipts (CN-066); exact fixture replay, post-archive `410` and preserved result payload across the browser flow (CN-074) | Production schedule, worker-output retention, vault backups and full restore drill |
+| SRD-070 | Archive deletes replays, keeps results and history | None (engine only writes the replay file) | **PARTIAL** | Vault recovery and serialized purge (CN-012/027/035); staff archive and receipts (CN-066); browser `410` and unchanged results (CN-074); restored archived-file cleanup (CN-079) | Production schedule, worker-output retention, vault backups and target-host restore drill |
 | BIO-REQ-01 | Audit the Battlecode repository and scaffold | None | **DONE** | Docs, handoff, scaffold findings | - |
 | BIO-REQ-02 | Reproducible scaffold compatible with the Python target | Partly | **PARTIAL** | See SRD-002, SRD-003 | See SRD-002 |
 | BIO-REQ-03 | Execute a single-file Python bot with the engine | Provides (official runner) | **DONE** | Launcher over `runner_entry.py` | - |
@@ -118,7 +118,7 @@ Battlecode column: `Provides` we reuse it; `Partly` it does something related th
 | BIO-NFR-06 | Append-only audit records, permanent | None | **PARTIAL** | PostgreSQL update/delete-rejecting triggers for feature audit and dispute events; state/event/audit/receipt transaction and rollback tests (CN-028) | Permanent unified audit for all legacy stores, deletion integration, backups and recovery proof |
 | BIO-NFR-07 | Dashboard notifications even when email is off | None | **PARTIAL** | Email-off/outage library and worker tests (CN-022/030); browser verifies persisted preference and receipt of new deadline and override notices with disabled email status (CN-031/074) | Real provider, PostgreSQL notification store and TC-08 production outage/restore drill remain open |
 | BIO-NFR-08 | Submission files private, served only after authorization | None | **TODO** | BIO-EPIC-05 | - |
-| BIO-NFR-09 | Backups and tested recovery | None | **TODO** | BIO-EPIC-08 | - |
+| BIO-NFR-09 | Backups and tested recovery | None | **PARTIAL** | Documented disposable PostgreSQL and private-state backup and restore, verified restored match references and archived replay cleanup (CN-033/079) | Target-host scheduling, retention, recovery objectives and production restore evidence |
 | BIO-NFR-10 | Logs avoid secrets and minimise personal data | None | **PARTIAL** | `match_log.py` redaction and the API error envelope exclude private server details, including PostgreSQL readiness failures. Request completion logs contain only request ID and status (CN-029/051) | Broader log exposure/access/retention review, including Django exception logs; no end-to-end production privacy proof |
 | BIO-NFR-11 | Concurrent match capacity from load tests | None | **TODO** | BIO-EPIC-08 | One match per host today (fixed engine port) |
 | BIO-NFR-12 | UI communicates deadlines, validation, match state, errors | None | **PARTIAL** | Responsive match states/dashboard/inbox (CN-028/031), direct role guards and correlated API errors (CN-037), team standing and upload validation (CN-053), and visible current navigation with keyboard focus (CN-072) | Remaining core screens, comprehensive usability and accessibility acceptance |

@@ -323,6 +323,38 @@ class Archive(Base):
         with self.assertRaises(R.Gone):
             R.fetch_replay(self.vault, "g1", ADMIN)
 
+    def test_maintenance_purges_files_restored_after_a_completed_archive(self):
+        folder = self.vault.root / "t1"
+        backup = self.root / "backup"
+        shutil.copytree(folder, backup)
+        self.assertTrue(R.archive_tournament(self.vault, "t1", "a")["replays_deleted"])
+        before = self.snap()
+        shutil.copytree(backup, folder)
+
+        with self.assertRaises(R.Gone):
+            R.fetch_replay(self.vault, "g1", ADMIN)
+        self.assertEqual(R.purge_pending(self.vault), ["t1"])
+        self.assertFalse(folder.exists())
+        self.assertEqual(self.files("t2"), ["h1.bc26"])
+        after = self.snap()
+        self.assertEqual(after["replays"], before["replays"])
+        purge = after["tournaments"]["t1"]["purge"]
+        self.assertEqual(purge["status"], R.PURGE_DONE)
+        self.assertEqual(purge["swept"], 3)
+        self.assertEqual(R.purge_pending(self.vault), [])
+        self.assertEqual(self.snap(), after)
+
+    def test_maintenance_records_a_restored_dangling_link_as_a_failure(self):
+        R.archive_tournament(self.vault, "t1", "a")
+        folder = self.vault.root / "t1"
+        folder.symlink_to(self.root / "missing")
+
+        self.assertEqual(R.purge_pending(self.vault), [])
+        self.assertTrue(folder.is_symlink())
+        state = self.snap()
+        self.assertEqual(state["tournaments"]["t1"]["purge"]["status"], R.PURGE_FAILED)
+        self.assertEqual([i["incident_type"] for i in state["incidents"]], ["purge_failed"])
+
     def test_unrecorded_files_in_the_folder_are_swept_too(self):
         (self.vault.root / "t1" / ".incoming-x.part").write_bytes(b"left by a crashed copy")
         (self.vault.root / "t1" / "notes").mkdir()

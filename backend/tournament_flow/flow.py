@@ -180,8 +180,8 @@ def housekeeping(flow: Flow, vault: P.Vault | None = None, *, now: Callable[[], 
 
     * `sweep_checks`;
     * with a vault: store the replays of every finished game of every bracket that has a tournament (a tournament
-      that is archived is skipped and listed: its replays are gone for good), then finish archives whose purge
-      was interrupted.
+      that is archived is skipped and listed), then finish interrupted purges and sweep any replay files
+      restored to archived tournaments.
     """
     out = {"checks": sweep_checks(flow, now=now)}
     if vault is not None:

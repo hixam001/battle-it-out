@@ -1006,3 +1006,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - All 40 replay cases passed locally on Python 3.15.2. The GitHub pull
   request records the hosted result. Wider hosted engine
   integration and target-host deployment remain open.
+
+## CN-079 — Archived replay restore reconciliation (2026-11-28)
+
+- **BIO-803:** Maintenance detects restored replay folders for archived
+  tournaments with a completed purge. It reuses the serialized vault purge,
+  reports inaccessible or invalid folders and leaves match history intact.
+- A disposable PostgreSQL 18.7 and service-state restore removed a stale
+  archived replay, returned `410` before and after the sweep and kept bracket
+  and game responses equal. Target-host backup and restore remain open.

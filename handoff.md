@@ -1513,3 +1513,20 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated the backend guide, test and project plans, Jira, coverage, CN-078
   and memory. All 91 statuses, nine backlog categories and 42 Jira items
   remain. Wider hosted integration, the worker image and deployment are open.
+
+### 2026-11-28 — BIO-803 Archived replay restore reconciliation
+
+- Confirmed PR #86 merged to `main` at `3c89849`. The Ubuntu 26.04 smoke
+  run passed all 40 replay cases, and the unit matrix and web/browser checks
+  passed. Started `BIO-803-reconcile-restored-replays` from that merge.
+- Updated vault maintenance in `replays.py` to sweep files restored under a
+  completed archive purge receipt and record invalid-folder failures. Added
+  two regressions, plus staging reconciliation steps in the operations runbook.
+- The new regressions failed before the fix. The Python 3.15.2 unit suite
+  passed 740 of 788 cases with 48 expected skips and the real-engine replay
+  suite passed all 42 cases. PostgreSQL 18.7 backup and restore into a
+  disposable target passed checksum, stale file purge, Admin `410` and
+  unchanged match and bracket checks. No existing replays were used.
+- Updated backend guides, test plan, coverage, Jira, CN-079, changelog and
+  memory. BIO-NFR-09 moves to PARTIAL. All nine backlog categories and
+  42 Jira items remain, including target-host backups, retention and restore.

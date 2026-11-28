@@ -22,7 +22,10 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-803 / CN-079 reconciles restored replay files under completed archive
+  purge receipts. A disposable PostgreSQL and service-state restore passed.
 - BIO-804 / CN-078 adds the primary-Python Battlecode engine smoke workflow.
+  PR #86 merged into `main` at `3c89849` after all three hosted checks passed.
 - BIO-804 / CN-077 adds hosted Django and Chromium Playwright checks.
   PR #85 merged into `main` at `874e567` after all three hosted checks passed.
 - BIO-804 / CN-076 adds the Python backend unit matrix on GitHub Actions.
@@ -193,7 +196,7 @@ remaining backlog after every task.
   ran 20 times each on 3.13 and 3.15, totaling 120 real matches. Unit mode
   skips integration cases; three engine-dependent tests need the project venv.
   These are Claude's recorded results, not a new four-version run by Codex.
-- Coverage currently records **26 DONE / 54 PARTIAL / 11 TODO / 0 DEFERRED**
+- Coverage currently records **26 DONE / 55 PARTIAL / 10 TODO / 0 DEFERRED**
   across **91** requirements. DONE denotes the documented library/tool scope,
   not owner acceptance or an independent security review. Counts and row-level
   gaps live in [REQUIREMENTS_COVERAGE.md](REQUIREMENTS_COVERAGE.md).
@@ -500,6 +503,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    private vault. CN-046 exposes verified role-scoped structured attempt logs,
    and CN-071 adds the match log screen with attempt selection.
    CN-054 adds the replay availability and download screen.
+   CN-079 covers stale archived files in a disposable restore. Target-host
+   backup retention and recovery objectives remain open.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
@@ -1303,5 +1308,29 @@ startup. The job uses Ubuntu 26.04 for its packaged AppArmor support for
 bubblewrap's namespace setup.
 All 40 replay cases passed locally on Python 3.15.2 in 20.362 seconds.
 All five workflow shell steps passed `bash -n`.
+The [hosted smoke run](https://github.com/hixam001/battle-it-out/actions/runs/46115982843)
+passed all 40 cases with Python 3.15.2, JDK 21.0.13.1, bubblewrap 0.11.1
+and engine 1.2.6 on Ubuntu 26.04. PR #86 merged to `main` at `3c89849`
+after the hosted unit matrix and web/browser checks also passed.
 Wider hosted integration coverage and deployment remain open. All 91
 requirement statuses, nine backlog categories and 42 Jira items remain.
+
+## CN-079 continuation evidence
+
+BIO-803 starts from merged `main` at `3c89849` on
+`BIO-803-reconcile-restored-replays`. Maintenance resumes incomplete vault
+purges and rechecks archived tournament folders whose purge already finished.
+It sweeps restored files through the existing serialized purge and records
+failures, including a restored dangling link. An absent archived folder
+adds no purge attempt. Official results and other tournaments stay intact.
+
+The two new replay regressions failed before the fix. Python 3.15.2 passed
+740 of 788 backend unit cases with 48 expected skips, then all 42 replay
+integration cases in 21.836 seconds. A PostgreSQL 18.7 and private-state restore
+verified backup checksums, current Admin scope, replay `410` before and after
+housekeeping, byte-identical match state, equal bracket and game responses,
+and a no-op repeat cleanup. All fixture files were disposable.
+
+BIO-NFR-09 moves to PARTIAL. All 91 requirements, nine backlog categories
+and 42 open Jira items remain. Production restore, retention and worker output
+cleanup still need their existing decisions and evidence.

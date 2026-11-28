@@ -575,6 +575,17 @@ fresh CSRF login. The service lifecycle suite exercises real engine games,
 purge recovery and injected send/alert failures. Target-host, provider and
 production restore acceptance remain open.
 
+### Archived replay restore reconciliation (BIO-803 / CN-079)
+
+Restored synthetic PostgreSQL and service state into an isolated target,
+then reintroduced a pre-archive replay file under a completed purge receipt.
+Requests authenticated as the restored Admin received `410` before and after
+housekeeping.
+The sweep removed the file, preserved the bracket and official game payloads,
+and left a repeat pass with no work. Replay regression tests cover the
+restored file, untouched replays in another tournament and a dangling folder
+link that is reported as a failed purge.
+
 ## 6. Known limitations / unresolved test inputs
 
 -   Python 3.13 compatibility is a target until TC-01 passes.
