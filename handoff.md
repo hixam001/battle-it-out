@@ -1616,3 +1616,20 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated the runbook, test plan, Jira, coverage, CN-084, changelog and
   memory. All nine backlog categories and 42 Jira items remain, including
   production scheduling, worker-output retention and target-host recovery.
+
+### 2026-11-28 — BIO-408 Stream private submission downloads
+
+- Started `BIO-408-stream-private-submissions` from current main at
+  `8237351` while PR #92 was in CI. Fast-forwarded to `590fbd2` once all three
+  hosted checks passed and PR #92 merged.
+- The scoped Django download routes now stream verified source or ZIP
+  attachments with exact length and the existing cache policy. The
+  verification and export paths still buffer the bounded bytes.
+- All 148 Django cases, system and migration checks and 32 browser cases
+  passed with disposable services. The HTTP tests check exact file contents,
+  ZIP members, denial, attachment metadata and audit. Browser checks the
+  Admin and Organizer source download paths.
+- Updated the web guide, API and test plans, Jira, coverage, CN-085,
+  changelog and memory. BIO-NFR-08 moves to PARTIAL. The nine backlog
+  categories and 42 Jira items remain, including production storage,
+  short-lived storage links, caps and retention.

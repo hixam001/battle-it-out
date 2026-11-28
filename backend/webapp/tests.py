@@ -121,10 +121,20 @@ class FeatureAPI(TestCase):
         for user in (self.a,self.org,self.admin):
             self.client.force_authenticate(user);self.assertEqual(self.client.get(self.url('live/')).status_code,410)
     def test_source_download_is_team_private_and_staff_read_is_audited(self):
-        own=self.client.get(self.url('submissions/ta-v1/download/'));self.assertEqual(own.status_code,200)
+        own = self.client.get(self.url('submissions/ta-v1/download/'))
+        self.assertEqual(own.status_code, 200)
+        self.assertTrue(own.streaming)
+        self.assertEqual(own['Content-Type'], 'text/x-python')
+        self.assertEqual(own['Content-Disposition'], 'attachment; filename="bot.py"')
+        self.assertEqual(own['Content-Length'], str(len(BOT)))
+        self.assertEqual(own['Cache-Control'], 'private, no-store')
+        self.assertEqual(b''.join(own.streaming_content), BOT)
         other=self.client.get(self.url('submissions/tb-v1/download/'));self.assertEqual(other.status_code,404)
+        self.assertFalse(other.streaming)
         self.client.force_authenticate(self.org)
-        self.assertEqual(self.client.get(self.url('submissions/tb-v1/download/')).status_code,200)
+        staff = self.client.get(self.url('submissions/tb-v1/download/'))
+        self.assertEqual(staff.status_code, 200)
+        self.assertEqual(b''.join(staff.streaming_content), BOT)
         self.assertTrue(any(a['action']=='download' for a in self.rt.flow.registry.store.snapshot()['audit']))
     def test_upload_uses_official_deadline_and_staff_cannot_upload(self):
         from django.core.files.uploadedfile import SimpleUploadedFile
@@ -148,6 +158,15 @@ class FeatureAPI(TestCase):
         download=self.client.get('/api/v1/tournaments/uploads/submissions/'+response.data['id']+'/download/')
         self.assertEqual(download.status_code,200)
         self.assertEqual(download['Content-Type'],'application/zip')
+        self.assertTrue(download.streaming)
+        self.assertEqual(download['Content-Disposition'], 'attachment; filename="bot-bundle.zip"')
+        self.assertEqual(download['Cache-Control'], 'private, no-store')
+        data = b''.join(download.streaming_content)
+        self.assertEqual(download['Content-Length'], str(len(data)))
+        with zipfile.ZipFile(io.BytesIO(data)) as bundle:
+            self.assertEqual(bundle.read('bot.py'), FILES['bot.py'])
+            self.assertEqual(bundle.read('strategy.py'), FILES['strategy.py'])
+            self.assertEqual(json.loads(bundle.read('requirements.json')), json.loads(FILES['requirements.json']))
         self.client.force_authenticate(self.b)
         self.assertEqual(self.client.get('/api/v1/tournaments/uploads/submissions/'+response.data['id']+'/download/').status_code,404)
 
