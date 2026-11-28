@@ -1103,3 +1103,14 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - The feed reads existing decision records and provides a link to the
   tournament. General staff inbox state, disputes and email delivery still
   need their documented work and decisions.
+
+## CN-089 — Dispute dashboard notices (2026-11-28)
+
+- **BIO-607 / BIO-612:** The dashboard reads up to three committed events for
+  the selected tournament. Admins and assigned Organizers see newly opened
+  disputes. Current verified team members see staff review activity for their
+  own disputes. The notice includes the title, activity and time, with a link
+  to the same tournament's dispute queue.
+- The current review route holds reasons and comments. The dashboard notices
+  use the existing event transaction. Inbox state, email, comment notices,
+  appeals and changes to recorded outcomes remain open.

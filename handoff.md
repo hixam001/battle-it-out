@@ -1677,3 +1677,19 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   coverage, CN-088, changelog and memory. All nine backlog categories and
   42 Jira items remain. General staff inbox, preferences, dispute notices
   and production delivery remain open.
+
+### 2026-11-28 — BIO-607 / BIO-612 Dispute dashboard notices
+
+- Started from `fdb8203` on `BIO-607-dispute-dashboard-notices` and
+  fast-forwarded to `3b159e2` after PR #96 merged into `main` with all four
+  hosted checks passing.
+- Django reads up to three committed events for the current role, tournament
+  and team. Staff see filings and the filing team sees review updates. The
+  React dashboard links to the scoped dispute queue.
+- The production build, all 151 Django tests, system and migration checks,
+  and all 32 browser cases (48.0 seconds) passed with disposable state.
+  The tests cover denied and revoked scope, order, audit rollback, repeat
+  requests, mobile layout and navigation to the full review.
+- Updated API and user guides, test plan, coverage, Jira, CN-089, changelog
+  and memory. All nine backlog categories and 42 Jira items remain.
+  Inbox state, email, comment notices and outcome policies remain open.

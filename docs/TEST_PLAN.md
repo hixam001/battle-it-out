@@ -728,3 +728,13 @@ CN-086 also verifies a reachable PostgreSQL connection whose schema search
 path hides the application's migrated tables. GET and HEAD return a redacted
 `503`, liveness remains `200`, and restoring the search path returns readiness
 to `200`.
+
+### Dispute dashboard notices (BIO-607 / CN-089)
+
+PostgreSQL tests verify current access for both staff roles, the filing team
+and the opponent. They check revocation, private caching, response fields,
+the three-event limit and ordering, stale and repeated decisions, and rollback
+after a failed audit. The browser flow opens a dispute, finds the filing on
+the assigned Organizer's dashboard and records a review. The participant sees
+the update at a mobile viewport and opens the selected tournament's dispute
+queue to read the review reason.

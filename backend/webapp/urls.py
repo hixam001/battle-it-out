@@ -54,6 +54,7 @@ urlpatterns = [
          roster.change_invitation_code, {'operation': G.replace_code}),
     path('api/v1/tournaments/<str:tid>/disputes/', V.disputes),
     path('api/v1/tournaments/<str:tid>/disputes/<uuid:did>/', V.dispute_detail),
+    path('api/v1/tournaments/<str:tid>/dispute-notices/', V.dispute_notices),
     path('api/v1/tournaments/<str:tid>/bracket/', results.bracket),
     path('api/v1/tournaments/<str:tid>/bracket/generate/', round_actions.generate),
     path('api/v1/tournaments/<str:tid>/map-pool/', round_actions.map_pool),

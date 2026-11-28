@@ -1080,6 +1080,7 @@ Canonical new paths use a trailing slash except `analytics.csv`.
   `bot-bundle.zip` with an exact `Content-Length` and `private, no-store`
   (CN-085). Staff access remains audited.
 - GET/POST `/tournaments/{id}/disputes/` and `/disputes/{uuid}/` support match-bound team-private review. Creation body: `series_id`, `title`, `description`. Update body: `expected_version` and either `message`, or staff `status` plus `resolution`. Both mutation forms require `Idempotency-Key`; state/event/audit/receipt persistence is one PostgreSQL transaction. Closing a review does not change match results or replay a game.
+- GET `/tournaments/{id}/dispute-notices/` returns `{items: [...]}` with up to three committed events, newest first with descending event ID for timestamp ties. Current Admins and assigned Organizers see `opened` events. Current verified participants see `status_changed` events for visible own-team disputes. Each item includes `id` (integer event ID), `kind`, `title` and ISO 8601 `created_at`. A scoped read uses `Cache-Control: private, no-store`. Full reasons and comments are available from the scoped dispute detail route.
 - GET `/admin/operations/` is Admin-only and read-only, returning counts, incident metadata, dead jobs and recent feature audit events.
 
 Existing core stores remain JSON. Native Django accounts/sessions plus operator

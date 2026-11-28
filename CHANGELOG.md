@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Dispute notices (BIO-607, CN-089)** show new filings to tournament staff
+  and team review updates to participants on the dashboard.
+
 - **Organizer approval notices (BIO-607, CN-088)** show recent approvals
   and rejection reasons to the creating Organizer while assigned.
 
