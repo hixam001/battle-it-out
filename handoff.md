@@ -1461,3 +1461,20 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   project memory. All 91 statuses, nine backlog categories and 42 Jira
   items remain. Backend matrix and real-engine CI, browser CI and deployment
   remain open.
+
+### 2026-11-28 — BIO-804 Backend unit matrix CI
+
+- Confirmed PR #83 merged into `main` at `f18d7c1` after the [hosted frontend
+  build](https://github.com/hixam001/battle-it-out/actions/runs/46113820481)
+  passed. Started `BIO-804-backend-unit-matrix-ci` from the fetched commit.
+- Added `.github/workflows/backend-units.yml`. It discovers the Python
+  families from the execution lock, prints the managed interpreter patch
+  versions, creates the primary pinned launcher environment and runs the
+  existing unit matrix on Ubuntu 24.04. The workflow uses uv 0.13.10 and
+  commit-pinned actions.
+- Shell parsing and local lock discovery passed. The hosted run supplied by
+  the PR verifies the workflow on a fresh GitHub runner. CN-074 records the
+  separate local unit and integration evidence.
+- Updated the backend guide, project and test plans, Jira, CN-076, coverage
+  and memory. All 91 statuses, nine backlog categories and 42 Jira items
+  remain. Hosted web, browser and real-engine checks and deployment stay open.

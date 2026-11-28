@@ -978,3 +978,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
   Ubuntu 24.04, Node.js 26.13.1 and commit-pinned actions.
 - A clean local export passed the same install and build commands. The PR
   records the hosted build check. Backend, browser and engine CI remain open.
+
+## CN-076 — Backend unit matrix CI (2026-11-28)
+
+- **BIO-804:** GitHub Actions runs the existing backend unit matrix on
+  Ubuntu 24.04. The execution lock supplies the supported Python families
+  and pinned primary runner environment. The job reports installed patch
+  versions and verifies each family with `backend/run_tests.py --matrix`.
+- Hosted evidence is recorded by the PR check. Web, browser and real-engine
+  CI are separate verification work.

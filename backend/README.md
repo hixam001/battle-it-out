@@ -46,6 +46,11 @@ Home of the Battle It Out execution foundation and, later, the web backend.
 
 ## Local setup notes
 
+The **Backend unit matrix** workflow installs the Python families listed in
+`match_runner/versions.lock.json`, creates the primary launcher environment
+and runs `backend/run_tests.py --matrix` on Ubuntu 24.04. Each run reports
+the exact interpreter versions. See [the workflow](../.github/workflows/backend-units.yml).
+
 - The scaffold's `run.py` requires Python exactly 3.12 and is not used by the
   match launcher, which runs the engine on Python 3.12 to 3.15
   (`match_runner/README.md`, `docs/CHANGE_NOTICES.md` CN-001).
