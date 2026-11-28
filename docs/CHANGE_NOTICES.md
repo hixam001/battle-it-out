@@ -970,3 +970,11 @@ Decisions from the owner that change or narrow what the requirement documents (P
   four-version backend unit matrix passed. The targeted real-engine run
   passed all 235 cases. Full TC-07/08 acceptance depends on deletion
   workflows, a production provider and restore drills.
+
+## CN-075 — Frontend build CI (2026-11-28)
+
+- **BIO-804:** GitHub Actions checks a clean install, TypeScript and Vite
+  build for frontend and workflow changes to `main`. The workflow uses
+  Ubuntu 24.04, Node.js 26.13.1 and commit-pinned actions.
+- A clean local export passed the same install and build commands. The PR
+  records the hosted build check. Backend, browser and engine CI remain open.

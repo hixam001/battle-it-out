@@ -322,6 +322,11 @@ labels in the webapp README.
 
 ## 4. Additional test categories
 
+The **Frontend build** check runs `npm ci` from the lockfile and
+`npm run build` on Ubuntu 24.04 with Node.js 26.13.1 for frontend and
+workflow changes to `main` (BIO-804 / CN-075). Browser and backend checks
+use their existing local instructions.
+
 ### Unit tests
 
 -   Deadline state transitions.

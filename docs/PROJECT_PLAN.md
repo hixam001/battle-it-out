@@ -112,7 +112,7 @@ Built and tested (evidence: change notices CN-001 to CN-025, pull requests #1 to
 - Tournament lifecycle and deadline timer, roster, invitation codes and registration, notifications and their sources.
 - All of the above are **libraries with JSON-file stores**: no HTTP API, database, accounts, website, running services or worker image exist.
 
-Not done (see `JIRA_BREAKDOWN.md` for the tasks): the backend foundation (needs DEC-11), the endpoints around each library, deletion and retention, the website, load and recovery tests, an independent security review, the pilot, and the owner decisions DEC-04, DEC-06, DEC-07, DEC-10, DEC-11, DEC-13, DEC-14. The whole backend suite was run on Python 3.12, 3.13, 3.14 and 3.15 on 2026-11-25 (CN-025); there is still no CI.
+Not done (see `JIRA_BREAKDOWN.md` for the tasks): the full backend foundation (needs DEC-11), remaining endpoints and screens, deletion and retention, load and recovery tests, an independent security review, the pilot, and the owner decisions DEC-04, DEC-06, DEC-07, DEC-10, DEC-11, DEC-13, DEC-14. The whole backend suite was run on Python 3.12, 3.13, 3.14 and 3.15 on 2026-11-25 (CN-025). CN-075 adds the frontend build check. The hosted Python matrix and real-engine CI remain BIO-804 work.
 
 ### 6.2 Recommended next work (in order)
 
