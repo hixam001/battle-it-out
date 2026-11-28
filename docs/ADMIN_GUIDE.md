@@ -146,6 +146,7 @@ the retained results from the same panel.
 
 - **Audit logs:** open **Audit log** for the global feed, or filter by an
   exact tournament ID to find retained records, including deleted tournaments.
+  For a current tournament, open **Tournament audit log** from its settings.
   Expand an event for the audit fields available to your role.
   [Audit API contract](API_CONTRACT.md#get-tournamentsidaudit-logs-and-get-adminaudit-logs).
 - **Notifications:** dashboard notifications are mandatory and independent of email. Email delivery attempts and failures are recorded and retried. Email provider, templates, and which security emails are mandatory are `[DECIDE]`.

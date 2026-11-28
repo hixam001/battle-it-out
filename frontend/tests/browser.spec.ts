@@ -782,6 +782,46 @@ test("Admin paginates global audit and filters retained events for a deleted tou
   await expect(table).toHaveCount(0);
 });
 
+test("staff open their scoped tournament audit from management", async ({ page, useSession }) => {
+  await useSession(page, "organizer");
+  await page.goto("/organizer/tournaments/cup");
+  await page.getByRole("link", { name: "Tournament audit log" }).click();
+  await expect(page).toHaveURL("/organizer/tournaments/cup/audit");
+  const events = page.getByRole("table", { name: "Tournament audit events" });
+  const completed = events.getByRole("row")
+    .filter({ has: page.getByRole("rowheader", { name: "completed", exact: true }) })
+    .filter({ has: page.getByRole("cell", { name: "series", exact: true }) });
+  await expect(completed).toBeVisible();
+  await completed.getByText("Event details", { exact: true }).click();
+  await expect(completed.getByText("winner team", { exact: true })).toBeVisible();
+  await expect(events.getByRole("rowheader", { name: "incident opened", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Audit filters" })).toHaveCount(0);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await page.screenshot({ path: test.info().outputPath("tournament-audit-desktop.png"), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("tournament-audit-mobile.png"), fullPage: true });
+  await page.getByRole("link", { name: "Back to tournament" }).click();
+  await expect(page).toHaveURL("/organizer/tournaments/cup");
+
+  const foreignReads: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/v1/tournaments/tied-fixture/audit-logs/") foreignReads.push(request.url());
+  });
+  await page.goto("/organizer/tournaments/tied-fixture/audit");
+  await expect(page.getByText("This tournament is unavailable.")).toBeVisible();
+  await expect(events).toHaveCount(0);
+  expect(foreignReads).toEqual([]);
+
+  await useSession(page, "admin");
+  await page.goto("/admin/manage-tournaments/cup/settings");
+  await page.getByRole("link", { name: "Tournament audit log" }).click();
+  await expect(page).toHaveURL("/admin/manage-tournaments/cup/audit");
+  await expect(events).toBeVisible();
+  await page.getByRole("link", { name: "Back to tournament" }).click();
+  await expect(page).toHaveURL("/admin/manage-tournaments/cup/settings");
+});
+
 test("Admin confirms a locked override and a deadline extension with participant receipts", async ({ page, useSession }) => {
   await useSession(page, "admin");
   await page.goto("/admin/tournaments/deadline-fixture");

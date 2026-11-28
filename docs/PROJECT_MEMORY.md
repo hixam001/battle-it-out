@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-610 / CN-073 adds scoped tournament audit views to both staff consoles.
+  The production build and all 31 browser tests passed.
 - BIO-708 / CN-072 improves visibility and keyboard focus in the shared
   console navigation. The production build and 30 browser tests passed.
+  PR #80 merged into `main` at `879a04e`.
 - BIO-705 / CN-071 adds the structured match log view for recorded attempts.
   The production build and all 29 browser tests passed.
   PR #79 merged into `main` at `0a1e028`.
@@ -454,7 +457,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    detail, edit, submit, approve, reject and open registration over HTTP.
    CN-055 adds the Admin approval queue. CN-056 adds the Organizer list,
    draft creation/edit, approval workflow and manual registration opening.
-   CN-058 adds the paginated global audit screen for Admins. CN-059 adds
+   CN-058 adds the paginated global audit screen for Admins. CN-073 adds
+   the tournament audit screen for Admins and assigned Organizers. CN-059 adds
    the Admin extension and emergency override forms with notice receipts.
    CN-062 adds the Organizer map selection, draw and round-start console.
    CN-065 adds Admin tournament listing, draft creation, settings and
@@ -1197,3 +1201,18 @@ a short desktop viewport after resizing. All 91 statuses, nine backlog
 categories and 42 tracked Jira items remain. Formal accessibility and
 full workflow acceptance remain open. The existing scoped tournament
 audit endpoint can supply the missing Organizer audit screen.
+
+## CN-073 continuation evidence
+
+BIO-610 starts from merged main at `879a04e` on
+`BIO-610-staff-tournament-audit-view`. Staff management links to the
+existing scoped tournament feed. Both audit screens share event rows
+and paging. Admin global filtering remains available for retained records.
+
+The production build and all 31 Playwright tests passed (44.8 s). The
+browser verifies event details and return navigation for both staff roles
+and refusal before requesting an unassigned Organizer's feed. An earlier
+run exposed an intermittent navigation visibility assertion. The scroll
+offset now rounds to whole pixels and observes the active link size.
+All 91 statuses, nine backlog categories and 42 tracked Jira items remain.
+The lifecycle browser suite can next exercise deadline notices with email off.

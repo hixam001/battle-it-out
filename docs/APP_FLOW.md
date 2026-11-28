@@ -447,6 +447,9 @@ Authenticated Web App (later phase)
                                             Organizer                              source; delete      deleted
                                                                                    after archive       
 
+  `/organizer/tournaments/{id}/audit`       Assigned        Tournament audit       Expand events,      Empty, recent,
+                                             Organizer                              page records        archived
+
   `/admin`                                  Admin           Global operations      Global status,      Healthy, warning,
                                                                                    incidents           incident
 
@@ -467,6 +470,9 @@ Authenticated Web App (later phase)
 
   `/admin/manage-tournaments/{id}/teams`   Admin           Verified teams         View team,          Empty, active,
                                                                                    download source     archived
+
+  `/admin/manage-tournaments/{id}/audit`   Admin           Tournament audit       Expand events,      Empty, recent,
+                                                                                   page records        archived
 
   `/admin/tournaments/{id}`                 Admin           Deadline controls      Extend deadlines,   Active, locked,
                                                                                    override settings   archived

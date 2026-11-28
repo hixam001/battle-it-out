@@ -952,3 +952,11 @@ Decisions from the owner that change or narrow what the requirement documents (P
   to the page, and inset focus rings remain visible at the strip edges.
 - The production build and all 30 Playwright tests passed, including a
   narrow nested route and short desktop after resize.
+
+## CN-073 — Staff tournament audit view (2026-11-28)
+
+- **BIO-610:** Tournament settings link to the scoped audit feed for
+  Admins and assigned Organizers. Both audit views share pagination and
+  event details. The global Admin view retains its tournament-ID filter.
+- The production build and all 31 Playwright tests passed, including
+  both staff consoles and an unassigned Organizer refusal.

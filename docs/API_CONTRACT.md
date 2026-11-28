@@ -973,6 +973,10 @@ appear only in the unfiltered Admin feed.
 Free-form reasons, invitation/provider credentials, source and host paths are
 excluded. Private/no-store and the shared error envelope apply.
 
+Admins and assigned Organizers can open the paginated tournament feed from
+tournament settings. The global Admin audit view retains its exact
+tournament-ID filter (CN-058/073).
+
 ## 8. Internal match-worker contract (not public API)
 
 The worker interface should be implemented behind a queue/job boundary,

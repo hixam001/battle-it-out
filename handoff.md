@@ -1410,3 +1410,20 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   coverage and memory. The 91 statuses, nine backlog categories and 42
   Jira items remain. The scoped tournament audit endpoint is ready for
   its Organizer console link and view.
+
+### 2026-11-28 — BIO-610 Staff tournament audit view
+
+- Confirmed PR #80 merged into `main` at `879a04e`. Started
+  `BIO-610-staff-tournament-audit-view` from the fetched commit.
+- Added tournament audit links and views for Admins and assigned
+  Organizers. Both views share the existing audit rows and pagination.
+  The API continues to supply the current role's event projection.
+- The production build and all 31 Playwright tests passed (44.8 s).
+  The browser verifies scoped event details, return links and refusal
+  before an unassigned Organizer makes a scoped audit request. The first
+  run uncovered an intermittent navigation assertion. Rounding scroll
+  offsets and observing the active link size resolved it on the rerun.
+- Updated both staff guides, API and flow specs, frontend guide, test plan,
+  Jira, CN-073, changelog, coverage and memory. All 91 statuses, nine backlog
+  categories and 42 tracked Jira items remain. The next lifecycle check can
+  pair a deadline extension with a participant's disabled email setting.
