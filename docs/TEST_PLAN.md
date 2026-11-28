@@ -392,6 +392,14 @@ with the existing local commands.
 -   Notification provider outage.
 -   Backup restore and replay purge job recovery.
 
+The worker-loss regression (BIO-802 / CN-083) exits a disposable worker
+process after the queue job and game attempt are recorded. The replacement
+defers until the match lease expires, records `worker_lost`, and retries
+using the pinned map and submissions. A second delivery writes no new
+results or advancements. Simulated game results keep the case independent
+of engine process timing. Target-host engine cleanup and throughput still
+need separate evidence.
+
 ## 5. Pre-demo checklist
 
 ### Participant team and submissions (BIO-704 / CN-053)

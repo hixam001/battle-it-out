@@ -22,9 +22,12 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-802 / CN-083 verifies queue and match lease recovery after an abrupt
+  worker exit and one result and advancement per game after redelivery.
 - BIO-804 / CN-082 extends real-engine replay smoke to all four pinned
   Python families, checks the interpreter recorded by the match and fixes
   the replay registration race exposed by its first hosted run (BIO-606).
+  PR #90 merged into `main` at `26d61af` after all three hosted checks passed.
 - BIO-705 / CN-081 shows the recorded game and tie-break map order on the
   scoped bracket page.
   PR #89 merged into `main` at `1cfdc10` after all four hosted checks passed.
@@ -435,6 +438,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    the nonrenewed 2400-second match-attempt lease, resume authority and final
    retry-cap policy remain. Live adapter compilation needs the pinned JAR/JDK;
    operational failed-email alert receipt retention still needs policy.
+   CN-083 exercises replacement across both expired leases with fixture games.
 3. **Execution gates:** realistic target-hardware limits benchmark (DEC-04),
    independent sandbox/security review, SR-06 Java-exception classification and
    SR-03 parameter-type residual, engine seed control or accepted TC-04 waiver,
@@ -1401,6 +1405,27 @@ failure in two jobs. File creation now shares the archive state lock and
 purged temporary copies return an archive refusal. Two deterministic
 interleavings reproduced the failure before the fix. Both archive race
 tests passed 20 repetitions each on Python 3.13.18 and 3.15.2 after the fix.
-Full hosted
-integration and target-host deployment remain open. All 91 requirement
-statuses, nine backlog categories and 42 Jira items remain.
+The patched local and hosted runs each passed all 43 cases per Python family.
+The [hosted smoke run](https://github.com/hixam001/battle-it-out/actions/runs/46118073197)
+passed on Python 3.12.16, 3.13.18, 3.14.10 and 3.15.2. PR #90 merged to
+`main` at `26d61af` after the unit matrix and web/browser checks also passed.
+Full hosted integration and target-host deployment remain open. All 91
+requirement statuses, nine backlog categories and 42 Jira items remain.
+
+## CN-083 continuation evidence
+
+BIO-802 starts `BIO-802-worker-loss-redelivery` from the verified `main`
+at `1cfdc10`. It fast-forwards onto the PR #90 merge at `26d61af` before
+publication. The fixture launches a disposable worker process and exits it
+from the game adapter after a queue claim and game attempt. The clock advances
+through the two lease expiries. Recovery records the first attempt as a
+platform failure and keeps the pinned map and submissions. A duplicate queued
+round leaves the completed match and bracket records unchanged. The game
+adapter uses fixture results.
+
+The queue suite passed 54 of 55 cases with one integration skip on Python
+3.12.15, 3.13.18, 3.14.10 and 3.15.2. All 55 passed with real-engine
+integration enabled on Python 3.15.2. The full backend run on that version
+passed 743 of 791 cases with 48 expected skips. All 91 statuses, nine backlog categories
+and 42 open Jira items remain. Target-host engine-process cleanup, provider
+outages, capacity and multi-host validation remain open.
