@@ -501,6 +501,13 @@ that its current navigation section is fully visible without scrolling the
 page. Keyboard activation moves focus to the main content. A short desktop
 viewport keeps the current section and Sign out visible after resizing.
 
+### Staff tournament audit view (BIO-610 / CN-073)
+
+The browser opens the scoped audit from both staff consoles, expands a
+recorded series completion and returns to tournament settings. An unassigned
+Organizer sees the unavailable state. The global Admin filter remains covered
+by its existing browser test.
+
 ### Scaffold / execution demo
 
 -   [ ] Clean checkout and setup instructions work.

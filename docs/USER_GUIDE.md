@@ -121,6 +121,10 @@ management to select an official team, review its verified roster and
 submission findings, and download its bot. The server records staff
 source reads. Captains upload and activate through validation.
 
+Open **Tournament audit log** from management to browse staff activity and
+recorded series events for the assigned tournament. Expand a record to see
+its available details.
+
 Use **Match disputes** to review comments and record resolutions for assigned
 tournaments. An Admin handles approvals, deadline extensions and emergency
 overrides. To archive a completed tournament, open it under **Manage

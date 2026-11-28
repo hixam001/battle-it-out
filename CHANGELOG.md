@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Staff tournament audit view (BIO-610, CN-073)** opens the paginated
+  tournament feed from Admin and assigned Organizer settings.
+
 - **Console navigation accessibility (BIO-708, CN-072)** keeps the current
   section visible on narrow or short viewports and preserves keyboard focus.
 

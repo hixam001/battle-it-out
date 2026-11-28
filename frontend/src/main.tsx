@@ -7,7 +7,7 @@ import { BracketResults, MatchResult, Replay } from "./results";
 import { Approvals } from "./approvals";
 import { adminTournamentList, adminTournamentSettings, organizerTournamentPath, TournamentManagement } from "./tournament-management";
 import { AnnouncementForm } from "./announcements";
-import { GlobalAudit } from "./audit";
+import { AuditLog } from "./audit";
 import { DeadlineControls } from "./deadlines";
 import { InvitationControls } from "./invitations";
 import { Roster } from "./roster";
@@ -413,7 +413,8 @@ const consoleLinks = [
   { page: "announce", href: "/announcements/new", label: "Post announcement", icon: "◈" },
 ] as const;
 type ConsolePage = (typeof consoleLinks)[number]["page"] | "match" | "replay" | "match-logs"
-  | "organizer-roster" | "organizer-rounds" | "organizer-teams" | "admin-roster" | "admin-teams";
+  | "organizer-roster" | "organizer-rounds" | "organizer-teams" | "organizer-audit"
+  | "admin-roster" | "admin-teams" | "admin-audit";
 type ConsoleRoute = { page: ConsolePage; id?: string; create?: boolean };
 const detailRoutes: [RegExp, ConsolePage][] = [
   [/^\/participant\/tournaments\/([^/#]+)\/bracket$/, "bracket"],
@@ -423,10 +424,12 @@ const detailRoutes: [RegExp, ConsolePage][] = [
   [/^\/organizer\/tournaments\/([^/#]+)\/roster$/, "organizer-roster"],
   [/^\/organizer\/tournaments\/([^/#]+)\/rounds$/, "organizer-rounds"],
   [/^\/organizer\/tournaments\/([^/#]+)\/teams$/, "organizer-teams"],
+  [/^\/organizer\/tournaments\/([^/#]+)\/audit$/, "organizer-audit"],
   [/^\/organizer\/tournaments\/([^/#]+)$/, "organizer"],
   [/^\/admin\/manage-tournaments\/([^/#]+)\/settings$/, "admin-tournaments"],
   [/^\/admin\/manage-tournaments\/([^/#]+)\/roster$/, "admin-roster"],
   [/^\/admin\/manage-tournaments\/([^/#]+)\/teams$/, "admin-teams"],
+  [/^\/admin\/manage-tournaments\/([^/#]+)\/audit$/, "admin-audit"],
   [/^\/admin\/tournaments\/([^/#]+)$/, "deadlines"],
 ];
 
@@ -679,16 +682,18 @@ function Console({ user, route, navigate, logout }: {
     const revealActive = () => {
       const viewport = nav.getBoundingClientRect();
       const link = active.getBoundingClientRect();
-      const left = Math.min(0, link.left - viewport.left) + Math.max(0, link.right - viewport.right);
-      const top = Math.min(0, link.top - viewport.top) + Math.max(0, link.bottom - viewport.bottom);
+      const left = Math.min(0, Math.floor(link.left - viewport.left)) + Math.max(0, Math.ceil(link.right - viewport.right));
+      const top = Math.min(0, Math.floor(link.top - viewport.top)) + Math.max(0, Math.ceil(link.bottom - viewport.bottom));
       if (left || top) nav.scrollBy(left, top);
     };
     revealActive();
     const observer = new ResizeObserver(revealActive);
     observer.observe(nav);
+    observer.observe(active);
     return () => observer.disconnect();
   }, [activeSection, loading, role]);
   const staffSettingsPath = adminManagement ? adminTournamentSettings : organizerTournamentPath;
+  const staffTournament = (organizerPage || adminManagement) ? cups.find((record) => record.id === id) : undefined;
   const showTournament = !organizerPage && !adminManagement && !["notifications", "account-settings", "operations", "approvals",
     "audit", "match", "replay", "match-logs"].includes(page);
   const canOpen = (target: ConsolePage) => {
@@ -788,7 +793,12 @@ function Console({ user, route, navigate, logout }: {
             onReview={(review) => setCups((items) => items.map((cup) => cup.id === review.id
               ? { ...cup, status: review.status } : cup))} />
         ) : page === "audit" ? (
-          <GlobalAudit tournaments={cups} />
+          <AuditLog tournaments={cups} />
+        ) : page === "organizer-audit" || page === "admin-audit" ? (
+          loading ? <p role="status">Loading tournament access…</p> : staffTournament ?
+            <AuditLog key={`${page}/${staffTournament.id}`}
+              tournament={{ ...staffTournament, backPath: staffSettingsPath(staffTournament.id) }} /> :
+            <section className="empty"><h1>Tournament audit log</h1><p>This tournament is unavailable.</p></section>
         ) : page === "organizer" || page === "admin-tournaments" ? (
           loading ? <p role="status">Loading tournaments…</p> :
             <TournamentManagement key={`${page}/${id ?? ""}/${Boolean(route.create)}`} id={id} userId={user.id}
@@ -796,13 +806,13 @@ function Console({ user, route, navigate, logout }: {
               tournaments={cups} loadError={error} navigate={navigate} onChange={applyTournament} />
         ) : page === "organizer-roster" || page === "admin-roster" ? (
           loading ? <p role="status">Loading tournament access…</p> : id &&
-            <Roster key={id} tournament={cups.find((record) => record.id === id)} backPath={staffSettingsPath(id)} />
+            <Roster key={id} tournament={staffTournament} backPath={staffSettingsPath(id)} />
         ) : page === "organizer-rounds" ? (
           loading ? <p role="status">Loading Organizer access…</p> :
-            <RoundControls key={id} tournament={cups.find((record) => record.id === id)} />
+            <RoundControls key={id} tournament={staffTournament} />
         ) : page === "organizer-teams" || page === "admin-teams" ? (
           loading ? <p role="status">Loading tournament access…</p> : id &&
-            <StaffTeams key={id} tournament={cups.find((record) => record.id === id)} backPath={staffSettingsPath(id)} />
+            <StaffTeams key={id} tournament={staffTournament} backPath={staffSettingsPath(id)} />
         ) : page === "match" ? (
           id && <MatchResult key={id} matchId={id} />
         ) : page === "replay" ? (

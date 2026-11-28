@@ -158,6 +158,7 @@ function ManagedTournament({ id, userId, admin, listPath, onChange }: {
             </div>
             <p><a href={tournamentPath + "/roster"}>Manage roster</a>{" · "}
               <a href={tournamentPath + "/teams"}>View teams</a>{" · "}
+              <a href={tournamentPath + "/audit"}>Tournament audit log</a>{" · "}
               {admin ? <a href={`/admin/tournaments/${encodeURIComponent(id)}`}>Deadline controls</a>
                 : <a href={tournamentPath + "/rounds"}>Manage rounds</a>}</p>
             <p role="status">{formatStatus(record.status)}</p>

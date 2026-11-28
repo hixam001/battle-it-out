@@ -23,11 +23,11 @@ Production static assets are generated into ignored `frontend/dist/`. Serve
 `/matches/{id}/replay`, `/matches/{id}/logs`, `/admin`, `/admin/approvals`, `/admin/audit`,
 `/admin/manage-tournaments`, `/admin/manage-tournaments/new`,
 `/admin/manage-tournaments/{id}/settings`, `/admin/manage-tournaments/{id}/roster`,
-`/admin/manage-tournaments/{id}/teams`,
+`/admin/manage-tournaments/{id}/teams`, `/admin/manage-tournaments/{id}/audit`,
 `/admin/tournaments`, `/admin/tournaments/{id}`, `/admin/invitations`, `/organizer`,
 `/organizer/tournaments/new`, `/organizer/tournaments/{id}`,
 `/organizer/tournaments/{id}/roster`, `/organizer/tournaments/{id}/rounds`,
-`/organizer/tournaments/{id}/teams` and
+`/organizer/tournaments/{id}/teams`, `/organizer/tournaments/{id}/audit` and
 `/announcements/new`; retain the same-origin
 `/api` route to Django. Hosting,
 TLS, reverse proxy and public deployment remain operator/deployment work; no
@@ -105,6 +105,8 @@ corrects unlocked entries with a version check.
 queues each ready round separately.
 **View teams** shows verified rosters, bracket standing, history, validation
 findings and audited source downloads in assigned tournaments.
+**Tournament audit log** shows the paginated role-scoped feed for the current
+tournament. It is available from both Admin and Organizer settings.
 
 Admins and assigned Organizers can confirm archive from a completed
 tournament's management page. The archive panel reports replay removal or

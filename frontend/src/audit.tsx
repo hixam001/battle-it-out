@@ -11,16 +11,20 @@ type Item = {
   detail: Record<string, string | number | boolean>;
 };
 type Page = { items: Item[]; next_offset: number | null };
+type Tournament = { id: string; name: string };
+type AuditScope = { tournaments: Tournament[]; tournament?: never } |
+  { tournament: Tournament & { backPath: string }; tournaments?: never };
 const pageSize = 25;
 const readable = (value: string) => value.replaceAll("_", " ");
 
-export function GlobalAudit({ tournaments }: { tournaments: { id: string; name: string }[] }) {
+export function AuditLog({ tournaments, tournament }: AuditScope) {
   const [draft, setDraft] = useState("");
   const [filter, setFilter] = useState("");
   const [offset, setOffset] = useState(0);
   const [revision, setRevision] = useState(0);
   const [page, setPage] = useState<Page>();
   const [error, setError] = useState("");
+  const endpoint = tournament ? `/tournaments/${encodeURIComponent(tournament.id)}/audit-logs/` : "/admin/audit-logs/";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -28,11 +32,11 @@ export function GlobalAudit({ tournaments }: { tournaments: { id: string; name: 
     if (filter) query.set("tournament_id", filter);
     setPage(undefined);
     setError("");
-    api<Page>(`/admin/audit-logs/?${query}`, { signal: controller.signal })
+    api<Page>(`${endpoint}?${query}`, { signal: controller.signal })
       .then((response) => { if (!controller.signal.aborted) setPage(response); })
       .catch((error: Error) => { if (!controller.signal.aborted) setError(error.message); });
     return () => controller.abort();
-  }, [filter, offset, revision]);
+  }, [endpoint, filter, offset, revision]);
 
   function search(tournament: string) {
     setFilter(tournament.trim());
@@ -43,10 +47,15 @@ export function GlobalAudit({ tournaments }: { tournaments: { id: string; name: 
   return (
     <>
       <div className="workspace-heading">
-        <h1>Global audit log</h1>
-        <button className="text-button" onClick={() => search(filter)}>Refresh audit log</button>
+        <div><h1>{tournament ? "Tournament audit log" : "Global audit log"}</h1>
+          {tournament && <p>{tournament.name}</p>}
+        </div>
+        <div className="notice-actions">
+          {tournament && <a href={tournament.backPath}>Back to tournament</a>}
+          <button className="text-button" onClick={() => search(filter)}>Refresh audit log</button>
+        </div>
       </div>
-      <section className="panel" aria-label="Audit filters">
+      {tournaments && <section className="panel" aria-label="Audit filters">
         <form onSubmit={(event) => { event.preventDefault(); search(draft); }}>
           <label>Tournament ID
             <input value={draft} onChange={(event) => setDraft(event.target.value)}
@@ -61,20 +70,22 @@ export function GlobalAudit({ tournaments }: { tournaments: { id: string; name: 
               onClick={() => { setDraft(""); search(""); }}>Clear filter</button>
           </div>
         </form>
-      </section>
+      </section>}
       <section className="panel" aria-labelledby="audit-events">
         <h2 id="audit-events">Audit events</h2>
         {filter && <p>Tournament ID <code>{filter}</code></p>}
         {error ? <p className="error" role="alert">{error}</p> :
           !page ? <p role="status">Loading audit events…</p> :
-          page.items.length === 0 ? <p>No audit events match this filter.</p> :
+          page.items.length === 0 ? <p>{filter ? "No audit events match this filter." : "No audit events recorded."}</p> :
             <div className="table-wrap">
-              <table aria-label="Global audit events">
+              <table aria-label={tournament ? "Tournament audit events" : "Global audit events"}>
                 <thead><tr>
                   <th scope="col">Date</th><th scope="col">Action</th><th scope="col">Source</th>
-                  <th scope="col">Tournament ID</th><th scope="col">Actor ID</th><th scope="col">Details</th>
+                  {!tournament && <th scope="col">Tournament ID</th>}<th scope="col">Actor ID</th><th scope="col">Details</th>
                 </tr></thead>
-                <tbody>{page.items.map((item) => <AuditRow key={`${item.source}/${item.id}`} item={item} />)}</tbody>
+                <tbody>{page.items.map((item) => (
+                  <AuditRow key={`${item.source}/${item.id}`} item={item} includeTournament={!tournament} />
+                ))}</tbody>
               </table>
             </div>}
         <nav className="notice-actions notice-pagination" aria-label="Audit pages">
@@ -91,14 +102,14 @@ export function GlobalAudit({ tournaments }: { tournaments: { id: string; name: 
   );
 }
 
-function AuditRow({ item }: { item: Item }) {
+function AuditRow({ item, includeTournament }: { item: Item; includeTournament: boolean }) {
   const details = Object.entries(item.detail);
   return (
     <tr>
       <td><time dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time></td>
       <th scope="row">{readable(item.action)}</th>
       <td>{readable(item.source)}</td>
-      <td>{item.tournament_id ?? "—"}</td>
+      {includeTournament && <td>{item.tournament_id ?? "—"}</td>}
       <td>{item.actor_id ?? "—"}</td>
       <td>{details.length > 0 ? (
         <details className="validation-details">
