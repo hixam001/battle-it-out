@@ -1,6 +1,7 @@
 import { test as base, expect } from "@playwright/test";
 import type { BrowserContext, Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { gunzipSync } from "node:zlib";
 
 type UseSession = (page: Page, username: string) => Promise<void>;
 type Cookies = Awaited<ReturnType<BrowserContext["cookies"]>>;
@@ -429,6 +430,10 @@ test("bracket links show match results and a recorded coin flip after replay arc
   await expect(page.getByRole("region", { name: "Final" }).getByText("Game wins 0–0")).toBeVisible();
   await page.getByRole("link", { name: "Match details" }).click();
   const matchUrl = page.url();
+  const path = `/api/v1${new URL(matchUrl).pathname}/`;
+  const before = await page.request.get(path);
+  expect(before.ok()).toBe(true);
+  const recordedResult = await before.json();
   await expect(page.getByRole("heading", { name: "Recorded coin flip" })).toBeVisible();
   await expect(page.getByText(/each team had a 50% chance/i)).toBeVisible();
   const games = page.getByRole("region", { name: "Games in this series" });
@@ -439,9 +444,11 @@ test("bracket links show match results and a recorded coin flip after replay arc
 
   await page.getByRole("link", { name: "Replay", exact: true }).click();
   const replayUrl = page.url();
-  const download = page.waitForEvent("download");
+  const downloadEvent = page.waitForEvent("download");
   await page.getByRole("link", { name: "Download replay" }).click();
-  expect((await download).suggestedFilename()).toMatch(/\.bc26$/);
+  const download = await downloadEvent;
+  expect(download.suggestedFilename()).toMatch(/\.bc26$/);
+  expect(gunzipSync(await readFile(await download.path())).toString()).toBe("Local browser download fixture.".repeat(40));
 
   await page.goto("/admin/manage-tournaments/tied-fixture/settings");
   const archive = page.getByRole("region", { name: "Tournament archive" });
@@ -458,6 +465,10 @@ test("bracket links show match results and a recorded coin flip after replay arc
   await page.goto(replayUrl);
   await expect(page.getByText("Replay no longer available. The tournament is archived.")).toBeVisible();
   await expect(page.getByRole("link", { name: "Download replay" })).toHaveCount(0);
+  expect((await page.request.get(path + "replay/")).status()).toBe(410);
+  const after = await page.request.get(path);
+  expect(after.ok()).toBe(true);
+  expect(await after.json()).toEqual(recordedResult);
   await page.getByRole("link", { name: "Back to match" }).click();
   await expect(page).toHaveURL(matchUrl);
   await expect(page.getByRole("heading", { name: "Recorded coin flip" })).toBeVisible();
@@ -822,7 +833,14 @@ test("staff open their scoped tournament audit from management", async ({ page, 
   await expect(page).toHaveURL("/admin/manage-tournaments/cup/settings");
 });
 
-test("Admin confirms a locked override and a deadline extension with participant receipts", async ({ page, useSession }) => {
+test("Admin confirms a deadline extension and publishes a participant notice with email off", async ({ page, useSession }) => {
+  await useSession(page, "captain-a");
+  await page.goto("/account/settings");
+  const email = page.getByRole("checkbox", { name: "Email notifications" });
+  await expect(email).toBeChecked();
+  await email.click();
+  await expect(page.getByText("Email notifications disabled.")).toBeVisible();
+
   await useSession(page, "admin");
   await page.goto("/admin/tournaments/deadline-fixture");
   await expect(page.getByRole("heading", { name: "Deadline controls" })).toBeVisible();
@@ -848,8 +866,10 @@ test("Admin confirms a locked override and a deadline extension with participant
   });
   await page.getByLabel("New deadline", { exact: true }).fill(next);
   await page.getByRole("textbox", { name: "Reason", exact: true }).fill("Allow another fixture submission.");
+  const extend = page.getByRole("button", { name: "Extend deadline", exact: true });
+  await expect(extend).toBeDisabled();
   await page.getByRole("checkbox", { name: /Confirm this change/ }).check();
-  await page.getByRole("button", { name: "Extend deadline", exact: true }).click();
+  await extend.click();
   await expect(page.getByRole("status")).toHaveText("Change recorded. Affected accounts: 2. Dashboard notices published.");
   const after = await (await page.request.get(path)).json();
   expect(Date.parse(after.submission_deadline)).toBeGreaterThan(Date.parse(changed.submission_deadline));
@@ -859,6 +879,15 @@ test("Admin confirms a locked override and a deadline extension with participant
   await page.goto("/notifications");
   await expect(page.getByRole("heading", { name: "The submission deadline of deadline-fixture was extended" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "A setting of deadline-fixture was changed by an emergency override" })).toBeVisible();
+  await expect(email).not.toBeChecked();
+  const feed = await page.request.get("/api/v1/notifications/?tournament_id=deadline-fixture");
+  expect(feed.ok()).toBe(true);
+  expect((await feed.json()).items).toEqual(expect.arrayContaining([
+    expect.objectContaining({ event_type: "deadline_extended", email_status: "disabled" }),
+    expect.objectContaining({ event_type: "emergency_override", email_status: "disabled" }),
+  ]));
+  await email.click();
+  await expect(page.getByText("Email notifications enabled.")).toBeVisible();
   await page.goto("/admin/tournaments/deadline-fixture");
   await expect(page.getByRole("alert")).toHaveText("Admin access is required to change deadlines and locked settings.");
 });

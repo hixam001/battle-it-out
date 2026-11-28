@@ -960,3 +960,13 @@ Decisions from the owner that change or narrow what the requirement documents (P
   event details. The global Admin view retains its tournament-ID filter.
 - The production build and all 31 Playwright tests passed, including
   both staff consoles and an unassigned Organizer refusal.
+
+## CN-074 — Local web lifecycle acceptance (2026-11-28)
+
+- **BIO-611:** Expanded browser checks verify new deadline and override
+  notices with participant email off, exact fixture replay content,
+  replay refusal after archive and unchanged official result data.
+- The production build, 31 Playwright cases, 147 Django cases and the
+  four-version backend unit matrix passed. The targeted real-engine run
+  passed all 235 cases. Full TC-07/08 acceptance depends on deletion
+  workflows, a production provider and restore drills.

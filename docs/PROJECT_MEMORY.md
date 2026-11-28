@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-611 / CN-074 expands local lifecycle acceptance for email-off notices,
+  verified replay archive and unchanged result payloads.
 - BIO-610 / CN-073 adds scoped tournament audit views to both staff consoles.
   The production build and all 31 browser tests passed.
+  PR #81 merged into `main` at `e75d797`.
 - BIO-708 / CN-072 improves visibility and keyboard focus in the shared
   console navigation. The production build and 30 browser tests passed.
   PR #80 merged into `main` at `879a04e`.
@@ -464,7 +467,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    CN-065 adds Admin tournament listing, draft creation, settings and
    registration opening. CN-066 adds confirmed staff archive, vault purge
    receipts and a link to retained results. CN-067 adds Admin roster import
-   and team review with audited source downloads.
+   and team review with audited source downloads. CN-074 verifies that
+   archived replay URLs return `410` and official results stay identical.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
    store migration, real provider and deployment; Organizer approval/rejection
    and dispute notices; mandatory security
@@ -1216,3 +1220,21 @@ run exposed an intermittent navigation visibility assertion. The scroll
 offset now rounds to whole pixels and observes the active link size.
 All 91 statuses, nine backlog categories and 42 tracked Jira items remain.
 The lifecycle browser suite can next exercise deadline notices with email off.
+
+## CN-074 continuation evidence
+
+BIO-611 starts from merged main at `e75d797` on
+`BIO-611-web-lifecycle-acceptance`. The browser disables participant email
+in settings and verifies both new Admin deadline notices with disabled email
+status. The archive flow checks exact fixture replay contents, `410` after
+purge and equality of the official result payload across archive.
+
+The production build, 31 Playwright tests (45.0 s), 147 Django tests
+(15.7 s), and Django system and migration checks passed. The backend unit
+matrix passed on CPython 3.12.15, 3.13.18, 3.14.10 and 3.15.2, with 735 of
+786 cases passing and 51 skips on each interpreter. All 91 statuses and
+nine backlog categories remain, with 42 Jira items open. Deletion and
+production provider outage and restore still gate full acceptance.
+All 235 targeted orchestrator, work-queue and service cases also passed
+in integration mode on Python 3.15.2 (278.3 s), using the pinned engine
+and temporary outputs. GitHub Actions is enabled for the next CI slice.

@@ -1427,3 +1427,23 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   Jira, CN-073, changelog, coverage and memory. All 91 statuses, nine backlog
   categories and 42 tracked Jira items remain. The next lifecycle check can
   pair a deadline extension with a participant's disabled email setting.
+
+### 2026-11-28 — BIO-611 Local web lifecycle acceptance
+
+- Confirmed PR #81 merged into `main` at `e75d797`. Started
+  `BIO-611-web-lifecycle-acceptance` from the fetched commit.
+- Browser coverage now disables email in participant settings before Admin
+  deadline actions and verifies the disabled email status on both new
+  dashboard notices. The archive case checks the exact replay fixture, a
+  `410` from the archive-blocked URL and equality of the official result
+  payload. The only code changes are in the browser tests.
+- The production build, 31 Playwright tests (45.0 s), 147 Django tests
+  (15.7 s), and Django system and migration checks passed. CPython 3.12.15,
+  3.13.18, 3.14.10 and 3.15.2 each passed 735 backend unit cases with 51
+  skips. Python 3.15.2 passed all 235 targeted orchestration, queue and
+  service cases with real-engine integration enabled (278.3 s). Test
+  artifacts stayed in disposable locations.
+- Updated the test plan, Jira, CN-074, coverage and memory. The 91
+  statuses, nine backlog categories and 42 Jira items remain. Deletion
+  and production recovery still gate acceptance. The repository's enabled
+  GitHub Actions can run the frontend build for the next CI slice.

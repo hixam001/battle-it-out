@@ -307,6 +307,14 @@ email opt-out. It asserts one audit event, receipt and inbox entry per
 recipient, rollback on audit capacity failure, archived-state refusal and
 deletion of announcement content with retained audit metadata.
 
+#### Browser lifecycle subset (BIO-611 / CN-074)
+
+The browser disables a linked participant's email preference in account
+settings, confirms an Admin override and deadline extension, then verifies
+both dashboard notices with `email_status: disabled`. The archive flow
+checks the exact downloaded fixture replay, HTTP `410` after confirmed purge,
+and equality of the official result payload before and after archive.
+
 Full TC-08 still requires a real provider, production outage and backup/restore
 drill. Staff recipients, approval/dispute notices and
 notification-store migration remain open. Web tests require explicit module
