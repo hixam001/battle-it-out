@@ -46,6 +46,11 @@ Home of the Battle It Out execution foundation and, later, the web backend.
 
 ## Local setup notes
 
+The [Battlecode engine smoke test](../.github/workflows/engine-smoke.yml)
+uses the Gradle wrapper, the pinned primary Python environment and the
+existing sandbox to play the sample Python bots on Ubuntu 26.04. The replay
+integration module writes its match and vault data to temporary directories.
+
 The **Backend unit matrix** workflow installs the Python families listed in
 `match_runner/versions.lock.json`, creates the primary launcher environment
 and runs `backend/run_tests.py --matrix` on Ubuntu 24.04. Each run reports

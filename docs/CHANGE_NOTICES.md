@@ -996,3 +996,13 @@ Decisions from the owner that change or narrow what the requirement documents (P
   the runner's installed Chromium. The job reports its browser version.
 - Shell validation passed locally. The hosted run appears on the PR.
   Real-engine CI remains separate.
+
+## CN-078 — Battlecode engine smoke test (2026-11-28)
+
+- **BIO-804:** Adds an Ubuntu 26.04 workflow for the replay integration
+  module using the primary launcher environment, JDK 21 and the pinned
+  Battlecode release. The preflight loads the existing sandbox configuration
+  before the match. The smoke workflow covers the primary Python runtime.
+- All 40 replay cases passed locally on Python 3.15.2. The GitHub pull
+  request records the hosted result. Wider hosted engine
+  integration and target-host deployment remain open.

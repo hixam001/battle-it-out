@@ -1496,3 +1496,20 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated web and frontend guides, project and test plans, Jira, CN-077
   and memory. All 91 statuses, nine backlog categories and 42 Jira items
   remain. Hosted real-engine verification and deployment remain open.
+
+### 2026-11-28 — BIO-804 Hosted Battlecode engine smoke test
+
+- Confirmed PR #85 merged into `main` at `874e567` after the Django and
+  Chromium, backend unit and frontend build checks passed. Started
+  `BIO-804-hosted-engine-smoke` on that commit and reused the local draft.
+- The CI workflow installs bubblewrap, selects JDK 21, prepares the locked
+  primary Python launcher and resolves the pinned Java runtime. It verifies
+  sandbox startup and runs the replay integration suite with disposable data.
+- The first GitHub attempt on Ubuntu 24.04 hit a permission error setting up
+  the sandbox loopback. The job now uses Ubuntu 26.04, which carries the
+  [distribution's bubblewrap namespace profile](https://documentation.ubuntu.com/release-notes/25.04/#apparmor-profile-for-bwrap).
+- All 40 replay cases passed on Python 3.15.2 in 20.362 seconds. All five
+  workflow shell steps passed syntax checks. Hosted results are in the PR.
+- Updated the backend guide, test and project plans, Jira, coverage, CN-078
+  and memory. All 91 statuses, nine backlog categories and 42 Jira items
+  remain. Wider hosted integration, the worker image and deployment are open.
