@@ -163,3 +163,24 @@ class RoundActionsAPI(TestCase):
         body = {'confirm': True, 'idempotency_key': 'paused-round'}
         self.assertEqual(self.send(organizer, 'rounds/1/start/', body).status_code, 409)
         self.assertEqual(self.jobs(), [])
+
+    def test_round_start_can_retry_after_restoring_the_pinned_maps(self):
+        organizer = self.session(self.org)
+        self.select(organizer)
+        self.close_window()
+        self.assertEqual(self.draw(organizer).status_code, 200)
+        changed = make_jar(self.fixture.root / 'changed.jar', {**FILES, GOOD['play'][0]: b'changed'})
+        start = 'rounds/1/start/'
+        body = {'confirm': True, 'idempotency_key': 'start-after-map-repair'}
+
+        with override_settings(BIO_ENGINE_JAR=changed):
+            response = self.send(organizer, start, body)
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertIn('pinned map pool', response.json()['error']['message'])
+        with override_settings(BIO_ENGINE_JAR=None):
+            self.assertEqual(self.send(organizer, start, body).status_code, 503)
+        self.assertEqual(B.get_bracket(self.rt.flow.store, self.tid)['rounds'][0]['status'], B.READY)
+        self.assertEqual(self.jobs(), [])
+
+        self.assertEqual(self.send(organizer, start, body).status_code, 200)
+        self.assertEqual(len(self.jobs()), 1)

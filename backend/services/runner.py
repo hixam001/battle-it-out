@@ -158,7 +158,7 @@ class Runtime:
             raise ConfigurationError("worker runtime verification failed; run launcher.py verify")
         # The alerts process owns delivery, including after a worker dies with a stored incident.
         return W.build_worker(self.config.data_dir, python_version=self.config.python_version, notify=True,
-                              live_dir=self.config.data_dir / "live")
+                              live_dir=self.config.data_dir / "live", engine_jar=self.config.engine_jar)
 
     def status(self) -> dict:
         stores = (self.flow.store, self.flow.queue.store, self.vault.index)

@@ -27,6 +27,7 @@ These keep their original keys. They are listed because later epics wait for the
 | BIO-204 | Benchmark the limits on target hardware and publish the fixed numbers | Interim profile only | Owner first: DEC-04 |
 | BIO-203 | Independent review of the sandbox (SR-06) | Self-review only | A reviewer outside the project |
 | BIO-303 | House bots and their bracket algorithm; the qualification cutoff draw (SRD-027) | Refused on purpose; no draw | Owner first: DEC-06, DEC-14 |
+| BIO-304 | Re-verify the pinned map pool before each round | Round-start and configured worker checks implemented (CN-080) | Engine JAR configured to match the launcher |
 | BIO-306 | New random seed on a retry (TC-04); a real Admin alert channel | Seed is not controllable in the engine; alert is a function | Engine change or an accepted waiver; BIO-409 for the channel |
 | BIO-305 | Replay endpoint, object storage, player | Vault (CN-012) and private download (BIO-605 / CN-032); object storage and player open | BIO-408, DEC-10 |
 | BIO-102 | Python 3.13 and 3.15 never run on the development machine | **Done by hand 2026-11-25 (CN-025):** the whole suite passes on 3.12 to 3.15, unit and real games, through `backend/run_tests.py --matrix`; what is left is running it automatically | BIO-804 (CI matrix), DEC-03 |

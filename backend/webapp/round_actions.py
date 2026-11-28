@@ -25,6 +25,19 @@ class EngineCatalogueUnavailable(APIException):
     status_code = 503
 
 
+class RoundMapConflict(APIException):
+    status_code = 409
+
+
+def engine_catalogue():
+    if settings.BIO_ENGINE_JAR is None:
+        raise EngineCatalogueUnavailable()
+    try:
+        return M.load_engine_maps(settings.BIO_ENGINE_JAR)
+    except (M.MapError, OSError, BadZipFile) as exc:
+        raise EngineCatalogueUnavailable() from exc
+
+
 def locked_scope(request, tid):
     # The operator assignment command locks the same account before changing a grant.
     account = get_user_model().objects.select_for_update().filter(pk=request.user.pk, is_active=True).first()
@@ -86,12 +99,7 @@ def generate(request, tid):
             return private(conflict('Registration must be open to generate a bracket.'), 409)
         if tournament['deadlines'][T.SUBMISSION] > time.time():
             return private(conflict('The submission deadline has not passed.'), 409)
-        if settings.BIO_ENGINE_JAR is None:
-            raise EngineCatalogueUnavailable()
-        try:
-            catalogue = M.load_engine_maps(settings.BIO_ENGINE_JAR)
-        except (M.MapError, OSError, BadZipFile) as exc:
-            raise EngineCatalogueUnavailable() from exc
+        catalogue = engine_catalogue()
         try:
             drawn = S.open_ready_bracket(
                 runtime.tournaments, runtime.flow, tid,
@@ -122,8 +130,16 @@ def start(request, tid, round_number):
         stored = results.official_bracket(tid, D.bracket_for(tid)[1])
         if stored is None or not 1 <= round_number <= len(stored['rounds']):
             raise NotFound()
+        flow = D.runtime().flow
+        pool_id = stored.get('map_pool')
+        if pool_id is not None and stored['rounds'][round_number - 1]['status'] in (B.READY, B.RUNNING):
+            try:
+                M.verified_pool(flow.store, pool_id, engine_catalogue(), L.load_lock()['engine_version'])
+            except M.MapError as exc:
+                # A repaired catalogue can be retried with the original request key.
+                raise RoundMapConflict('The pinned map pool no longer matches the engine.') from exc
         try:
-            outcome = F.start_round(D.runtime().flow, stored['id'], round_number, actor.user_id, enqueue_paused=False)
+            outcome = F.start_round(flow, stored['id'], round_number, actor.user_id, enqueue_paused=False)
         except B.BracketError as exc:
             return conflict(str(exc)), 409
         except F.FlowError:

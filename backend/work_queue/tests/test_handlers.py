@@ -256,6 +256,42 @@ class RoundJobs(Base):
 
 
 class Wiring(Base):
+    def test_configured_worker_retries_map_drift_without_playing_or_advancing(self):
+        from backend.match_orchestrator import maps as M
+        from backend.match_orchestrator.tests.test_maps import ENGINE, FILES, GOOD as POOL_MAPS, make_jar
+        from backend.work_queue import service as S
+
+        jar = make_jar(self.dir / "engine.jar", FILES)
+        store = JsonFileStore(self.dir / "matches.json")
+        catalogue = M.load_engine_maps(jar)
+        M.create_pool(store, "p1", catalogue, ENGINE, **POOL_MAPS)
+        M.create_bracket_from_pool(store, "b1", teams(2), "p1", catalogue, ENGINE)
+        B.start_round(store, "b1", 1, "org-1", now=self.clock)
+        job = J.enqueue_round(self.q, "b1", 1, now=self.clock)
+        played = []
+
+        def play_game(context):
+            played.append(context.match_id)
+            return lower_wins(context)
+
+        worker = S.build_worker(self.dir, engine_jar=jar, play=self.fail, run_fn=play_game, now=self.clock)
+        changed_maps = {**FILES, POOL_MAPS["play"][0]: b"changed"}
+        make_jar(jar, changed_maps)
+        self.assertEqual(worker.run_once()["outcome"], J.QUEUED)
+        self.assertEqual(played, [])
+        self.assertEqual(store.snapshot()["matches"], {})
+        failed = J.get_job(self.q, job["id"])
+        self.assertIn("changed since the pool was made", failed["last_error"])
+
+        make_jar(jar, FILES)
+        self.clock.t = failed["not_before"]
+        self.assertEqual(worker.run_once()["outcome"], J.DONE)
+        self.assertEqual(B.get_bracket(store, "b1")["rounds"][0]["status"], B.COMPLETED)
+        make_jar(jar, changed_maps)
+        J.enqueue_round(self.q, "b1", 1, now=self.clock)
+        self.assertEqual(worker.run_once()["outcome"], J.DONE)
+        self.assertEqual(len(played), 1)
+
     def test_trial_games_and_tournament_games_share_one_host_lock_and_the_registry_is_the_bots_dir(self):
         from unittest import mock
         from backend.work_queue import service as S

@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-304 / CN-080 rechecks pinned map pools at round start and configured
+  worker execution. Map drift blocks games until the catalogue is repaired.
 - BIO-803 / CN-079 reconciles restored replay files under completed archive
   purge receipts. A disposable PostgreSQL and service-state restore passed.
+  PR #87 merged into `main` at `43a178f` after all three hosted checks passed.
 - BIO-804 / CN-078 adds the primary-Python Battlecode engine smoke workflow.
   PR #86 merged into `main` at `3c89849` after all three hosted checks passed.
 - BIO-804 / CN-077 adds hosted Django and Chromium Playwright checks.
@@ -429,8 +432,9 @@ with current code and the coverage matrix; nothing here is closed by intake.
    independent sandbox/security review, SR-06 Java-exception classification and
    SR-03 parameter-type residual, engine seed control or accepted TC-04 waiver,
    house-bot algorithm (DEC-06), qualification-cutoff draw/audit (DEC-14), and
-   complete TC-05 including these scenarios. Map pools exist; custom-map safety,
-   suitability, per-round re-verification and production persistence remain.
+   complete TC-05 including these scenarios. The round-start route and
+   configured worker re-verify pinned map pools (CN-080). Custom-map safety,
+   suitability and production persistence remain.
    Other OSes, 3.16/free-threaded builds and wider real-engine CI remain open. New
    native bundle/live tests do not close any of these execution gates.
 4. **Registration/submissions:** public claim and verification endpoints and
@@ -1334,3 +1338,24 @@ and a no-op repeat cleanup. All fixture files were disposable.
 BIO-NFR-09 moves to PARTIAL. All 91 requirements, nine backlog categories
 and 42 open Jira items remain. Production restore, retention and worker output
 cleanup still need their existing decisions and evidence.
+
+PR #87 merged into `main` at `43a178f` after the hosted engine smoke test,
+backend unit matrix and web/browser checks passed.
+
+## CN-080 continuation evidence
+
+BIO-304 starts from merged `main` at `43a178f` on
+`BIO-304-verify-maps-before-rounds`. The API rechecks the pinned map pool
+against the configured catalogue before starting a round, and the configured
+worker verifies it again when the round job runs. A refused request leaves
+the round ready and the original key reusable. A worker mismatch uses the
+normal queue retry path before a game attempt exists.
+
+Python 3.15.2 ran 789 backend cases with 741 passes and 48 expected skips.
+All 148 Django cases and the system and migration checks passed with disposable
+PostgreSQL. All 52 service and map cases passed with real-engine integration
+in 65.656 seconds. The regressions verify changed maps on both paths, same-key
+repair, one completion and no replay of a completed round. All 91 requirement statuses,
+nine backlog categories and 42 Jira items remain. The configured JAR must be
+the launcher's engine JAR. Custom-map approval and production persistence
+remain open.

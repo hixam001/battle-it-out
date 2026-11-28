@@ -136,6 +136,13 @@ four-game final resolved by coin flip. Repeated reads preserve the result and
 stored draw. Current sessions, access revocation, archived history and generic
 hidden/missing refusals are tested with disposable PostgreSQL accounts.
 
+Per-round map verification (BIO-304 / CN-080) changes a fixture map after the
+draw and checks for `409` with a ready round and no queued job. A missing
+catalogue returns `503`. Repair lets the original key queue exactly one job.
+The configured worker test changes a map after enqueue, verifies the failed
+job starts no game, restores the map and verifies one completed game. A later
+duplicate for the completed round plays no games.
+
 ### TC-06 --- Registration, invitations, and deadline transitions
 
 **Jira:** BIO-EPIC-05 / BIO-EPIC-06\

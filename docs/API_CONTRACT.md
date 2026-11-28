@@ -748,6 +748,10 @@ above. The server rechecks staff access before replaying a saved response.
 Results contain `round_number`, `status` and `job_id` (`null` for a completed
 round). A later round whose predecessor is incomplete, a paused round or
 invalid pinned files return `409`. Repeating a start queues at most one job.
+For a bracket with a stored map pool, the server checks its engine version and
+map hashes before accepting a start. A mismatch returns `409` and an
+unavailable catalogue returns `503`. Both allow the same key to be retried
+after repair. The configured worker rechecks the pool at execution time.
 
 ### GET and PUT `/tournaments/{id}/map-pool/`
 

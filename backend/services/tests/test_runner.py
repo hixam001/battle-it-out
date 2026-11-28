@@ -195,7 +195,8 @@ class ServiceFlow(ServiceFixture):
     def test_worker_verifies_runtime_and_enables_notifications(self):
         with mock.patch.object(S.L, "verify", return_value=[]), mock.patch.object(S.W, "build_worker") as build:
             self.runtime.worker()
-            build.assert_called_once_with(self.dir, python_version="3.15", notify=True, live_dir=self.dir / "live")
+        build.assert_called_once_with(self.dir, python_version="3.15", notify=True, live_dir=self.dir / "live",
+                                      engine_jar=self.config.engine_jar)
         with mock.patch.object(S.L, "verify", return_value=["bad package"]), mock.patch.object(S.W, "build_worker") as build:
             with self.assertRaises(S.ConfigurationError):
                 self.runtime.worker()

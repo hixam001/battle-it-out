@@ -230,12 +230,14 @@ def _stage(b: dict, round_no: int) -> tuple[str, list[str]]:
 
 def run_round(store: JsonFileStore, bracket_id: str, round_no: int, run_fn: Callable[[O.AttemptContext], dict], *,
               owner: str | None = None, alert: Callable[[dict], None] | None = None,
-              coin: Callable[[], str] | None = None, **job_kwargs) -> dict:
+              coin: Callable[[], str] | None = None, verify_map_pool: Callable[[str], None] | None = None,
+              **job_kwargs) -> dict:
     """Play the matches of a started round one after another and advance each winner once.
 
     Returns {"status": round status, "ran": attempts run by this call, "skipped": reason or None}. Safe to call
     again or from several workers: finished matches are not replayed, and a match another worker holds is
     skipped (`running_elsewhere`). Stops when a game is paused (an operator must resume it, then call again).
+    A configured worker verifies the pinned pool before running a round.
     """
     now = job_kwargs.get("now", time.time)
     owner = owner or f"worker-{os.getpid()}-{uuid.uuid4().hex[:8]}"
@@ -248,6 +250,9 @@ def run_round(store: JsonFileStore, bracket_id: str, round_no: int, run_fn: Call
         status = b["rounds"][round_no - 1]["status"]
         if status in (PENDING, READY):
             raise BracketError(f"round {round_no} has not been started by an Organizer")
+        pool_id = b.get("map_pool")
+    if status == RUNNING and pool_id is not None and verify_map_pool is not None:
+        verify_map_pool(pool_id)
     skipped = None
     index = 0
     while True:

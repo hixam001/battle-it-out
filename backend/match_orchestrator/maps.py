@@ -164,10 +164,7 @@ def create_bracket_from_pool(store: JsonFileStore, bracket_id: str, teams: list[
 
     The bracket stores the map names and the pool id, so the exact map files can be found again.
     """
-    pool = get_pool(store, pool_id)
-    problems = verify_pool(pool, catalogue, engine_version)
-    if problems:
-        raise MapError("map pool does not match the engine: " + "; ".join(problems))
+    pool = verified_pool(store, pool_id, catalogue, engine_version)
     bracket = B.create_bracket(store, bracket_id, teams, pool_maps(pool), **kw)
     with store.transaction() as state:
         stored = state["brackets"][bracket_id]
@@ -176,3 +173,12 @@ def create_bracket_from_pool(store: JsonFileStore, bracket_id: str, teams: list[
         stored["map_pool"] = pool_id
         bracket = copy.deepcopy(stored)
     return bracket
+
+
+def verified_pool(store: JsonFileStore, pool_id: str, catalogue: dict[str, str], engine_version: str) -> dict:
+    """Return the immutable pool when every pinned map matches the current engine."""
+    pool = get_pool(store, pool_id)
+    problems = verify_pool(pool, catalogue, engine_version)
+    if problems:
+        raise MapError("map pool does not match the engine: " + "; ".join(problems))
+    return pool

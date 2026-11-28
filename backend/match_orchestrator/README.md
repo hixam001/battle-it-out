@@ -40,6 +40,10 @@ B.public_view(B.get_bracket(store, "open-2026"))          # what participants ma
 
 Where the map names come from. `load_engine_maps(jar)` lists the maps inside the pinned engine jar with the SHA-256 of each file (read as a zip, nothing extracted). `create_pool` stores a pool: the played maps, **1** tie-break map for a normal tie and **3** for a final tie, all from that catalogue, with the engine version and every file hash pinned. A pool is never edited (a different set is a new pool id); a tie-break map may not also be a played map. `verify_pool` reports a missing map, a changed file or a different engine; `create_bracket_from_pool` refuses to draw a bracket on a pool that fails and records the pool id on the bracket. Custom (Organizer-uploaded) maps are not supported.
 
+The round-start API and the configured worker verify the bracket's immutable
+pool again (CN-080). A mismatched configured catalogue stops launch before
+the worker records a match attempt.
+
 ## Replays (`replays.py`, BIO-305, CN-012)
 
 A vault for the engine's `.bc26` replay files (one per game) plus an index. Stored files are private (0600), checked on the way in (hash equal to the launcher's, complete gzip), and served only through the access rule: Admin any tournament, Organizer assigned ones, participant tournaments they are registered in; no access looks exactly like "no such replay"; after archive everyone gets `Gone`, Admin included. Archive marks first, then deletes, then verifies; a failed or interrupted purge is finished by `purge_pending`. Results and brackets are never touched.
