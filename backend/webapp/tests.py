@@ -83,12 +83,12 @@ class FeatureAPI(TestCase):
         self.assertEqual(result.status_code,201,result.data);return result.data
     def test_anonymous_cannot_read_any_protected_feature(self):
         self.client.force_authenticate(None)
-        for path in ('analytics/','analytics.csv','live/','disputes/','teams/ta/submissions/'):
+        for path in ('analytics/','analytics.csv','live/','disputes/','dispute-notices/','teams/ta/submissions/'):
             response=self.client.get(self.url(path));self.assertEqual(response.status_code,401,path)
     def test_foreign_scope_and_missing_tournament_have_same_404(self):
         self.client.force_authenticate(self.outsider)
         for tid in ('cup','missing'):
-            for feature in ('analytics/','live/','disputes/'):
+            for feature in ('analytics/','live/','disputes/','dispute-notices/'):
                 self.assertEqual(self.client.get(f'/api/v1/tournaments/{tid}/{feature}').status_code,404)
     def test_participant_actor_comes_from_current_verified_roster(self):
         self.assertIn('cup',D.actor(self.a).tournament_ids)
@@ -291,6 +291,47 @@ class FeatureAPI(TestCase):
         self.assertEqual(resolved.data['version'],4)
         self.assertEqual(self.post(path,{'expected_version':4,'message':'closed'},'closed').status_code,409)
         self.assertEqual(AuditEvent.objects.count(),4)
+
+    def test_dispute_notices_use_committed_events_and_current_scope(self):
+        item = self.open()
+        notices = self.url('dispute-notices/')
+        detail = self.url(f"disputes/{item['id']}/")
+        self.assertEqual(self.client.get(notices).data['items'], [])
+        self.assertEqual(self.post(detail, {'expected_version': 1, 'message': 'Private comment'}, 'comment').status_code, 200)
+
+        for staff in (self.admin, self.org):
+            self.client.force_authenticate(staff)
+            response = self.client.get(notices)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response['Cache-Control'], 'private, no-store')
+            opening, = response.data['items']
+            self.assertEqual(set(opening), {'id', 'kind', 'title', 'created_at'})
+            self.assertEqual((opening['kind'], opening['title']), ('opened', 'Review match'))
+        self.assertEqual(self.post(detail, {'expected_version': 1, 'status': 'reviewing', 'resolution': 'Stale'}, 'stale').status_code, 409)
+        for version, status in enumerate(('reviewing', 'awaiting_participant', 'reviewing', 'resolved'), 2):
+            body = {'expected_version': version, 'status': status, 'resolution': 'Private reason'}
+            accepted = self.post(detail, body, f'review-{version}')
+            self.assertEqual(accepted.status_code, 200)
+            self.assertEqual(self.post(detail, body, f'review-{version}').data, accepted.data)
+        self.assertEqual(self.client.get(notices).data['items'], [opening])
+        OrganizerAssignment.objects.filter(user=self.org).update(active=False)
+        self.assertEqual(self.client.get(notices).status_code, 404)
+
+        self.client.force_authenticate(self.b)
+        self.assertEqual(self.client.get(notices).data['items'], [])
+        self.client.force_authenticate(self.a)
+        reviews = self.client.get(notices).data['items']
+        self.assertEqual(len(reviews), 3)
+        event_ids = list(Dispute.objects.get(pk=item['id']).events.filter(kind='status_changed')
+                         .order_by('-pk').values_list('pk', flat=True))
+        self.assertEqual(len(event_ids), 4)
+        self.assertEqual([review['id'] for review in reviews], event_ids[:3])
+        for review in reviews:
+            self.assertEqual(set(review), set(opening))
+            self.assertEqual((review['kind'], review['title']), ('status_changed', 'Review match'))
+        Identity.objects.filter(user=self.a).update(roster_user_id='unregistered')
+        self.assertEqual(self.client.get(notices).status_code, 404)
+
     def test_idempotency_payload_mismatch_and_revoked_membership_cannot_replay(self):
         self.open()
         mismatch=self.post(self.url('disputes/'),{'series_id':self.sid,'title':'Changed','description':'different'})
@@ -307,6 +348,8 @@ class FeatureAPI(TestCase):
         with patch.object(AuditEvent.objects,'create',side_effect=DatabaseError('fixture failure')):
             with self.assertRaises(DatabaseError):self.open()
         self.assertEqual(Dispute.objects.count(),0);self.assertEqual(Receipt.objects.count(),0)
+        self.client.force_authenticate(self.org)
+        self.assertEqual(self.client.get(self.url('dispute-notices/')).data['items'], [])
     def test_operations_are_admin_only_and_omit_raw_details(self):
         self.assertEqual(self.client.get('/api/v1/admin/operations/').status_code,403)
         self.client.force_authenticate(self.admin)

@@ -116,6 +116,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | GET | `/tournaments/{id}/submissions/{version}/download/` | Streams verified source or an exported ZIP after scope checks. Staff reads are audited. Private/no-store. |
 | GET/POST | `/tournaments/{id}/disputes/` | Team-private dispute list/create tied to a real match |
 | GET/POST | `/tournaments/{id}/disputes/{uuid}/` | Team/staff comments and review transitions with optimistic revision |
+| GET | `/tournaments/{id}/dispute-notices/` | Up to three recent filings for staff or own-team review updates for participants |
 | GET | `/admin/operations/` | Admin-only counts, safe incident metadata, dead jobs and recent feature audit events |
 | GET | `/tournaments/{id}/audit-logs/` | Current tournament scope, role-specific redacted audit, bounded pages |
 | GET | `/admin/audit-logs/` | Admin-only audit with bounded pages and optional tournament filter, including deleted tournament history |
@@ -212,9 +213,15 @@ conflict; current scope is checked before a stored response. Mutations, event,
 audit and receipt share one PostgreSQL transaction. PostgreSQL triggers refuse
 updates/deletes to audit and dispute-event rows.
 
+The dashboard reads the latest three relevant notices from committed events.
+Admins and current assigned Organizers see new filings. Verified participants
+see staff review updates about their own team's disputes. The notice shows the
+title, activity and time. The full comments and reasons remain in the scoped
+review. These notices are dashboard-only.
+
 Closing a review **does not change results, redraw randomness, resume matches
-or rerun games**. Outcome corrections, appeals, reopening rules, automatic
-notifications and a broader Admin mutation console need separate policies/work.
+or rerun games**. Outcome corrections, appeals, reopening rules, additional
+notice channels and a broader Admin mutation console remain open.
 Existing source-upload mutations retain the registry's own durable audit and
 idempotency; cross-store SQL/JSON transactions are not claimed.
 

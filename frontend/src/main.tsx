@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { api, setCsrfToken } from "./api";
-import { AccountSettings, Inbox, TournamentNotices } from "./notifications";
+import { AccountSettings, DisputeNotices, Inbox, TournamentNotices } from "./notifications";
 import { Submissions, Team } from "./participant";
 import { BracketResults, MatchResult, Replay } from "./results";
 import { Approvals } from "./approvals";
@@ -418,6 +418,7 @@ type ConsolePage = (typeof consoleLinks)[number]["page"] | "match" | "replay" | 
 type ConsoleRoute = { page: ConsolePage; id?: string; create?: boolean };
 const detailRoutes: [RegExp, ConsolePage][] = [
   [/^\/participant\/tournaments\/([^/#]+)\/bracket$/, "bracket"],
+  [/^\/tournaments\/([^/#]+)\/disputes$/, "disputes"],
   [/^\/matches\/([^/#]+)\/replay$/, "replay"],
   [/^\/matches\/([^/#]+)\/logs$/, "match-logs"],
   [/^\/matches\/([^/#]+)$/, "match"],
@@ -668,7 +669,7 @@ function Console({ user, route, navigate, logout }: {
   useEffect(() => {
     refreshTournament().catch((e) => setError(e.message)).finally(() => setLoading(false));
   }, [refreshTournament]);
-  const scopedTournament = (page === "bracket" || page === "deadlines") && id;
+  const scopedTournament = ["bracket", "deadlines", "disputes"].includes(page) && id;
   const cup = cups.find((c) => c.id === (scopedTournament || selected));
   const organizerPage = page.startsWith("organizer");
   const adminManagement = page.startsWith("admin-");
@@ -747,7 +748,10 @@ function Console({ user, route, navigate, logout }: {
               value={cup?.id ?? ""}
               onChange={(e) => {
                 setSelected(e.target.value);
-                if (scopedTournament) navigate(page === "deadlines" ? "/admin/tournaments" : "/bracket");
+                if (scopedTournament) {
+                  const destination = consoleLinks.find((link) => link.page === page);
+                  if (destination) navigate(destination.href);
+                }
               }}
             >
               {!cup && <option value="" disabled>Select a tournament</option>}
@@ -888,7 +892,7 @@ function Console({ user, route, navigate, logout }: {
           </>
         ) : !error && (
           <section className="empty">
-            <h1>No tournaments yet.</h1>
+            <h1>{scopedTournament ? "This tournament is unavailable." : "No tournaments yet."}</h1>
             <p>
               Your registered tournaments and active Organizer assignments will
               appear here. Contact your Organizer if you expected access.
@@ -921,6 +925,7 @@ function Dashboard({ cup, role, unavailable }: { cup?: Cup; role: string; unavai
             <p className="muted">Timezone {timeZone}</p>
           </section>
           {role === "participant" && <TournamentNotices key={cup.id} tournamentId={cup.id} />}
+          <DisputeNotices key={`disputes/${cup.id}`} tournamentId={cup.id} />
         </>
       ) : !unavailable && <p>No tournaments yet. Contact your Organizer if you expected access.</p>}
     </>

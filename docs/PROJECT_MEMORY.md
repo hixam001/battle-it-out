@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-607 / CN-089 shows scoped dispute filings and review updates on the
+  dashboard. The browser follows the notice to the selected tournament.
 - BIO-607 / CN-088 shows recent approval and rejection decisions in the
-  current creating Organizer's console.
+  current creating Organizer's console. PR #96 merged into `main` at `3b159e2`
+  after all four hosted checks passed.
 - BIO-204 / CN-087 adds a sandboxed reference and CPU-load measurement
   command. The local control sample completed six matches.
   PR #95 merged into `main` at `fdb8203` after all three hosted checks passed.
@@ -494,7 +497,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    archive, permanent tournament deletion across every legacy/new package with
    audit retained. Feature match disputes now support private comments/staff
    review/version/idempotency and immutable history; appeals/reopening/outcome
-   correction policy and automatic notices remain. The Admin operations reader
+   correction policy remain. CN-089 adds current-scope dashboard notices for
+   new filings and team review updates. The Admin operations reader
    includes attempt and alert details and dead jobs (CN-068). Recovery
    action controls await their policy. CN-034 delivers
    current-scope bracket and game result reads, including archived history. CN-035 adds confirmed archive for current
@@ -516,7 +520,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    archived replay URLs return `410` and official results stay identical.
    CN-088 adds Organizer dashboard approval and rejection notices.
 6. **Notifications:** staff/unlinked recipient provisioning, PostgreSQL
-   store migration, real provider and deployment; dispute notices; mandatory security
+   store migration, real provider and deployment; dispute inbox/email; mandatory security
    email policy, owner wording/retry review, expiry alerts and real outage drill.
    Check/round/draw adapters and failed-email alert retry hooks already exist.
    CN-030 supplies linked-participant feed/read/preferences HTTP endpoints with
@@ -527,7 +531,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    staff authoring and receipt counts in the console. Staff inboxes and a
    final pagination contract remain open. CN-069 adds the linked participant
    account settings route for the same email preference. CN-088 adds a
-   read-only dashboard feed for the current creating Organizer.
+   read-only dashboard feed for the current creating Organizer. CN-089 adds
+   current tournament and team dispute notices from committed events.
 7. **Replays/logs/privacy:** object storage,
    short-lived URLs, full browser replay player (DEC-10), deployed purge schedule,
    backups/restore, indicator-text exposure review, durable log retention and
@@ -1541,3 +1546,20 @@ Current role and assignment govern each read.
 The production build, 150 Django cases plus system and migration checks,
 and 32 browser cases (46.6 seconds) passed on disposable services. The nine
 backlog categories, 42 Jira items and all 91 requirement statuses remain.
+
+PR #96 merged into `main` at `3b159e2` after the frontend build, unit matrix,
+real-engine smoke and web/browser checks passed.
+
+## CN-089 continuation evidence
+
+BIO-607 and BIO-612 start `BIO-607-dispute-dashboard-notices` from verified
+`main` at `fdb8203` and fast-forward to `3b159e2` before implementation.
+The scoped dashboard reads up to three committed events. Assigned staff see
+new filings and participants see staff activity on disputes by their team.
+The notice links to the queue for the same tournament. Reasons and comments
+stay in the scoped review. The feature uses the existing event store.
+
+The production build, all 151 PostgreSQL Django tests, system and migration
+checks and all 32 browser cases passed with disposable fixtures. All 91
+requirement statuses, nine backlog categories and 42 Jira items remain.
+Inbox state, email, comment notices and dispute outcome policies are open.

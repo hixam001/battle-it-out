@@ -59,6 +59,9 @@ Organizer for help with a permission error. Other teams' source stays private.
   match, describe what staff should review and follow comments. An assigned
   Organizer or Admin reviews and records a resolution. A resolved dispute
   preserves the recorded game result.
+- **Dispute notices** on the Dashboard shows the latest staff review activity
+  for your team's disputes. Select **Open match disputes** to read the full
+  review in the same tournament.
 - A bot crash, timeout or resource violation forfeits the game. A platform
   failure retries with the same map and pinned bot versions. A retry cap can
   pause the match. Automatic new engine seeds are an open execution requirement.
@@ -133,7 +136,8 @@ recorded series events for the assigned tournament. Expand a record to see
 its available details.
 
 Use **Match disputes** to review comments and record resolutions for assigned
-tournaments. An Admin handles approvals, deadline extensions and emergency
+tournaments. **Dispute notices** on the Dashboard shows recent new filings
+for the selected tournament. An Admin handles approvals, deadline extensions and emergency
 overrides. To archive a completed tournament, open it under **Manage
 tournaments**, confirm replay removal and select **Archive tournament**.
 The receipt reports the replay vault purge state. Results, brackets,

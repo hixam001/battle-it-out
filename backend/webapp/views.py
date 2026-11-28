@@ -430,6 +430,18 @@ def visible_disputes(who, tid):
     return query if who.role in ('admin', 'organizer') else query.filter(team_id__in=who.team_ids)
 
 
+@api_view(['GET'])
+def dispute_notices(request, tid):
+    who, _ = D.tournament(request.user, tid)
+    kind = 'opened' if who.role in ('admin', 'organizer') else 'status_changed'
+    events = (DisputeEvent.objects.filter(dispute__in=visible_disputes(who, tid), kind=kind)
+              .order_by('-created_at', '-pk').values_list('pk', 'dispute__title', 'created_at')[:3])
+    return private({'items': [
+        {'id': event_id, 'kind': kind, 'title': title, 'created_at': created_at.isoformat()}
+        for event_id, title, created_at in events
+    ]})
+
+
 @api_view(['GET', 'POST'])
 def disputes(request, tid):
     who, record = D.tournament(request.user, tid)

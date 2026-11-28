@@ -69,6 +69,8 @@ test("public landing is responsive, keyboard accessible and clearly labels its i
 
 test("participant signs in, sees recorded analytics and opens a match dispute", async ({
   page,
+  browser,
+  useSession,
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -125,6 +127,38 @@ test("participant signs in, sees recorded analytics and opens a match dispute", 
     path: test.info().outputPath("disputes-mobile.png"),
     fullPage: true,
   });
+
+  const organizer = await browser.newPage({ baseURL: new URL(page.url()).origin });
+  try {
+    await useSession(organizer, "organizer");
+    await organizer.goto("/dashboard");
+    await organizer.getByLabel("Tournament", { exact: true }).selectOption("cup");
+    const openings = organizer.getByRole("region", { name: "Dispute notices" });
+    await expect(openings.getByText("Dispute opened", { exact: true })).toBeVisible();
+    await expect(openings.getByText("Browser fixture review", { exact: true })).toBeVisible();
+    await openings.getByRole("link", { name: "Open match disputes" }).click();
+    await expect(organizer).toHaveURL("/tournaments/cup/disputes");
+    await organizer.getByRole("button", { name: /Browser fixture review/ }).click();
+    await organizer.getByLabel("Reason / resolution").fill("Checking the recorded game.");
+    const decision = organizer.waitForResponse((response) =>
+      response.request().method() === "POST" && response.url().includes("/disputes/"));
+    await organizer.getByRole("button", { name: "Record review decision" }).click();
+    expect((await decision).ok()).toBe(true);
+  } finally {
+    await organizer.close();
+  }
+
+  await page.getByRole("link", { name: "Dashboard", exact: true }).click();
+  const reviews = page.getByRole("region", { name: "Dispute notices" });
+  await expect(reviews.getByText("Review updated", { exact: true })).toBeVisible();
+  await expect(reviews.getByText("Browser fixture review", { exact: true })).toBeVisible();
+  await expect(reviews.getByText("Checking the recorded game.")).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await reviews.getByRole("link", { name: "Open match disputes" }).click();
+  await expect(page).toHaveURL("/tournaments/cup/disputes");
+  await page.getByRole("button", { name: /Browser fixture review/ }).click();
+  await expect(page.getByText("Checking the recorded game.")).toBeVisible();
+
   await page
     .getByRole("link", { name: "Bot submissions", exact: true })
     .click();

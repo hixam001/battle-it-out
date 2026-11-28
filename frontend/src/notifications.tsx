@@ -12,6 +12,12 @@ type Notice = {
 };
 type Feed = { items: Notice[]; total: number; unread: number };
 type Preferences = { email_enabled: boolean; dashboard_enabled: true };
+type DisputeNotice = {
+  id: number;
+  kind: "opened" | "status_changed";
+  title: string;
+  created_at: string;
+};
 
 const pageSize = 20;
 const preferencePath = "/me/notification-preferences/";
@@ -280,6 +286,45 @@ export function TournamentNotices({ tournamentId }: { tournamentId: string }) {
             {feed.items.map((notice) => <NoticeItem key={notice.id} notice={notice} />)}
           </ul>
         ) : <p>No notices for this tournament yet.</p>}
+    </section>
+  );
+}
+
+export function DisputeNotices({ tournamentId }: { tournamentId: string }) {
+  const [items, setItems] = useState<DisputeNotice[]>([]);
+  const [error, setError] = useState(false);
+  const path = `/tournaments/${encodeURIComponent(tournamentId)}`;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    api<{ items: DisputeNotice[] }>(`${path}/dispute-notices/`, { signal: controller.signal })
+      .then(({ items }) => { if (!controller.signal.aborted) setItems(items); })
+      .catch(() => { if (!controller.signal.aborted) setError(true); });
+    return () => controller.abort();
+  }, [path]);
+
+  if (!items.length && !error) return null;
+  return (
+    <section className="panel notice-feed" aria-labelledby="dispute-notices-heading">
+      <div className="notice-toolbar">
+        <h2 id="dispute-notices-heading">Dispute notices</h2>
+        {items.length > 0 && <a href={`${path}/disputes`}>Open match disputes</a>}
+      </div>
+      {error ? <p className="error" role="alert">Dispute notices are unavailable.</p> : (
+        <ul className="notice-list">
+          {items.map((item) => (
+            <li className="notice-item" key={item.id}>
+              <div>
+                <div className="notice-meta">
+                  <span>{item.kind === "opened" ? "Dispute opened" : "Review updated"}</span>
+                  <time dateTime={item.created_at}>{noticeDate.format(new Date(item.created_at))}</time>
+                </div>
+                <h3>{item.title}</h3>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
