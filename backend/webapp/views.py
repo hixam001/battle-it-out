@@ -32,6 +32,7 @@ from backend.work_queue import jobs as J
 from backend.notifications import notifications as N
 from backend.tournaments import tournaments as T
 from . import domain as D
+from . import results as Results
 from .models import AuditEvent, Dispute, DisputeEvent, LoginAttempt, Receipt
 
 
@@ -272,10 +273,13 @@ def notifications(request):
     unread = query.get('unread_only', 'false')
     if unread not in ('true', 'false'):
         raise ValidationError('unread_only must be true or false.')
-    return private(N.list_notifications(
-        D.runtime().notifications, who, unread_only=unread == 'true',
+    rt = D.runtime()
+    feed = N.list_notifications(
+        rt.notifications, who, unread_only=unread == 'true',
         tournament_id=query.get('tournament_id'),
-        limit=integer('limit', 50, 1, N.MAX_PAGE), offset=integer('offset', 0, 0, 2_147_483_647)))
+        limit=integer('limit', 50, 1, N.MAX_PAGE), offset=integer('offset', 0, 0, 2_147_483_647))
+    Results.add_notice_result_links(rt, who.user_id, feed['items'])
+    return private(feed)
 
 
 @api_view(['PATCH'])
@@ -283,7 +287,10 @@ def notifications(request):
 def notification_detail(request, nid):
     who = D.notification_recipient(request.user)
     body = body_fields(request, {'read'}, {'read'})
-    return private(N.mark_read(D.runtime().notifications, who, nid, read=body['read']))
+    rt = D.runtime()
+    notice = N.mark_read(rt.notifications, who, nid, read=body['read'])
+    Results.add_notice_result_links(rt, who.user_id, [notice])
+    return private(notice)
 
 
 @api_view(['GET', 'PATCH'])

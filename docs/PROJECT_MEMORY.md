@@ -25,8 +25,19 @@ remaining backlog after every task.
 - BIO-405 / CN-093 counts failed authentication toward the interim
   PostgreSQL login limit for each source and account.
 
+- BIO-802 / CN-092 runs two tournaments sequentially through the real
+  configured service worker and verifies that archive affects its own artifacts.
+  PR #100 merged into `main` at `1e50004` after all three hosted checks passed.
+
+- BIO-705 / CN-091 links existing result notices to the recorded game from
+  the participant dashboard and inbox after a current-scope check.
+  PR #99 merged into `main` at `53d947e` after all four hosted checks passed.
+- BIO-804 / CN-090 adds an on-demand full backend engine-integration workflow
+  with a separate hosted job per locked Python family. PR #98 merged into
+  `main` at `ac5236d` after all four full-suite jobs passed.
 - BIO-607 / CN-089 shows scoped dispute filings and review updates on the
-  dashboard. The browser follows the notice to the selected tournament.
+  dashboard. PR #97 merged into `main` at `bec3e2b` after all four hosted
+  checks passed.
 - BIO-607 / CN-088 shows recent approval and rejection decisions in the
   current creating Organizer's console. PR #96 merged into `main` at `3b159e2`
   after all four hosted checks passed.
@@ -461,6 +472,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    retry-cap policy remain. Live adapter compilation needs the pinned JAR/JDK;
    operational failed-email alert receipt retention still needs policy.
    CN-083 exercises replacement across both expired leases with fixture games.
+   CN-092 verifies two queued tournaments on one real worker and isolated archive.
 3. **Execution gates:** realistic target-hardware limits benchmark (DEC-04),
    independent sandbox/security review, SR-06 Java-exception classification and
    SR-03 parameter-type residual, engine seed control or accepted TC-04 waiver,
@@ -468,8 +480,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    complete TC-05 including these scenarios. The round-start route and
    configured worker re-verify pinned map pools (CN-080). Custom-map safety,
    suitability and production persistence remain.
-   Other OSes, 3.16/free-threaded builds and wider real-engine CI remain open. New
-   native bundle/live tests do not close any of these execution gates.
+   Other OSes, 3.16 and free-threaded builds remain open. CN-090 adds
+   on-demand full hosted integration on the locked Ubuntu/Python matrix.
    CN-087 supplies a local control command and verified usage report.
    Representative bots, maps and an approved target worker remain needed.
 4. **Registration/submissions:** public claim and verification endpoints and
@@ -545,7 +557,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    evidence remain. CN-032 adds current-scope native replay downloads from the
    private vault. CN-046 exposes verified role-scoped structured attempt logs,
    and CN-071 adds the match log screen with attempt selection.
-   CN-054 adds the replay availability and download screen.
+   CN-054 adds the replay availability and download screen. CN-091 adds
+   scoped navigation from existing result notices to the recorded game.
    CN-079 covers stale archived files in a disposable restore. Target-host
    backup retention and recovery objectives remain open.
    CN-084 covers continued maintenance through a concurrent archive.
@@ -562,12 +575,13 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Branding,
    usability, formal accessibility/nonvisual play-by-play and full FLOW-01–08
    acceptance remain; production capacity/outage/concurrency/multi-host tests,
-   target-host backups/recovery, deployment/TLS, wider real-engine CI,
+   target-host backups/recovery, deployment/TLS, supported OS matrix,
    runbook adoption/sign-off, pilot and go-live approval remain open. CN-033
    supplies an interim runbook and console guide with disposable restore and
    web signing-key rehearsal. CN-075–077 add CI for the frontend build,
    backend unit matrix, Django and browser tests. CN-078/082 add real-engine
-   replay smoke on all locked Python families. No release dates before the
+   replay smoke on all locked Python families. CN-090 adds on-demand full
+   engine integration for those families. No release dates before the
    benchmark.
 9. **Owner/legal and follow-up scope:** written Battlecode Java-engine license
    clarification, copyright holder, participant terms and network source offer;
@@ -1567,10 +1581,77 @@ checks and all 32 browser cases passed with disposable fixtures. All 91
 requirement statuses, nine backlog categories and 42 Jira items remain.
 Inbox state, email, comment notices and dispute outcome policies are open.
 
+PR #97 merged into `main` at `bec3e2b` after the build, backend unit matrix,
+engine smoke and web/browser checks passed.
+
+## CN-090 continuation evidence
+
+BIO-804 starts `BIO-804-full-engine-integration` from verified `main` at
+`3b159e2` and fast-forwards to `bec3e2b` before publication. Every locked
+Python family gets an isolated hosted runner using the existing smoke
+setup. A full suite fails when any case skips. The replay fixture records
+the job's interpreter and default-runtime fixtures exercise the primary
+launcher. Routine PRs keep the short smoke path.
+
+All 18 runner tests passed locally on Python 3.15.2, including optional
+skip refusal and propagation through the matrix. The seven workflow shell
+blocks passed syntax checks. All 91 requirement statuses, nine backlog
+categories and 42 Jira items remain. Target deployment, pinned worker image
+and approved supported OSes remain open.
+
+The initial local Python 3.15.2 full run passed all 794 cases with zero
+skips in 500.570 seconds. The first hosted run failed live transport and
+service lifecycle. Ubuntu 26.04 ships Java 25 as its PATH default while
+the workflow selected `JAVA_HOME` 21 for Gradle. A local mixed-JDK
+fixture confirmed that incompatible compiler output cannot load on JDK
+21. The job now selects the same JDK for both Gradle and `javac`.
+
+The [hosted rerun](https://github.com/hixam001/battle-it-out/actions/runs/46144839920)
+passed all 794 cases with zero skips on each of Python 3.12.16, 3.13.18,
+3.14.10 and 3.15.2 using JDK 21.0.13.1. PR #98 merged into `main` at
+`ac5236d` after the regular smoke, unit and web/browser checks also passed.
+
+## CN-091 continuation evidence
+
+BIO-705 starts `BIO-705-match-result-notice-links` from verified `main` at
+`bec3e2b` while PR #98 runs CI and incorporates `ac5236d` after that merge.
+The HTTP projection resolves stable result
+notice IDs to the last game of the official series with current team and
+tournament scope. Existing notice records work with their saved IDs.
+Archive retains navigation and roster revocation removes the link.
+
+The production build, 152 Django cases with PostgreSQL and system/migration
+checks, 101 notification library cases and all 32 Playwright cases passed.
+All 91 requirement statuses, nine backlog categories and 42 Jira items
+remain. Raw engine points, browser replay playback and formal acceptance
+remain open.
+
+PR #99 merged into `main` at `53d947e` after the build, backend unit matrix,
+engine smoke and web/browser checks passed.
+
+## CN-092 continuation evidence
+
+BIO-802 starts `BIO-802-two-tournament-worker-rehearsal` from verified `main`
+at `bec3e2b` while PRs #98 and #99 run CI and incorporates `53d947e` after
+their verified merges. The extended real-service test runs
+four upload checks and two queued rounds through one configured worker. It
+verifies distinct map pins, results, notices, replays and live boards. A
+repeat worker pass is idle. Archiving the first tournament keeps the second
+tournament's artifacts and both official brackets intact.
+
+All 47 service, scheduler and live-view cases passed with real-engine
+integration on Python 3.15.2 and JDK 21 in 101.069 seconds. All nine backlog
+categories, 91 requirement statuses and 42 Jira items remain. Target-host
+capacity, provider outages and multi-host execution remain open.
+
+PR #100 merged into `main` at `1e50004` after the hosted unit matrix,
+engine smoke and web/browser checks passed.
+
 ## CN-093 continuation evidence
 
 BIO-405 starts `BIO-405-count-login-failures` from verified `main` at
-`bec3e2b`. Login checks and records failures under the existing PostgreSQL
+`bec3e2b` and incorporates `1e50004` after the earlier PRs merge.
+Login checks and records failures under the existing PostgreSQL
 advisory locks in stable order. Successful sign-ins leave the counts intact.
 The interim cap and window remain. Existing stored attempts expire on the
 same window.

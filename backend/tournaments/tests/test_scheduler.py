@@ -266,18 +266,18 @@ class Registered(SchedBase):
         self.roster = G.Registration.at(self.dir / "registration.json", self.treg)
         self.users = {}
 
-    def register(self, teams=("ta", "tb", "tc"), confirm=True):
+    def register(self, teams=("ta", "tb", "tc"), confirm=True, *, tid="t1"):
         rows = [_row(f"{t}@uni.edu", t, 1, "captain") for t in teams]
-        G.import_roster(self.roster, ADMIN, "t1", rows, now=self.clock)
+        G.import_roster(self.roster, ADMIN, tid, rows, now=self.clock)
         codes = {}
-        for item in G.issue_codes(self.roster, ADMIN, "t1", now=self.clock)["issued"]:
+        for item in G.issue_codes(self.roster, ADMIN, tid, now=self.clock)["issued"]:
             codes[item["entry_id"]] = item["code"]
-        by_email = {e["email"]: e["id"] for e in G.list_roster(self.roster, ADMIN, "t1")}
+        by_email = {e["email"]: e["id"] for e in G.list_roster(self.roster, ADMIN, tid)}
         for t in teams:
             user = f"user-{t}"
-            G.claim(self.roster, "t1", f"{t}@uni.edu", codes[by_email[f"{t}@uni.edu"]], user, now=self.clock)
+            G.claim(self.roster, tid, f"{t}@uni.edu", codes[by_email[f"{t}@uni.edu"]], user, now=self.clock)
             if confirm:
-                G.confirm_email(self.roster, "t1", user, now=self.clock)
+                G.confirm_email(self.roster, tid, user, now=self.clock)
             self.users[t] = user
 
     def upload(self, team):

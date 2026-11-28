@@ -1115,6 +1115,36 @@ Decisions from the owner that change or narrow what the requirement documents (P
   use the existing event transaction. Inbox state, email, comment notices,
   appeals and changes to recorded outcomes remain open.
 
+## CN-090 — Full hosted engine integration (2026-11-28)
+
+- **BIO-804:** The full backend suite runs on demand on Ubuntu 26.04 and
+  on PRs changing its workflow. The Python matrix comes from the existing
+  execution lock. Each job reuses the smoke workflow's engine, JDK and
+  sandbox setup and runs all cases with `--integration --require-no-skips`.
+- Each job runs its games sequentially. The replay fixture checks its real
+  interpreter. Tests of default launcher behavior use the lock's primary
+  runtime. The regular PR smoke workflow remains available.
+
+## CN-091 — Match result notice links (2026-11-28)
+
+- **BIO-705:** Existing result notices can open the last recorded game in
+  their series. The API uses the same stable participant notice identifier
+  as the round publisher, verified roster membership and the official
+  bracket history. The dashboard and the inbox share that link.
+- The result path keeps the normal game access check and survives replay
+  archive. Historical notice text stays visible when the link is unavailable.
+  Browser replay playback and raw engine points remain open.
+
+## CN-092 — Two-tournament service rehearsal (2026-11-28)
+
+- **BIO-802:** The existing real-service integration test now queues two
+  tournaments with four checked bots and distinct pinned map pools on one
+  worker. Both complete and publish scoped result notices and game artifacts.
+- Archiving one removes its replays and boards and preserves both official
+  brackets and the other tournament's replay digests and boards. The test
+  uses fixture bots, one engine host and disposable state. Production
+  capacity and multi-host behavior remain open.
+
 ## CN-093 — Login failure limits (2026-11-28)
 
 - **BIO-405:** The PostgreSQL login limiter records failed authentication

@@ -1694,9 +1694,69 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   and memory. All nine backlog categories and 42 Jira items remain.
   Inbox state, email, comment notices and outcome policies remain open.
 
+### 2026-11-28 — BIO-804 Full hosted engine integration
+
+- Started `BIO-804-full-engine-integration` at `3b159e2` during PR #97's
+  checks and fast-forwarded to `bec3e2b` after its verified merge to `main`.
+- On-demand GitHub Actions runs the full backend integration suite on each
+  locked Python family, with a separate host for each fixed-port engine.
+  Workflow-definition PRs also exercise this path. `--require-no-skips`
+  fails when prerequisites leave coverage incomplete.
+- All 18 runner tests and seven workflow shell syntax checks passed locally.
+  Replay fixtures run with the matrix interpreter and default-runtime
+  fixtures use the primary launcher specified in the lock.
+- Updated the backend guide, test and project plans, coverage, Jira, CN-090,
+  changelog and memory. All nine backlog categories and 42 Jira items remain.
+  A pinned worker image, deployment and further OS support remain open.
+- Local full integration passed all 794 cases with zero skips in 500.570
+  seconds. The first hosted run failed live transport and the configured
+  service lifecycle. The workflow now selects JDK 21 for both Gradle and
+  the live adapter compiler, and the live test includes bounded server-log
+  diagnostics if another fixture start fails.
+- All 794 hosted integration cases passed with zero skips on each locked
+  Python family after the JDK repair. PR #98 merged into `main` at `ac5236d`
+  after all eight hosted jobs passed.
+
+### 2026-11-28 — BIO-705 Match result links from notices
+
+- Started `BIO-705-match-result-notice-links` from verified `main` at
+  `bec3e2b` while PR #98 was running its engine matrix. Incorporated `ac5236d`
+  after its verified merge.
+- The dashboard and inbox link match-result notices to the official series
+  and its last recorded game. The HTTP projection resolves saved notice IDs
+  with current team access, including archived results. Personal notice text
+  remains available after a participant loses that access.
+- The production build, all 152 Django cases plus system and migration
+  checks, 101 notification library cases and 32 browser cases (49.2 seconds)
+  passed using disposable data.
+- Updated the notification source, result projection, React notice item,
+  tests, API and user guides, test plan, coverage, Jira, CN-091, changelog
+  and memory. All nine backlog categories and 42 Jira items remain. Raw
+  engine points, browser replay playback and formal acceptance remain open.
+
+- PR #99 merged into `main` at `53d947e` after all four hosted checks passed.
+
+### 2026-11-28 — BIO-802 Two-tournament worker rehearsal
+
+- Started `BIO-802-two-tournament-worker-rehearsal` at `bec3e2b` during
+  PRs #98 and #99's hosted checks. Incorporated `53d947e` after both merged.
+- The existing real-service test runs four bot checks and two queued rounds
+  on the same configured worker with different main maps. It verifies scoped
+  results, notices, live boards and replay files. Archive removes the first
+  tournament's artifacts and retains the other tournament's replay digests,
+  live boards and both official brackets. The next delivery is idle.
+- All 47 local service, scheduler and live-view cases passed with real-engine
+  integration on Python 3.15.2 and JDK 21 in 101.069 seconds.
+- Updated the regression fixtures, test plan, coverage, Jira, CN-092 and
+  memory. All nine backlog categories and 42 Jira items remain. Target-host
+  capacity, outages and multi-host operation remain open.
+
+- PR #100 merged into `main` at `1e50004` after all three hosted checks passed.
+
 ### 2026-11-28 — BIO-405 Count failed sign-ins
 
 - Started `BIO-405-count-login-failures` from verified `main` at `bec3e2b`.
+  Incorporated `1e50004` after the earlier PRs merged.
 - The Django login route checks and records failures inside the existing
   PostgreSQL source and account locks. Valid credentials leave failure
   counts intact. The interim threshold and time window still apply.
