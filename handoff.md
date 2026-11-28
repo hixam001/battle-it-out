@@ -1713,3 +1713,23 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   service lifecycle. The workflow now selects JDK 21 for both Gradle and
   the live adapter compiler, and the live test includes bounded server-log
   diagnostics if another fixture start fails.
+- All 794 hosted integration cases passed with zero skips on each locked
+  Python family after the JDK repair. PR #98 merged into `main` at `ac5236d`
+  after all eight hosted jobs passed.
+
+### 2026-11-28 — BIO-705 Match result links from notices
+
+- Started `BIO-705-match-result-notice-links` from verified `main` at
+  `bec3e2b` while PR #98 was running its engine matrix. Incorporated `ac5236d`
+  after its verified merge.
+- The dashboard and inbox link match-result notices to the official series
+  and its last recorded game. The HTTP projection resolves saved notice IDs
+  with current team access, including archived results. Personal notice text
+  remains available after a participant loses that access.
+- The production build, all 152 Django cases plus system and migration
+  checks, 101 notification library cases and 32 browser cases (49.2 seconds)
+  passed using disposable data.
+- Updated the notification source, result projection, React notice item,
+  tests, API and user guides, test plan, coverage, Jira, CN-091, changelog
+  and memory. All nine backlog categories and 42 Jira items remain. Raw
+  engine points, browser replay playback and formal acceptance remain open.

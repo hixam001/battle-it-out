@@ -171,6 +171,11 @@ def main():
                 notifications.notify(fixture.rt.notifications, 'announcement', cup, ['roster-a'],
                                      {'headline': title, 'message': 'Test dashboard notification.'},
                                      event_key=f'fixture-{i}', now=lambda: fixture.now - 24 + i)
+            pairing = bracket.get_bracket(store, 'cup')['rounds'][0]['matches'][0]
+            notifications.notify(fixture.rt.notifications, 'match_result', 'cup', ['roster-b'],
+                                 {'team': 'tb', 'opponent': 'ta', 'round': 1, 'match_id': fixture.sid,
+                                  'result': 'won' if pairing['winner'] == 'tb' else 'lost'},
+                                 event_key=f"match_result:cup:r1:m{pairing['index']}:tb")
             shutil.copytree(fixture.root, state)
         finally:
             fixture.doCleanups()

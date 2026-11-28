@@ -742,3 +742,12 @@ after a failed audit. The browser flow opens a dispute, finds the filing on
 the assigned Organizer's dashboard and records a review. The participant sees
 the update at a mobile viewport and opens the selected tournament's dispute
 queue to read the review reason.
+
+### Match result notice links (BIO-705 / CN-091)
+
+The Django fixture generates a normal match-result event through the round
+notice source. It checks resolution to the last official game, unchanged
+read-state behavior, archive access and removal of the link after membership
+ends. A second event without a matching official series stays readable in
+the feed. Chromium checks that the dashboard and inbox use the same link,
+read-state changes preserve it and the participant can open the game by keyboard.

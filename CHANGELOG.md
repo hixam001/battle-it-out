@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Match result notice links (BIO-705, CN-091)** open the recorded result
+  from the dashboard and inbox while the recipient has team access.
+
 - **Full engine integration (BIO-804, CN-090)** adds an on-demand hosted
   backend suite with one job per locked Python family.
 

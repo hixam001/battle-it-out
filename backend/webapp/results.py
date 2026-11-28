@@ -6,6 +6,8 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from backend.match_orchestrator import bracket as B, orchestrator as O, replays as P, tiebreak as TB
+from backend.notifications import sources as N
+from backend.registration import registration as G
 from backend.tournaments import tournaments as T
 from . import domain as D
 
@@ -19,6 +21,38 @@ def game_ref(state, game):
 
 def series_wins(series):
     return {side: sum(game['winner_side'] == side for game in series['games']) for side in ('A', 'B')}
+
+
+def add_notice_result_links(rt, recipient_id, items):
+    """Resolve current result links for both existing and newly stored notices."""
+    notices = {(item['tournament_id'], item['id']): item
+               for item in items if item['event_type'] == 'match_result'}
+    if not notices:
+        return
+    requested = {tid for tid, _ in notices}
+    tournaments = rt.tournaments.store.snapshot()['tournaments']
+    teams = {m['tournament_id']: m['team_id'] for m in G.memberships(rt.registration, recipient_id)
+             if m['registration_status'] == G.REGISTERED and m['tournament_id'] in requested
+             and tournaments.get(m['tournament_id'], {}).get('status', T.DELETED) != T.DELETED}
+    if not teams:
+        return
+    state = rt.flow.store.snapshot()
+    for bracket in state.get('brackets', {}).values():
+        tid = bracket.get('tournament_id')
+        team = teams.get(tid)
+        if team is None:
+            continue
+        for rd in bracket['rounds']:
+            for pairing in rd['matches']:
+                if pairing['winner'] is None or pairing['bye'] or team not in (pairing['a'], pairing['b']):
+                    continue
+                nid = N.match_result_notice_id(bracket['id'], rd['number'], pairing['index'], team, recipient_id)
+                notice = notices.get((tid, nid))
+                series = state.get('series', {}).get(pairing['series_id'])
+                if notice is not None and series and series['result'] and series['games']:
+                    match_id = series['games'][-1]['match_id']
+                    if match_id in state['matches']:
+                        notice['result_match_id'] = match_id
 
 
 def official_bracket(tid, brackets):

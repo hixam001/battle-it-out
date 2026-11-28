@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-705 / CN-091 links existing result notices to the recorded game from
+  the participant dashboard and inbox after a current-scope check.
 - BIO-804 / CN-090 adds an on-demand full backend engine-integration workflow
-  with a separate hosted job per locked Python family.
+  with a separate hosted job per locked Python family. PR #98 merged into
+  `main` at `ac5236d` after all four full-suite jobs passed.
 - BIO-607 / CN-089 shows scoped dispute filings and review updates on the
   dashboard. PR #97 merged into `main` at `bec3e2b` after all four hosted
   checks passed.
@@ -545,7 +548,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    evidence remain. CN-032 adds current-scope native replay downloads from the
    private vault. CN-046 exposes verified role-scoped structured attempt logs,
    and CN-071 adds the match log screen with attempt selection.
-   CN-054 adds the replay availability and download screen.
+   CN-054 adds the replay availability and download screen. CN-091 adds
+   scoped navigation from existing result notices to the recorded game.
    CN-079 covers stale archived files in a disposable restore. Target-host
    backup retention and recovery objectives remain open.
    CN-084 covers continued maintenance through a concurrent archive.
@@ -1592,3 +1596,23 @@ service lifecycle. Ubuntu 26.04 ships Java 25 as its PATH default while
 the workflow selected `JAVA_HOME` 21 for Gradle. A local mixed-JDK
 fixture confirmed that incompatible compiler output cannot load on JDK
 21. The job now selects the same JDK for both Gradle and `javac`.
+
+The [hosted rerun](https://github.com/hixam001/battle-it-out/actions/runs/46144839920)
+passed all 794 cases with zero skips on each of Python 3.12.16, 3.13.18,
+3.14.10 and 3.15.2 using JDK 21.0.13.1. PR #98 merged into `main` at
+`ac5236d` after the regular smoke, unit and web/browser checks also passed.
+
+## CN-091 continuation evidence
+
+BIO-705 starts `BIO-705-match-result-notice-links` from verified `main` at
+`bec3e2b` while PR #98 runs CI and incorporates `ac5236d` after that merge.
+The HTTP projection resolves stable result
+notice IDs to the last game of the official series with current team and
+tournament scope. Existing notice records work with their saved IDs.
+Archive retains navigation and roster revocation removes the link.
+
+The production build, 152 Django cases with PostgreSQL and system/migration
+checks, 101 notification library cases and all 32 Playwright cases passed.
+All 91 requirement statuses, nine backlog categories and 42 Jira items
+remain. Raw engine points, browser replay playback and formal acceptance
+remain open.
