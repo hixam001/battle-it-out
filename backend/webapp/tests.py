@@ -22,7 +22,7 @@ from backend.tournaments import tournaments as T
 from backend.work_queue import jobs as J
 from backend.work_queue.tests.test_handlers import verdict
 from . import domain as D
-from .models import Identity, OrganizerAssignment, Dispute, AuditEvent, Receipt
+from .models import Identity, OrganizerAssignment, Dispute, AuditEvent, LoginAttempt, Receipt
 
 BOT=b'def turn():\n    pass\n'
 ADM=R.Actor('staff','admin')
@@ -288,6 +288,17 @@ class FeatureAPI(TestCase):
         self.assert_upload_error(self.upload_file(path, key='one'), 404, 'NOT_FOUND')
         self.assert_upload_error(self.upload_file(path, key='new'), 404, 'NOT_FOUND')
         self.assertEqual(len(self.rt.flow.registry.store.snapshot()['submissions']), 2)
+
+    def test_successful_logins_do_not_use_the_shared_failure_budget(self):
+        for user in (self.a, self.b) * 6:
+            browser = Client(enforce_csrf_checks=True)
+            csrf = browser.get('/api/v1/auth/session/').json()['csrf']
+            response = browser.post('/api/v1/auth/login/', {
+                'username': user.username, 'password': 'test-fixture-passphrase',
+            }, content_type='application/json', HTTP_X_CSRFTOKEN=csrf)
+            self.assertEqual(response.status_code, 200, response.content)
+            self.assertEqual(browser.get('/api/v1/auth/session/').json()['user']['id'], user.pk)
+        self.assertFalse(LoginAttempt.objects.exists())
 
     def test_login_rate_limit_is_durable_and_failure_does_not_create_a_session(self):
         client=Client(enforce_csrf_checks=True)

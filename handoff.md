@@ -1750,3 +1750,18 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated the regression fixtures, test plan, coverage, Jira, CN-092 and
   memory. All nine backlog categories and 42 Jira items remain. Target-host
   capacity, outages and multi-host operation remain open.
+
+- PR #100 merged into `main` at `1e50004` after all three hosted checks passed.
+
+### 2026-11-28 — BIO-405 Count failed sign-ins
+
+- Started `BIO-405-count-login-failures` from verified `main` at `bec3e2b`.
+  Incorporated `1e50004` after the earlier PRs merged.
+- The Django login route checks and records failures inside the existing
+  PostgreSQL source and account locks. Valid credentials leave failure
+  counts intact. The interim threshold and time window still apply.
+- All 152 Django tests and system and migration checks passed, including
+  twelve successful sign-ins from one source and the existing refusal tests.
+- Updated the web guide, API and test plans, Jira, CN-093, changelog and
+  memory. All nine backlog categories and 42 Jira items remain. Public
+  registration, verification email and account recovery remain open.

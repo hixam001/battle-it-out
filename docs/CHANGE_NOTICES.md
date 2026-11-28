@@ -1144,3 +1144,13 @@ Decisions from the owner that change or narrow what the requirement documents (P
   brackets and the other tournament's replay digests and boards. The test
   uses fixture bots, one engine host and disposable state. Production
   capacity and multi-host behavior remain open.
+
+## CN-093 — Login failure limits (2026-11-28)
+
+- **BIO-405:** The PostgreSQL login limiter records failed authentication
+  under the existing source and account locks. Each successful sign-in leaves
+  both counters intact. The interim ten-failure threshold and 15-minute
+  window still apply.
+- The test signs in two provisioned fixture accounts twelve times through
+  one source. The existing failure test verifies the `401` and `429` paths,
+  independent source and account blocking and absent failed sessions.

@@ -89,12 +89,12 @@ def login_view(request):
             raise ValueError()
     except (ValueError, UnicodeError):
         return JsonResponse({'error': {'message': 'Enter a username and password.'}}, status=400)
-    # Durable per-source/account limiter. Values themselves are never stored or returned.
+    # Durable per-source/account failure limiter. Only digests are stored.
     keys = sorted(hashlib.sha256(value.encode()).hexdigest() for value in
                   ('source\0' + request.META.get('REMOTE_ADDR', ''), 'account\0' + body['username'].casefold()))
     since = timezone.now() - timedelta(minutes=15)
     with transaction.atomic():
-        # Independently bound source and account attempts, including unknown names; stable lock order.
+        # Serialize the limit check and failure count in stable lock order.
         from django.db import connection
         if connection.vendor == 'postgresql':
             with connection.cursor() as cursor:
@@ -103,10 +103,10 @@ def login_view(request):
         LoginAttempt.objects.filter(at__lt=since).delete()
         if any(LoginAttempt.objects.filter(key=key, at__gte=since).count() >= 10 for key in keys):
             return JsonResponse({'error': {'message': 'Too many attempts. Try again later.'}}, status=429)
-        LoginAttempt.objects.bulk_create([LoginAttempt(key=key) for key in keys])
-    user = authenticate(request, username=body['username'], password=body['password'])
-    if user is None:
-        return JsonResponse({'error': {'message': 'Invalid username or password.'}}, status=401)
+        user = authenticate(request, username=body['username'], password=body['password'])
+        if user is None:
+            LoginAttempt.objects.bulk_create([LoginAttempt(key=key) for key in keys])
+            return JsonResponse({'error': {'message': 'Invalid username or password.'}}, status=401)
     login(request, user)
     response = JsonResponse({'csrf': get_token(request), 'user': {'id': user.pk, 'username': user.username, 'admin': user.is_superuser}})
     response['Cache-Control'] = 'private, no-store'

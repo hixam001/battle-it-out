@@ -22,8 +22,12 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-405 / CN-093 counts failed authentication toward the interim
+  PostgreSQL login limit for each source and account.
+
 - BIO-802 / CN-092 runs two tournaments sequentially through the real
   configured service worker and verifies that archive affects its own artifacts.
+  PR #100 merged into `main` at `1e50004` after all three hosted checks passed.
 
 - BIO-705 / CN-091 links existing result notices to the recorded game from
   the participant dashboard and inbox after a current-scope check.
@@ -1639,3 +1643,21 @@ All 47 service, scheduler and live-view cases passed with real-engine
 integration on Python 3.15.2 and JDK 21 in 101.069 seconds. All nine backlog
 categories, 91 requirement statuses and 42 Jira items remain. Target-host
 capacity, provider outages and multi-host execution remain open.
+
+PR #100 merged into `main` at `1e50004` after the hosted unit matrix,
+engine smoke and web/browser checks passed.
+
+## CN-093 continuation evidence
+
+BIO-405 starts `BIO-405-count-login-failures` from verified `main` at
+`bec3e2b` and incorporates `1e50004` after the earlier PRs merge.
+Login checks and records failures under the existing PostgreSQL
+advisory locks in stable order. Successful sign-ins leave the counts intact.
+The interim cap and window remain. Existing stored attempts expire on the
+same window.
+
+All 152 Django tests plus system and migration checks passed on disposable
+PostgreSQL. The regression signs in two provisioned fixture accounts twelve
+times from one source and preserves the independent failure-limit tests.
+All 91 requirement statuses, nine backlog categories and 42 Jira items remain.
+Public account registration, verification email and recovery are open.

@@ -141,7 +141,10 @@ consume code or permanently block a legitimate retry.
 **Errors:** `401`, `429`.
 
 The implemented session form at `/login` uses the current JSON
-`username` and `password` contract described above (CN-028/070).
+`username` and `password` contract described above (CN-028/070). The interim
+PostgreSQL limiter records failed authentication against source and account
+separately and returns `429` after ten failures in 15 minutes. Successful
+logins leave both existing failure counts intact (CN-093).
 
 ### POST `/auth/logout`
 
