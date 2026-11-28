@@ -57,6 +57,10 @@ class ResultsAPI(TestCase):
                 record = response.json()['bracket']
                 self.assertEqual(record['champion'], 'ta')
                 self.assertEqual(record['map_pool_id'], 'pool')
+                self.assertEqual(record['maps'], {
+                    'play': ['one'], 'tiebreak_normal': ['two'], 'tiebreak_final': ['two', 'three', 'four'],
+                })
+                self.assertNotIn('sha256', response.content.decode())
                 decision = record['rounds'][0]['matches'][0]
                 self.assertEqual(decision['winner'], 'ta')
                 self.assertEqual(decision['series']['games'], [{'match_id': self.mid, 'status': O.COMPLETED}])

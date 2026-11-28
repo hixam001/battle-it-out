@@ -136,6 +136,11 @@ four-game final resolved by coin flip. Repeated reads preserve the result and
 stored draw. Current sessions, access revocation, archived history and generic
 hidden/missing refusals are tested with disposable PostgreSQL accounts.
 
+The bracket's map projection (BIO-705 / CN-081) returns the recorded main-game
+and tie-break names under the same access rules, including after archive. A
+mobile keyboard test opens the participant's map section and verifies the
+three final tie-break names in order.
+
 Per-round map verification (BIO-304 / CN-080) changes a fixture map after the
 draw and checks for `409` with a ready round and no queued job. A missing
 catalogue returns `503`. Repair lets the original key queue exactly one job.

@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Bracket map order (BIO-705, CN-081)** shows main-game maps, the normal
+  tie-break map and the ordered final tie-break maps on the bracket page.
+
 - **Staff tournament audit view (BIO-610, CN-073)** opens the paginated
   tournament feed from Admin and assigned Organizer settings.
 
