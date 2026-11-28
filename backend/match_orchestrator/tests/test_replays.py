@@ -13,6 +13,7 @@ import os
 import random
 import shutil
 import stat
+import sys
 import tempfile
 import threading
 import unittest
@@ -562,7 +563,11 @@ class WithTheBracket(Base):
 class RealReplay(unittest.TestCase):
     def test_real_engine_replay_is_stored_served_and_purged(self):
         from backend.match_runner import launcher as L
-        py = L.resolve_python(None, None, L.load_lock())
+        lock = L.load_lock()
+        version = "%d.%d" % sys.version_info[:2]
+        if version not in lock["tested_python"]:
+            version = lock["primary_python"]
+        py = L.resolve_python(version, None, lock)
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             bots = root / "bots"
@@ -580,6 +585,8 @@ class RealReplay(unittest.TestCase):
             self.assertGreaterEqual(out["stored"], 1)
             self.assertEqual(sorted(vault.index.snapshot()["incidents"], key=str), [])
             mid = next(iter(vault.index.snapshot()["replays"]))
+            recorded = O.get_match(store, mid)["attempts"][-1]["summary"]["python"]
+            self.assertEqual(".".join(recorded.split(".")[:2]), version)
             h = R.fetch_replay(vault, mid, R.Viewer("participant", frozenset({"t1"})))
             with gzip.open(h.path, "rb") as g:                      # the engine's file really is gzip, to the end
                 self.assertGreater(len(g.read()), 1000)

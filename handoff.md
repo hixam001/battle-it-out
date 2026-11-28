@@ -1563,3 +1563,16 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   test plan, coverage, Jira, CN-081, changelog and memory. All 91 statuses,
   nine backlog categories and 42 Jira items remain. Replay playback and raw
   engine points remain open.
+
+### 2026-11-28 — BIO-804 Real-engine Python smoke matrix
+
+- Confirmed PR #89 merged to `main` at `1cfdc10` after all four hosted
+  checks passed. Started `BIO-804-real-engine-python-matrix` from that merge.
+- The engine smoke job installs the Python families in the execution lock
+  and runs the replay integration module on each one. The module verifies
+  the interpreter written to the match attempt alongside replay and archive.
+- All 42 cases passed locally on each of Python 3.12.15, 3.13.18, 3.14.10
+  and 3.15.2. All five shell steps passed syntax checks.
+- Updated the backend guide, test and project plans, Jira, coverage,
+  CN-082 and memory. All 91 statuses, nine backlog categories and 42 Jira
+  items remain. Wider integration and deployment remain open.

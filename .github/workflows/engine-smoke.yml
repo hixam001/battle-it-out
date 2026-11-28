@@ -40,14 +40,18 @@ jobs:
           bwrap --version
           "${JAVA_HOME_21_X64:?}/bin/java" -version
           printf 'JAVA_HOME=%s\n' "$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
-      - name: Install the primary Python launcher environment
+      - name: Install the locked Python launcher environments
         run: |
+          versions=$(python3 -c 'from backend.run_tests import tested_versions; print(" ".join(tested_versions()))')
+          read -ra runtimes <<< "$versions"
           primary=$(python3 -c 'from backend.match_runner.launcher import load_lock; print(load_lock()["primary_python"])')
-          uv python install "$primary"
-          python3 backend/match_runner/setup_env.py "$primary"
+          uv python install "${runtimes[@]}"
+          python3 backend/match_runner/setup_env.py "${runtimes[@]}"
           launcher_python="$GITHUB_WORKSPACE/backend/.venvs/py$primary/bin/python"
-          "$launcher_python" --version
-          printf 'BIO_CI_LAUNCHER_PYTHON=%s\n' "$launcher_python" >> "$GITHUB_ENV"
+          {
+            printf 'BIO_CI_LAUNCHER_PYTHON=%s\n' "$launcher_python"
+            printf 'BIO_CI_PYTHON_VERSIONS=%s\n' "$versions"
+          } >> "$GITHUB_ENV"
       - name: Start Python through the match sandbox
         run: |
           "$BIO_CI_LAUNCHER_PYTHON" - <<'PYTHON'
@@ -80,7 +84,14 @@ jobs:
           GRADLE
           cd backend/battlecode26-scaffold
           ./gradlew --console=plain --init-script "$resolver" resolveEngineRuntime
-      - name: Verify result and replay from the real Battlecode engine
+      - name: Verify real engine results and replays across Python versions
         run: |
-          "$BIO_CI_LAUNCHER_PYTHON" backend/run_tests.py --integration --verbose \
-            backend.match_orchestrator.tests.test_replays
+          read -ra runtimes <<< "$BIO_CI_PYTHON_VERSIONS"
+          failed=0
+          for version in "${runtimes[@]}"; do
+            launcher_python="backend/.venvs/py$version/bin/python"
+            "$launcher_python" --version
+            "$launcher_python" backend/run_tests.py --integration --verbose \
+              backend.match_orchestrator.tests.test_replays || failed=1
+          done
+          exit "$failed"

@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-804 / CN-082 extends real-engine replay smoke to all four pinned
+  Python families and checks the interpreter recorded by the match.
 - BIO-705 / CN-081 shows the recorded game and tie-break map order on the
   scoped bracket page.
+  PR #89 merged into `main` at `1cfdc10` after all four hosted checks passed.
 - BIO-304 / CN-080 rechecks pinned map pools at round start and configured
   worker execution. Map drift blocks games until the catalogue is repaired.
   PR #88 merged into `main` at `5547f08` after all three hosted checks passed.
@@ -530,8 +533,9 @@ with current code and the coverage matrix; nothing here is closed by intake.
    runbook adoption/sign-off, pilot and go-live approval remain open. CN-033
    supplies an interim runbook and console guide with disposable restore and
    web signing-key rehearsal. CN-075–077 add CI for the frontend build,
-   backend unit matrix, Django and browser tests. CN-078 adds a primary-Python
-   real-engine replay smoke workflow. No release dates before the benchmark.
+   backend unit matrix, Django and browser tests. CN-078/082 add real-engine
+   replay smoke on all locked Python families. No release dates before the
+   benchmark.
 9. **Owner/legal and follow-up scope:** written Battlecode Java-engine license
    clarification, copyright holder, participant terms and network source offer;
    reconcile proposed Jira numbering/create real issues; decide client pin
@@ -1377,4 +1381,19 @@ the official bracket. Full replay playback and raw engine points remain open.
 The production build, all 148 Django cases and all 32 Playwright cases
 passed with disposable services. The new browser case checks keyboard
 access and the final map order at a 390-pixel viewport. All 91 requirement
+statuses, nine backlog categories and 42 Jira items remain.
+
+PR #89 merged into `main` at `1cfdc10` after the frontend build, unit matrix,
+real-engine smoke and web/browser checks passed.
+
+## CN-082 continuation evidence
+
+BIO-804 starts from merged `main` at `1cfdc10` on
+`BIO-804-real-engine-python-matrix`. The Ubuntu 26.04 job builds each
+launcher environment listed in `versions.lock.json` and runs the replay
+integration module for each family in sequence. The real game checks the
+recorded match interpreter. The job fails if any family fails. Locally all
+42 cases passed on each of Python 3.12.15, 3.13.18, 3.14.10 and 3.15.2, and
+all five workflow shell steps passed syntax checks. Full hosted
+integration and target-host deployment remain open. All 91 requirement
 statuses, nine backlog categories and 42 Jira items remain.
