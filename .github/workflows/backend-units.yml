@@ -1,0 +1,48 @@
+name: Backend unit matrix
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - backend/**
+      - .github/workflows/backend-units.yml
+  push:
+    branches: [main]
+    paths:
+      - backend/**
+      - .github/workflows/backend-units.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-matrix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      UV_MANAGED_PYTHON: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: '0.13.10'
+          enable-cache: false
+      - name: Install the locked runtime families
+        run: |
+          versions=$(python3 -c 'from backend.run_tests import tested_versions; print("\n".join(tested_versions()))')
+          mapfile -t runtimes <<< "$versions"
+          uv python install "${runtimes[@]}"
+          for version in "${runtimes[@]}"; do
+            "$(uv python find "$version")" --version
+          done
+          python3 backend/match_runner/setup_env.py
+      - name: Run the backend unit matrix
+        run: |
+          primary=$(python3 -c 'import json; from backend.run_tests import LOCK; print(json.loads(LOCK.read_text())["primary_python"])')
+          "backend/.venvs/py$primary/bin/python" backend/run_tests.py --matrix

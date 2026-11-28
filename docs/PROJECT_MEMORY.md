@@ -22,7 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-804 / CN-076 adds the Python backend unit matrix on GitHub Actions.
 - BIO-804 / CN-075 adds a clean frontend build check on GitHub Actions.
+  PR #83 merged into `main` at `f18d7c1` after its hosted build passed.
 - BIO-611 / CN-074 expands local lifecycle acceptance for email-off notices,
   verified replay archive and unchanged result payloads.
   PR #82 merged into `main` at `a299868`.
@@ -422,7 +424,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    house-bot algorithm (DEC-06), qualification-cutoff draw/audit (DEC-14), and
    complete TC-05 including these scenarios. Map pools exist; custom-map safety,
    suitability, per-round re-verification and production persistence remain.
-   Other OSes, 3.16/free-threaded builds and backend CI remain open. New
+   Other OSes, 3.16/free-threaded builds and real-engine CI remain open. New
    native bundle/live tests do not close any of these execution gates.
 4. **Registration/submissions:** public claim and verification endpoints and
    invitation delivery; remaining registration API contracts; locked-entry
@@ -507,11 +509,11 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Branding,
    usability, formal accessibility/nonvisual play-by-play and full FLOW-01–08
    acceptance remain; production capacity/outage/concurrency/multi-host tests,
-   target-host backups/recovery, deployment/TLS, backend matrix/real-engine CI,
+   target-host backups/recovery, deployment/TLS, web/browser/real-engine CI,
    runbook adoption/sign-off, pilot and go-live approval remain open. CN-033
    supplies an interim runbook and console guide with disposable restore and
-   web signing-key rehearsal. CN-075 adds the frontend build CI. No release
-   dates before the benchmark.
+   web signing-key rehearsal. CN-075 and CN-076 add the frontend build and
+   backend unit matrix CI. No release dates before the benchmark.
 9. **Owner/legal and follow-up scope:** written Battlecode Java-engine license
    clarification, copyright holder, participant terms and network source offer;
    reconcile proposed Jira numbering/create real issues; decide client pin
@@ -1254,3 +1256,16 @@ A clean local export passed `npm ci` and `npm run build` with Node.js
 26.13.1 and npm 12.2.3. Hosted evidence is recorded in the PR build check.
 All 91 statuses, nine backlog categories and 42 open Jira items remain.
 Backend matrix, real-engine and browser CI and deployment remain open.
+
+## CN-076 continuation evidence
+
+BIO-804 starts from merged main at `f18d7c1` on
+`BIO-804-backend-unit-matrix-ci`. GitHub Actions reads the Python families
+from the existing test runner, installs managed Python with uv 0.13.10,
+and uses the pinned primary launcher environment to dispatch the unit
+matrix on Ubuntu 24.04. The run reports the exact Python patch versions.
+
+Hosted evidence is recorded in the PR's Backend unit matrix check. The
+frontend workflow's first hosted check passed in [PR #83](https://github.com/hixam001/battle-it-out/actions/runs/46113820481).
+All 91 statuses, nine backlog categories and 42 open Jira items remain.
+Web, browser and real-engine CI remain separate verification work.
