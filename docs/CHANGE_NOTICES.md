@@ -1115,6 +1115,16 @@ Decisions from the owner that change or narrow what the requirement documents (P
   use the existing event transaction. Inbox state, email, comment notices,
   appeals and changes to recorded outcomes remain open.
 
+## CN-090 — Full hosted engine integration (2026-11-28)
+
+- **BIO-804:** The full backend suite runs on demand on Ubuntu 26.04 and
+  on PRs changing its workflow. The Python matrix comes from the existing
+  execution lock. Each job reuses the smoke workflow's engine, JDK and
+  sandbox setup and runs all cases with `--integration --require-no-skips`.
+- Each job runs its games sequentially. The replay fixture checks its real
+  interpreter. Tests of default launcher behavior use the lock's primary
+  runtime. The regular PR smoke workflow remains available.
+
 ## CN-091 — Match result notice links (2026-11-28)
 
 - **BIO-705:** Existing result notices can open the last recorded game in

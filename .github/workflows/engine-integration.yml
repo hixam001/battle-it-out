@@ -1,0 +1,40 @@
+name: Full Battlecode engine integration
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/engine-integration.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: full-engine-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runtimes:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    outputs:
+      python: ${{ steps.lock.outputs.python }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: lock
+        name: Read the locked Python families
+        run: |
+          python3 -c 'import json; from backend.run_tests import tested_versions; print("python=" + json.dumps(tested_versions()))' >> "$GITHUB_OUTPUT"
+
+  integration:
+    needs: runtimes
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ${{ fromJSON(needs.runtimes.outputs.python) }}
+    uses: ./.github/workflows/engine-smoke.yml
+    with:
+      full_python: ${{ matrix.python }}

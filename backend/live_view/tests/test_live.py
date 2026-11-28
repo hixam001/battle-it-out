@@ -27,7 +27,9 @@ class LiveEngine(unittest.TestCase):
                             self.assertNotEqual(probe.connect_ex(('127.0.0.1',6175)),0,'raw engine WebSocket must not listen')
                     time.sleep(.02)
                 result=future.result()
-            self.assertEqual(result['classification'],'normal',result)
+            if result['classification'] != 'normal':
+                log = Path(result['logs']['server']).read_text(errors='replace')
+                self.fail(f"Live game failed: {result}\nServer log tail:\n{log[-2400:]}")
             self.assertEqual((baseline['round'],baseline['reason']),(result['round'],result['reason']))
             self.assertGreater(len(set(active_rounds)),1,'observed actual board changes before game completion')
             board=json.loads(path.read_text());self.assertTrue(board['finished']);self.assertEqual(board['round'],result['round'])
