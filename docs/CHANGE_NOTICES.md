@@ -1114,3 +1114,13 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - The current review route holds reasons and comments. The dashboard notices
   use the existing event transaction. Inbox state, email, comment notices,
   appeals and changes to recorded outcomes remain open.
+
+## CN-093 — Login failure limits (2026-11-28)
+
+- **BIO-405:** The PostgreSQL login limiter records failed authentication
+  under the existing source and account locks. Each successful sign-in leaves
+  both counters intact. The interim ten-failure threshold and 15-minute
+  window still apply.
+- The test signs in two provisioned fixture accounts twelve times through
+  one source. The existing failure test verifies the `401` and `429` paths,
+  independent source and account blocking and absent failed sessions.

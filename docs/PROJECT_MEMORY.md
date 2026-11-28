@@ -22,6 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-405 / CN-093 counts failed authentication toward the interim
+  PostgreSQL login limit for each source and account.
+
 - BIO-607 / CN-089 shows scoped dispute filings and review updates on the
   dashboard. The browser follows the notice to the selected tournament.
 - BIO-607 / CN-088 shows recent approval and rejection decisions in the
@@ -1563,3 +1566,17 @@ The production build, all 151 PostgreSQL Django tests, system and migration
 checks and all 32 browser cases passed with disposable fixtures. All 91
 requirement statuses, nine backlog categories and 42 Jira items remain.
 Inbox state, email, comment notices and dispute outcome policies are open.
+
+## CN-093 continuation evidence
+
+BIO-405 starts `BIO-405-count-login-failures` from verified `main` at
+`bec3e2b`. Login checks and records failures under the existing PostgreSQL
+advisory locks in stable order. Successful sign-ins leave the counts intact.
+The interim cap and window remain. Existing stored attempts expire on the
+same window.
+
+All 152 Django tests plus system and migration checks passed on disposable
+PostgreSQL. The regression signs in two provisioned fixture accounts twelve
+times from one source and preserves the independent failure-limit tests.
+All 91 requirement statuses, nine backlog categories and 42 Jira items remain.
+Public account registration, verification email and recovery are open.

@@ -389,7 +389,9 @@ with the existing local commands.
 -   Secret/environment-variable exposure.
 -   Cross-team/cross-tournament IDOR.
 -   Unauthorized file download.
--   Rate limiting on login and invitation validation.
+-   Rate limiting on login and invitation validation. The PostgreSQL API
+    suite checks independent source and account failure limits and twelve
+    valid sign-ins on one source (BIO-405 / CN-093).
 -   SQL injection/XSS/CSRF as applicable to selected auth model.
 -   Audit tampering attempts.
 

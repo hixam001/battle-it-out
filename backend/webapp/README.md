@@ -49,8 +49,8 @@ and production provider/image/deployment work remain open.
 Native Django password hashing and session authentication are the reversible
 initial implementation. Session reads and login issue CSRF tokens; login,
 logout and authenticated mutations enforce CSRF. Login failure limits are
-PostgreSQL-backed: 10 attempts per source/account in 15 minutes, an **interim**
-operator policy. Public account registration, recovery and verification-email
+PostgreSQL-backed. The interim limit is ten failed attempts per source or
+account in 15 minutes. Successful sign-ins leave the failure counts intact. Public account registration, recovery and verification-email
 delivery are still part of the wider backend backlog. The landing page accurately
 directs users to their Organizer for account access.
 
