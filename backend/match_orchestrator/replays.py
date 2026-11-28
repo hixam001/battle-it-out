@@ -214,6 +214,12 @@ def _sha256_and_check(path: Path, limit: int) -> tuple[str, int]:
     return digest, size
 
 
+def _require_unarchived(state: dict, tournament_id: str) -> None:
+    rec = state["tournaments"].get(tournament_id)
+    if rec and rec["status"] == ARCHIVED:
+        raise ArchivedRefused(f"tournament {tournament_id} is archived; replays are no longer stored")
+
+
 def register_replay(vault: Vault, tournament_id: str, match_id: str, source: Path | str, expected_sha256: str | None, *,
                     max_bytes: int = SAFETY_MAX_BYTES, now: Callable[[], float] = time.time) -> dict:
     """Copy a finished game's replay into the vault and record it. Idempotent for the same content.
@@ -225,11 +231,8 @@ def register_replay(vault: Vault, tournament_id: str, match_id: str, source: Pat
     _check_id("tournament", tournament_id)
     _check_id("match", match_id)
     dest = vault._path(tournament_id, match_id)
-    existing = None
     with vault.index.transaction() as state:
-        rec = state["tournaments"].get(tournament_id)
-        if rec and rec["status"] == ARCHIVED:
-            raise ArchivedRefused(f"tournament {tournament_id} is archived; replays are no longer stored")
+        _require_unarchived(state, tournament_id)
         existing = state["replays"].get(match_id)
     digest, size = _sha256_and_check(Path(source), max_bytes)
     if expected_sha256 is not None and digest != expected_sha256:
@@ -240,13 +243,16 @@ def register_replay(vault: Vault, tournament_id: str, match_id: str, source: Pat
         if existing["status"] == AVAILABLE and dest.is_file():
             return copy.deepcopy(existing)           # same content again: nothing to do
     folder = dest.parent
-    vault.root.mkdir(parents=True, exist_ok=True, mode=0o700)
-    if folder.is_symlink():
-        raise Refused("the replay folder is a link; refusing to write through it")
     tmp = None
     try:
-        folder.mkdir(exist_ok=True, mode=0o700)
-        fd, tmp = tempfile.mkstemp(prefix=".incoming-", suffix=".part", dir=folder)
+        with vault.index.transaction() as state:
+            # Create the staging file before archive can mark the tournament and sweep its folder.
+            _require_unarchived(state, tournament_id)
+            vault.root.mkdir(parents=True, exist_ok=True, mode=0o700)
+            if folder.is_symlink():
+                raise Refused("the replay folder is a link; refusing to write through it")
+            folder.mkdir(exist_ok=True, mode=0o700)
+            fd, tmp = tempfile.mkstemp(prefix=".incoming-", suffix=".part", dir=folder)
         with os.fdopen(fd, "wb") as out, open(source, "rb") as f:
             shutil.copyfileobj(f, out, 1 << 20)
             out.flush()
@@ -258,9 +264,8 @@ def register_replay(vault: Vault, tournament_id: str, match_id: str, source: Pat
         with vault.index.transaction() as state:
             # the purge starts under this same lock, so either it already started (refuse, delete our copy)
             # or it cannot start until this record and file are both in place
-            rec = _tournament(state, tournament_id, now())
-            if rec["status"] == ARCHIVED:
-                raise ArchivedRefused(f"tournament {tournament_id} is archived; replays are no longer stored")
+            _require_unarchived(state, tournament_id)
+            _tournament(state, tournament_id, now())
             os.replace(tmp, dest)
             t = now()
             state["replays"][match_id] = {
@@ -268,7 +273,14 @@ def register_replay(vault: Vault, tournament_id: str, match_id: str, source: Pat
                 "storage_key": f"{tournament_id}/{dest.name}", "format": REPLAY_FORMAT, "sha256": digest,
                 "bytes": size, "created_at": _iso(t), "deleted_at": None, "deletion_reason": None}
             return copy.deepcopy(state["replays"][match_id])
-    except OSError as e:                             # e.g. the folder was purged while we were copying
+    except ArchivedRefused:
+        raise
+    except (OSError, Refused) as e:
+        # The purge can unlink the staged copy while the writer is verifying it.
+        with vault.index.transaction() as state:
+            _require_unarchived(state, tournament_id)
+        if isinstance(e, Refused):
+            raise
         raise Refused(f"could not store the replay ({type(e).__name__})") from e
     finally:
         if tmp is not None:
@@ -288,6 +300,7 @@ def register_from_result(vault: Vault, tournament_id: str, match_id: str, result
         raise
     except Refused as e:
         with vault.index.transaction() as state:
+            _require_unarchived(state, tournament_id)
             rec = state["replays"].get(match_id)
             t = now()
             if rec is None:

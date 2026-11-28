@@ -13,6 +13,7 @@ import os
 import random
 import shutil
 import stat
+import sys
 import tempfile
 import threading
 import unittest
@@ -483,6 +484,25 @@ class Archive(Base):
             self.assertFalse([r for r in self.snap()["replays"].values()
                               if r["tournament_id"] == tid and r["status"] != "purged"], f"round {round_}")
 
+    def test_archive_during_validation_refuses_without_leaving_a_folder_or_incident(self):
+        check = R._sha256_and_check
+        for during_copy in (False, True):
+            with self.subTest(during_copy=during_copy):
+                tid = f"archive-during-check-{int(during_copy)}"
+                source = self.make()
+
+                def archive_during_check(path, limit):
+                    if path.name.startswith(".incoming-") == during_copy:
+                        R.archive_tournament(self.vault, tid, "a")
+                    return check(path, limit)
+
+                with patch.object(R, "_sha256_and_check", side_effect=archive_during_check):
+                    with self.assertRaises(R.ArchivedRefused):
+                        R.register_from_result(self.vault, tid, tid, {"replay": source, "replay_sha256": sha(source)})
+                self.assertFalse((self.vault.root / tid).exists())
+                self.assertNotIn(tid, self.snap()["replays"])
+                self.assertEqual(self.snap()["incidents"], [])
+
 
 class WithTheBracket(Base):
     """The replays of a whole tournament, and what an archive must not touch."""
@@ -562,7 +582,11 @@ class WithTheBracket(Base):
 class RealReplay(unittest.TestCase):
     def test_real_engine_replay_is_stored_served_and_purged(self):
         from backend.match_runner import launcher as L
-        py = L.resolve_python(None, None, L.load_lock())
+        lock = L.load_lock()
+        version = "%d.%d" % sys.version_info[:2]
+        if version not in lock["tested_python"]:
+            version = lock["primary_python"]
+        py = L.resolve_python(version, None, lock)
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             bots = root / "bots"
@@ -580,6 +604,8 @@ class RealReplay(unittest.TestCase):
             self.assertGreaterEqual(out["stored"], 1)
             self.assertEqual(sorted(vault.index.snapshot()["incidents"], key=str), [])
             mid = next(iter(vault.index.snapshot()["replays"]))
+            recorded = O.get_match(store, mid)["attempts"][-1]["summary"]["python"]
+            self.assertEqual(".".join(recorded.split(".")[:2]), version)
             h = R.fetch_replay(vault, mid, R.Viewer("participant", frozenset({"t1"})))
             with gzip.open(h.path, "rb") as g:                      # the engine's file really is gzip, to the end
                 self.assertGreater(len(g.read()), 1000)
