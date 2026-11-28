@@ -1114,3 +1114,13 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - The current review route holds reasons and comments. The dashboard notices
   use the existing event transaction. Inbox state, email, comment notices,
   appeals and changes to recorded outcomes remain open.
+
+## CN-091 — Match result notice links (2026-11-28)
+
+- **BIO-705:** Existing result notices can open the last recorded game in
+  their series. The API uses the same stable participant notice identifier
+  as the round publisher, verified roster membership and the official
+  bracket history. The dashboard and the inbox share that link.
+- The result path keeps the normal game access check and survives replay
+  archive. Historical notice text stays visible when the link is unavailable.
+  Browser replay playback and raw engine points remain open.

@@ -186,6 +186,11 @@ Delivery errors and provider fields stay private. The existing inbox shows
 announcements, deadline changes and emergency overrides. Real providers and
 the PostgreSQL migration of notification state remain open.
 
+Match-result notices include `result_match_id` when the recipient's verified
+team still has access to the official series. The dashboard and inbox link
+to its last recorded game, including after replay archive. The ordinary
+notice text stays readable in the personal inbox after access ends.
+
 Admins and assigned Organizers can publish an announcement with JSON
 `headline` and `message` fields and an `Idempotency-Key`. The route targets
 verified roster accounts of a published, unarchived tournament and returns

@@ -22,6 +22,8 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-705 / CN-091 links existing result notices to the recorded game from
+  the participant dashboard and inbox after a current-scope check.
 - BIO-607 / CN-089 shows scoped dispute filings and review updates on the
   dashboard. The browser follows the notice to the selected tournament.
 - BIO-607 / CN-088 shows recent approval and rejection decisions in the
@@ -542,7 +544,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    evidence remain. CN-032 adds current-scope native replay downloads from the
    private vault. CN-046 exposes verified role-scoped structured attempt logs,
    and CN-071 adds the match log screen with attempt selection.
-   CN-054 adds the replay availability and download screen.
+   CN-054 adds the replay availability and download screen. CN-091 adds
+   scoped navigation from existing result notices to the recorded game.
    CN-079 covers stale archived files in a disposable restore. Target-host
    backup retention and recovery objectives remain open.
    CN-084 covers continued maintenance through a concurrent archive.
@@ -1563,3 +1566,17 @@ The production build, all 151 PostgreSQL Django tests, system and migration
 checks and all 32 browser cases passed with disposable fixtures. All 91
 requirement statuses, nine backlog categories and 42 Jira items remain.
 Inbox state, email, comment notices and dispute outcome policies are open.
+
+## CN-091 continuation evidence
+
+BIO-705 starts `BIO-705-match-result-notice-links` from verified `main` at
+`bec3e2b` while PR #98 runs CI. The HTTP projection resolves stable result
+notice IDs to the last game of the official series with current team and
+tournament scope. Existing notice records work with their saved IDs.
+Archive retains navigation and roster revocation removes the link.
+
+The production build, 152 Django cases with PostgreSQL and system/migration
+checks, 101 notification library cases and all 32 Playwright cases passed.
+All 91 requirement statuses, nine backlog categories and 42 Jira items
+remain. Raw engine points, browser replay playback and formal acceptance
+remain open.

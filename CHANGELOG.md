@@ -6,6 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
+- **Match result notice links (BIO-705, CN-091)** open the recorded result
+  from the dashboard and inbox while the recipient has team access.
+
 - **Dispute notices (BIO-607, CN-089)** show new filings to tournament staff
   and team review updates to participants on the dashboard.
 

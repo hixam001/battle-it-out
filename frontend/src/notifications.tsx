@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, api } from "./api";
+import { matchPath } from "./results";
 
 type Notice = {
   id: string;
@@ -9,6 +10,7 @@ type Notice = {
   created_at: string;
   read: boolean;
   email_status: string;
+  result_match_id?: string;
 };
 type Feed = { items: Notice[]; total: number; unread: number };
 type Preferences = { email_enabled: boolean; dashboard_enabled: true };
@@ -45,6 +47,7 @@ function NoticeItem({ notice, tournament, action }: {
         </div>
         <h3>{notice.title}</h3>
         <p>{notice.body}</p>
+        {notice.result_match_id && <p><a href={matchPath(notice.result_match_id)}>View match result</a></p>}
         {notice.email_status === "failed" && <p className="muted">Email delivery failed.</p>}
         {notice.email_status === "no_address" && <p className="muted">No address available for email delivery.</p>}
       </div>
