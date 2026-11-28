@@ -1633,3 +1633,18 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   changelog and memory. BIO-NFR-08 moves to PARTIAL. The nine backlog
   categories and 42 Jira items remain, including production storage,
   short-lived storage links, caps and retention.
+
+### 2026-11-28 — BIO-404 PostgreSQL schema readiness
+
+- Started `BIO-404-postgres-schema-readiness` from `590fbd2` during PR #93's
+  hosted checks. Fast-forwarded to `6eb8ca5` after all three passed and PR #93
+  merged into `main`.
+- Readiness now checks visibility of the managed Django tables in its
+  existing bounded PostgreSQL probe. A missing table reports redacted `503`.
+  The disposable regression reproduced false readiness before the fix and
+  checks GET/HEAD, liveness and recovery. All 149 Django cases and system
+  and migration checks passed.
+- Updated the web guide, API and test plans, operations runbook, Jira,
+  coverage, CN-086, changelog and memory. All nine backlog categories and
+  42 Jira items remain. Full migration checks, worker readiness and
+  production monitoring remain open.

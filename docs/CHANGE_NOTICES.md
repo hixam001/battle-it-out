@@ -1074,3 +1074,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - HTTP tests check exact source and ZIP members, attachment metadata, length
   and a private cache policy. Browser tests check existing Admin and Organizer
   downloads. Production object storage and retention remain open.
+
+## CN-086 — PostgreSQL schema readiness (2026-11-28)
+
+- **BIO-404:** The bounded, public readiness probe checks that the web
+  connection can see the managed Django model tables. Missing tables return
+  the same redacted `503` as an unavailable database. Liveness stays `200`.
+- A disposable PostgreSQL test hides the tables on the probe's search path
+  and verifies GET and HEAD failure followed by recovery. Worker, engine,
+  migration consistency and production monitoring checks remain separate.

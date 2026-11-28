@@ -8,6 +8,7 @@ import re
 import stat
 import time
 from datetime import UTC, datetime, timedelta
+from django.apps import apps
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.db import connections, transaction
 from django.http import FileResponse, JsonResponse, HttpResponse
@@ -48,13 +49,18 @@ def health(request):
 
 @require_http_methods(['GET', 'HEAD'])
 def readiness(request):
-    """Probe PostgreSQL with the web service's credentials and a dedicated connection."""
+    """Probe the application schema with the web service's credentials."""
     params = connections['default'].get_connection_params()
     options = params.get('options') or ''
     params.update(connect_timeout=3, options=f'{options} -c statement_timeout=2000', autocommit=True)
+    tables = [model._meta.db_table for model in apps.get_models(include_auto_created=True)
+              if model._meta.managed and not model._meta.proxy]
     try:
         with connect(**params) as probe, probe.cursor() as cursor:
-            cursor.execute('SELECT 1')
+            cursor.execute('SELECT bool_and(pg_catalog.to_regclass(name) IS NOT NULL) '
+                           'FROM unnest(%s::text[]) AS expected(name)', (tables,))
+            if not cursor.fetchone()[0]:
+                return JsonResponse({}, status=503)
     except OperationalError:
         return JsonResponse({}, status=503)
     return JsonResponse({'status': 'ready'})

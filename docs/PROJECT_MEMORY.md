@@ -22,7 +22,9 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-404 / CN-086 includes model table visibility in PostgreSQL readiness.
 - BIO-408 / CN-085 streams verified private source and bundle attachments.
+  PR #93 merged into `main` at `6eb8ca5` after all three hosted checks passed.
 - BIO-606 / CN-084 continues replay maintenance when a tournament is archived
   during collection. The same pass completes pending purges.
   PR #92 merged into `main` at `590fbd2` after all three hosted checks passed.
@@ -429,7 +431,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    errors/request IDs and process liveness. CN-026's full administration
    proposal remains open. CN-051 adds a PostgreSQL readiness probe with
    verified unavailable/recovery behavior. Worker and deployment monitoring
-   remain open. Legacy creator fallback remains outside these scoped
+   remain open. CN-086 verifies model table visibility on the configured
+   connection. Legacy creator fallback remains outside these scoped
    feature routes and must be replaced before the full role API is implemented.
    CN-042 reads current-role scoped audit across the existing stores. Permanent
    migration remains open. CN-048 and CN-050 add official series history and
@@ -1475,3 +1478,21 @@ response formats preserve their exact contents and normal browser downloads.
 BIO-NFR-08 advances to PARTIAL. All 91 requirements, nine backlog
 categories and 42 Jira items remain. Production storage, short-lived
 storage links, agreed caps and retention are open.
+
+PR #93 merged into `main` at `6eb8ca5` after the backend unit matrix, engine
+smoke and web/browser checks passed.
+
+## CN-086 continuation evidence
+
+BIO-404 starts `BIO-404-postgres-schema-readiness` from `590fbd2` and
+fast-forwards to merged `main` at `6eb8ca5`. The existing PostgreSQL
+readiness connection now looks up the managed Django model tables in one
+bounded catalogue query. The regression reproduces false readiness before
+the fix with a reachable PostgreSQL server and a search path without the
+tables. After the fix, GET and HEAD return a redacted `503`, liveness stays
+`200` and restoring the path recovers readiness. All 149 Django tests and
+the system and migration checks passed on disposable PostgreSQL.
+
+All 91 requirement statuses, nine backlog categories and 42 Jira items
+remain. The probe checks table visibility. Migration consistency, worker
+and engine checks and production monitoring remain open.
