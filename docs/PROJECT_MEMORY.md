@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-606 / CN-084 continues replay maintenance when a tournament is archived
+  during collection. The same pass completes pending purges.
 - BIO-802 / CN-083 verifies queue and match lease recovery after an abrupt
   worker exit and one result and advancement per game after redelivery.
+  PR #91 merged into `main` at `8237351` after all three hosted checks passed.
 - BIO-804 / CN-082 extends real-engine replay smoke to all four pinned
   Python families, checks the interpreter recorded by the match and fixes
   the replay registration race exposed by its first hosted run (BIO-606).
@@ -521,6 +524,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    CN-054 adds the replay availability and download screen.
    CN-079 covers stale archived files in a disposable restore. Target-host
    backup retention and recovery objectives remain open.
+   CN-084 covers continued maintenance through a concurrent archive.
    Production retention of worker-side artifacts, raw native
    indicator text review and browser playback remain open.
 8. **Website and launch:** remaining registration/account lifecycle,
@@ -1429,3 +1433,22 @@ integration enabled on Python 3.15.2. The full backend run on that version
 passed 743 of 791 cases with 48 expected skips. All 91 statuses, nine backlog categories
 and 42 open Jira items remain. Target-host engine-process cleanup, provider
 outages, capacity and multi-host validation remain open.
+
+PR #91 merged into `main` at `8237351` after the engine smoke, backend unit
+matrix and web/browser checks passed.
+
+## CN-084 continuation evidence
+
+BIO-606 starts `BIO-606-archive-during-maintenance` from `26d61af` and
+fast-forwards to merged `main` at `8237351` before publication. An archive
+that begins after the initial replay check can stop collection for its own
+bracket. Maintenance lists that bracket as skipped and continues the next
+tournament and scheduled purges. The deterministic source-verification
+regression reproduced the aborted pass before the fix and verifies
+continuation and unchanged official records after it.
+
+All 51 tournament-flow and service tests passed with real-engine integration
+on Python 3.15.2 in 81.662 seconds. On the updated branch 744 of 792 backend
+unit tests passed with 48 expected skips. All 91 requirement statuses, nine backlog
+categories and 42 Jira items remain. Production scheduling and retention
+still need their documented decisions and evidence.

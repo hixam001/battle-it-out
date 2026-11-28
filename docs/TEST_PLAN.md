@@ -607,6 +607,11 @@ and left a repeat pass with no work. Replay regression tests cover the
 restored file, untouched replays in another tournament and a dangling folder
 link that is reported as a failed purge.
 
+The concurrent maintenance case (BIO-606 / CN-084) archives a tournament
+while its replay source is being verified. The pass records the bracket as
+skipped, visits the next tournament, finishes the pending purge and preserves
+both brackets and all match records.
+
 ## 6. Known limitations / unresolved test inputs
 
 -   Python 3.13 compatibility is a target until TC-01 passes.

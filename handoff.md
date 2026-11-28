@@ -1600,3 +1600,19 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated the test plan, Jira, coverage, CN-083 and memory. All nine backlog
   categories and 42 Jira items remain. Target-host crash recovery, capacity,
   provider outage and multi-host verification remain open.
+
+### 2026-11-28 — BIO-606 Archive during replay maintenance
+
+- Started `BIO-606-archive-during-maintenance` from `26d61af` while PR #91
+  was in CI. Fast-forwarded to `8237351` after all hosted checks passed and
+  PR #91 merged into `main`.
+- Maintenance now skips a bracket when its tournament is archived during
+  collection, then visits other tournaments and finishes pending purges.
+  The deterministic regression reproduced the interrupted pass before the
+  repair. It observes the continued pass and unchanged official records.
+- All 51 tournament-flow and service tests passed with real-engine
+  integration on Python 3.15.2 in 81.662 seconds. The full backend suite
+  passed 744 of 792 with 48 expected skips. Tests used disposable state.
+- Updated the runbook, test plan, Jira, coverage, CN-084, changelog and
+  memory. All nine backlog categories and 42 Jira items remain, including
+  production scheduling, worker-output retention and target-host recovery.
