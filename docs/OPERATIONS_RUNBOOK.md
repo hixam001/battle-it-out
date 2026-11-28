@@ -114,9 +114,8 @@ game and one advancement per winner.
    replay binaries. Verify match/bracket history separately. Check that the
    private live board is refused after archive. Keep worker output and
    restored copies private until the artifact retention review is complete.
-   A backup may contain a file for a purge already marked done. Staging
-   reconciliation must recheck archived folders, since `purge_pending`
-   selects unfinished purges only.
+   Maintenance checks archived folders even when a purge is marked `done`.
+   If a restore brought a file back, verify that the next purge removes it.
 
 ## Backup and restore rehearsal
 
@@ -161,9 +160,28 @@ reviewed cutover.
    directory. Validate account scope, schema, queue counts, pinned submission
    hashes, match and bracket references, notification preferences and the
    vault index. Compare archive/deletion records recorded after the snapshot.
-   Verify archived files stay absent. Keep artifact access disabled until
-   state and retention reconcile. Reconcile deliveries already handed off
-   since the snapshot before enabling a sender.
+   Once the archive records are reconciled, run the purge reconciliation
+   against staging. For a replay-only check without advancing deadlines,
+   use the following command with `BIO_RESTORE_DATA_DIR` pointing to the new
+   private state directory.
+
+   ```bash
+   BIO_DATA_DIR="$BIO_RESTORE_DATA_DIR" backend/.venvs/py3.15/bin/python - <<'PY'
+   import os
+   from pathlib import Path
+   from backend.match_orchestrator.replays import ReplayIndex, Vault, purge_pending
+
+   root = Path(os.environ['BIO_DATA_DIR'])
+   print(purge_pending(Vault(root / 'replays', ReplayIndex(root / 'replays.json'))))
+   PY
+   ```
+
+   Verify that archived vault folders are absent and authorized replay requests
+   return `410`. An empty list can also mean a purge failed. Check for open
+   `purge_failed` incidents and compare archived folders against the restored
+   index. Keep artifact access disabled until state and retention reconcile.
+   Reconcile deliveries already handed off since the snapshot before enabling
+   a sender.
 5. Record elapsed recovery time, snapshot age, what was lost and the results
    of the checks. Preserve failed staging state for diagnosis. Rehearse from
    a fresh isolated target after a failure.

@@ -163,6 +163,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Fixed
 
+- **Archived replay recovery (BIO-803, CN-079)** sweeps replay files that
+  reappear after a restore. Archived downloads stay blocked and official
+  match and bracket history stays intact.
+
 - **A team could win by breaking the engine protocol (SR-01 residual, CN-025):** when the router refused an out-of-turn frame but the engine had already logged the game as finished, the match was classified `normal` and the sender won. Found as an intermittent failure of a real-game test on 3.13, 3.14 and 3.15; a protocol violation seen by the router is now always charged to the sender (forfeit to the other team). 5 new rule tests; 120 real matches since without a failure.
 - **`open_bracket` could make a tournament undrawable (CN-018 D3, fixed in CN-019):** the write-once pins were written before the check that two teams can play, so a tournament with fewer than two active bots could not be drawn again even after an Admin extension and a new upload. The check now runs first (`registry.preview_pins`, read only); regression tests added.
 

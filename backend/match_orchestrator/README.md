@@ -50,7 +50,7 @@ vault = R.Vault("/srv/replays", R.ReplayIndex("/srv/replays.json"))
 R.collect_bracket(vault, store, "open-2026", "open-2026")           # after each round; once per game, safe to repeat
 h = R.fetch_replay(vault, "open-2026-r1-m0-g0", R.Viewer("participant", frozenset({"open-2026"})))   # NotFound / Gone / Unavailable otherwise
 R.archive_tournament(vault, "open-2026", actor="admin-1")          # {"status": "archived", "replays_deleted": True, ...}
-R.purge_pending(vault)                                              # run from a scheduler; finishes any purge that did not complete
+R.purge_pending(vault)                                              # retry incomplete purges and sweep restored files from archived tournaments
 ```
 
 ## Whole-tournament test (CN-015)
