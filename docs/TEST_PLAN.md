@@ -416,6 +416,13 @@ results or advancements. Simulated game results keep the case independent
 of engine process timing. Target-host engine cleanup and throughput still
 need separate evidence.
 
+The real-service rehearsal (BIO-802 / CN-092) uploads four bots and queues
+two tournaments with distinct pinned map pools on one worker. It verifies
+sequential completions, tournament-specific match notices and live/replay
+artifacts, an idle redelivery check and an archive that preserves both
+official brackets and the other tournament's artifacts. The rehearsal uses
+fixture bots and disposable local state. Target capacity remains open.
+
 ## 5. Pre-demo checklist
 
 ### Participant team and submissions (BIO-704 / CN-053)

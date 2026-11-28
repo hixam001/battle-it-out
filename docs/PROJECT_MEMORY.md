@@ -22,6 +22,8 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-802 / CN-092 runs two tournaments sequentially through the real
+  configured service worker and verifies that archive affects its own artifacts.
 - BIO-607 / CN-089 shows scoped dispute filings and review updates on the
   dashboard. The browser follows the notice to the selected tournament.
 - BIO-607 / CN-088 shows recent approval and rejection decisions in the
@@ -458,6 +460,7 @@ with current code and the coverage matrix; nothing here is closed by intake.
    retry-cap policy remain. Live adapter compilation needs the pinned JAR/JDK;
    operational failed-email alert receipt retention still needs policy.
    CN-083 exercises replacement across both expired leases with fixture games.
+   CN-092 verifies two queued tournaments on one real worker and isolated archive.
 3. **Execution gates:** realistic target-hardware limits benchmark (DEC-04),
    independent sandbox/security review, SR-06 Java-exception classification and
    SR-03 parameter-type residual, engine seed control or accepted TC-04 waiver,
@@ -1563,3 +1566,17 @@ The production build, all 151 PostgreSQL Django tests, system and migration
 checks and all 32 browser cases passed with disposable fixtures. All 91
 requirement statuses, nine backlog categories and 42 Jira items remain.
 Inbox state, email, comment notices and dispute outcome policies are open.
+
+## CN-092 continuation evidence
+
+BIO-802 starts `BIO-802-two-tournament-worker-rehearsal` from verified `main`
+at `bec3e2b` while PRs #98 and #99 run CI. The extended real-service test runs
+four upload checks and two queued rounds through one configured worker. It
+verifies distinct map pins, results, notices, replays and live boards. A
+repeat worker pass is idle. Archiving the first tournament keeps the second
+tournament's artifacts and both official brackets intact.
+
+All 47 service, scheduler and live-view cases passed with real-engine
+integration on Python 3.15.2 and JDK 21 in 101.069 seconds. All nine backlog
+categories, 91 requirement statuses and 42 Jira items remain. Target-host
+capacity, provider outages and multi-host execution remain open.
