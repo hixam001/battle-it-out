@@ -1281,7 +1281,8 @@ BIO-804 starts from merged main at `0ba1ce6` on
 and HTTP checks with disposable PostgreSQL 18.7. It then seeds the
 browser fixture and starts Django and Vite on loopback to run the
 Chromium Playwright suite. Python 3.15.2, Node.js 26.13.1 and the existing
-dependency locks govern the test runtime.
+dependency locks govern the application runtime. The job uses the Ubuntu
+runner's installed Chromium and reports the browser version.
 
 Shell blocks passed syntax checks. The PR's Web and browser tests check
 records hosted verification. The current local evidence is in CN-074.

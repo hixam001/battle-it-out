@@ -57,12 +57,12 @@ jobs:
         with:
           node-version: '26.13.1'
           package-manager-cache: false
-      - name: Install web dependencies
+      - name: Install Django dependencies
         run: |
           uv venv --python 3.15.2 backend/.venvs/web
           uv pip install --python backend/.venvs/web/bin/python -r backend/webapp/requirements.lock.txt
-          npm ci --prefix frontend
-          frontend/node_modules/.bin/playwright install --with-deps chromium
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
       - name: Initialize disposable test settings
         env:
           MAPPED_POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
@@ -88,6 +88,9 @@ jobs:
         run: |
           python=backend/.venvs/web/bin/python
           manage=backend/webapp/manage.py
+          BIO_BROWSER_PATH=$(command -v chromium)
+          export BIO_BROWSER_PATH
+          "$BIO_BROWSER_PATH" --version
           "$python" "$manage" migrate --noinput
           "$python" -m frontend.tests.seed_fixture
           export BIO_ENGINE_JAR="$BIO_DATA_DIR/fixture-engine.jar"

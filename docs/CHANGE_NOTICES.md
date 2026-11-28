@@ -992,6 +992,7 @@ Decisions from the owner that change or narrow what the requirement documents (P
 
 - **BIO-804:** A GitHub Actions workflow runs Django checks and the
   Playwright suite with disposable PostgreSQL 18.7 and loopback services.
-  It uses the existing fixture and locked Python and Node dependencies.
+  It uses the existing fixture, locked Python and Node dependencies and
+  the runner's installed Chromium. The job reports its browser version.
 - Shell validation passed locally. The hosted run appears on the PR.
   Real-engine CI remains separate.

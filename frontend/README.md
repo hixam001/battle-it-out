@@ -155,7 +155,8 @@ npm test
 ```
 
 `BIO_WEB_BASE_URL` overrides the loopback test URL. `BIO_BROWSER_PATH` can point
-to an already installed compatible Chromium executable. Screenshots go to
+to an installed compatible Chromium executable. CI uses the runner's version
+and prints it in the test log. Screenshots go to
 ignored test-results. Desktop/mobile layout, keyboard navigation, real login,
 analytics, dispute/comment, submissions catalogue, logout, Admin operations,
 the dashboard and private inbox are exercised using local test data. Additional

@@ -1489,7 +1489,8 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Added `.github/workflows/web-tests.yml`. It runs Django system,
   migration and HTTP tests with disposable PostgreSQL 18.7. It seeds
   synthetic browser data and runs Chromium Playwright against loopback
-  Django and Vite. Signing material is generated per job.
+  Django and Vite. Signing material is generated per job. CI uses the
+  runner's installed Chromium and prints its version in the log.
 - Shell syntax passed locally. Hosted results are in the PR check.
   CN-074 records the matching local Django and Playwright evidence.
 - Updated web and frontend guides, project and test plans, Jira, CN-077
