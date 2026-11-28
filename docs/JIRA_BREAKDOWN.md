@@ -24,7 +24,7 @@ These keep their original keys. They are listed because later epics wait for the
 
 | Key | Open part | State today | Needs |
 |---|---|---|---|
-| BIO-204 | Benchmark the limits on target hardware and publish the fixed numbers | Interim profile only | Owner first: DEC-04 |
+| BIO-204 | Benchmark the limits on target hardware and publish the fixed numbers | Interim profile and repeatable local control command with runtime and usage evidence (CN-005/087) | Approved target hardware, representative bots and maps, and DEC-04 sign-off |
 | BIO-203 | Independent review of the sandbox (SR-06) | Self-review only | A reviewer outside the project |
 | BIO-303 | House bots and their bracket algorithm; the qualification cutoff draw (SRD-027) | Refused on purpose; no draw | Owner first: DEC-06, DEC-14 |
 | BIO-304 | Re-verify the pinned map pool before each round | Round-start and configured worker checks implemented (CN-080) | Engine JAR configured to match the launcher |

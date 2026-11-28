@@ -1648,3 +1648,17 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   coverage, CN-086, changelog and memory. All nine backlog categories and
   42 Jira items remain. Full migration checks, worker readiness and
   production monitoring remain open.
+
+### 2026-11-28 — BIO-204 Sandbox resource measurement controls
+
+- Started `BIO-204-resource-measurement-harness` from `6eb8ca5` during
+  PR #94's checks and fast-forwarded to `fdd473c` after its verified merge.
+- Added `backend/match_runner/measure_resources.py` to run sandboxed
+  reference and CPU-load fixtures repeatedly and report timing, usage,
+  runtime and input hashes. Artifacts use temporary directories.
+- All six Python 3.15.2 and Battlecode 1.2.6 sandboxed `DefaultSmall`
+  matches completed with cgroups active. Reference and CPU-load medians
+  were 4.3 and 5.3 seconds. CLI help, invalid input and report checks passed.
+- Updated the runner guide, test plan, Jira, coverage, CN-087, changelog
+  and memory. All nine backlog categories and 42 Jira items remain.
+  DEC-04 needs an approved target and representative bots and maps.

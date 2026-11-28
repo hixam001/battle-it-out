@@ -22,7 +22,10 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-204 / CN-087 adds a sandboxed reference and CPU-load measurement
+  command. The local control sample completed six matches.
 - BIO-404 / CN-086 includes model table visibility in PostgreSQL readiness.
+  PR #94 merged into `main` at `fdd473c` after all three hosted checks passed.
 - BIO-408 / CN-085 streams verified private source and bundle attachments.
   PR #93 merged into `main` at `6eb8ca5` after all three hosted checks passed.
 - BIO-606 / CN-084 continues replay maintenance when a tournament is archived
@@ -458,6 +461,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    suitability and production persistence remain.
    Other OSes, 3.16/free-threaded builds and wider real-engine CI remain open. New
    native bundle/live tests do not close any of these execution gates.
+   CN-087 supplies a local control command and verified usage report.
+   Representative bots, maps and an approved target worker remain needed.
 4. **Registration/submissions:** public claim and verification endpoints and
    invitation delivery; remaining registration API contracts; locked-entry
    Admin exception; team size/name/captain policy, source retention/deletion,
@@ -1496,3 +1501,22 @@ the system and migration checks passed on disposable PostgreSQL.
 All 91 requirement statuses, nine backlog categories and 42 Jira items
 remain. The probe checks table visibility. Migration consistency, worker
 and engine checks and production monitoring remain open.
+
+PR #94 merged to `main` at `fdd473c` after the backend unit matrix, engine
+smoke and web/browser checks passed.
+
+## CN-087 continuation evidence
+
+BIO-204 starts `BIO-204-resource-measurement-harness` from `6eb8ca5` while
+PR #94 runs CI and fast-forwards to `fdd473c` before publication. The command
+snapshots the interim profile and fixture inputs, runs the existing
+sandboxed launcher sequentially, and records runtime and usage in JSON.
+
+Three `DefaultSmall` samples per pairing completed on Python 3.15.2 and
+engine 1.2.6 with cgroups active. Reference match times were 4.6, 4.3 and
+4.3 seconds, with 20.8 MiB peak runner RSS across the samples. The CPU-load
+pairing took 5.2, 5.3 and 5.3 seconds, with 20.9 MiB peak runner RSS.
+The report check verified per-side usage, reversed sides and both case
+counts. The CLI help and invalid repetition check passed. DEC-04 still
+needs representative bots, maps and target hardware. All 91 requirement
+statuses, nine backlog categories and 42 Jira items remain.

@@ -101,6 +101,11 @@ time/memory/instruction limits are enforced. - Limit breach is
 classified as bot failure and produces automatic loss. - Numeric limits
 are documented only after benchmark approval.
 
+The BIO-204 control command in the [match runner guide](../backend/match_runner/README.md#tests)
+records repeatable fixture timings, CPU and memory usage with the sandbox
+and interim limits active. The control sample verifies measurement. DEC-04
+requires representative bots, maps and target hardware to approve limits.
+
 ### TC-04 --- Bot failure versus platform failure
 
 **Jira:** BIO-205 / BIO-306\

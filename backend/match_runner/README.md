@@ -50,6 +50,23 @@ python3 backend/match_runner/launcher.py logs match-XXXX.events.jsonl --role par
 
 ## Tests
 
+To collect a repeatable control measurement on a dedicated Linux worker, use
+the existing launcher environment and a warmed Gradle cache:
+
+```bash
+backend/.venvs/py3.15/bin/python -m backend.match_runner.measure_resources \
+  --runs 5 --map DefaultSmall > /tmp/bio-resource-measurement.json
+```
+
+This plays reference versus reference and reference versus the bundled
+CPU-load fixture, alternating sides between repetitions. It keeps the
+sandbox and a snapshot of the interim profile active. The report includes
+runtime versions, the profile and fixture hashes, match times, outcomes,
+per-team and per-process resource usage, and whether cgroups were active.
+Match logs and replays use disposable directories. Run while the engine port
+is available. DEC-04 still requires a representative workload on the target
+worker before approving limits.
+
 ```bash
 backend/.venvs/py3.15/bin/python -m unittest backend.match_runner.tests.test_launcher backend.match_runner.tests.test_limits_sandbox backend.match_runner.tests.test_failure_classification backend.match_runner.tests.test_structured_log   # unit tests (also run on 3.12-3.14)
 BIO_INTEGRATION=1 backend/.venvs/py3.15/bin/python -m unittest backend.match_runner.tests.test_launcher backend.match_runner.tests.test_limits_sandbox backend.match_runner.tests.test_failure_classification backend.match_runner.tests.test_structured_log   # real matches: forfeits, sandbox escape probe, crashes, log injection

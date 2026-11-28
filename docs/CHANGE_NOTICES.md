@@ -1083,3 +1083,14 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - A disposable PostgreSQL test hides the tables on the probe's search path
   and verifies GET and HEAD failure followed by recovery. Worker, engine,
   migration consistency and production monitoring checks remain separate.
+
+## CN-087 — Sandbox resource measurement controls (2026-11-28)
+
+- **BIO-204:** The measurement command runs the reference and CPU-load
+  fixture pairings against the pinned engine. It records the snapshot
+  profile and fixture hashes, interpreter, host kernel and CPU availability,
+  per-side usage and cgroup state. Match artifacts are disposable.
+- A local Python 3.15.2 run completed all six games on `DefaultSmall`
+  with engine 1.2.6. Median match time was 4.3 seconds for the reference
+  pairing and 5.3 seconds with the CPU-load fixture. These are local control
+  results. DEC-04 still requires a representative target-hardware benchmark.
