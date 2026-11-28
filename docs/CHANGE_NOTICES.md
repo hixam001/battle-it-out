@@ -1045,3 +1045,13 @@ Decisions from the owner that change or narrow what the requirement documents (P
   registration reports an archive refusal and records no missing replay.
 - Hosted results are recorded in the PR. Wider integration and deployment
   remain open.
+
+## CN-083 — Recover a round after worker loss (2026-11-28)
+
+- **BIO-802:** A disposable worker process exits after acquiring both the
+  queue job and a match attempt. Its replacement defers while the match
+  lease is active, then records the interrupted attempt as `worker_lost`.
+- The replacement uses the original map and submissions, advances both
+  winners once and leaves official records identical after another delivery.
+  The fixture simulates game results. Target-host process cleanup, capacity
+  and outage drills remain open.

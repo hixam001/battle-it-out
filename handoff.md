@@ -1582,3 +1582,21 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated the backend guide, test and project plans, Jira, coverage,
   CN-082 and memory. All 91 statuses, nine backlog categories and 42 Jira
   items remain. Wider integration and deployment remain open.
+
+### 2026-11-28 — BIO-802 Worker-loss recovery and redelivery
+
+- Started `BIO-802-worker-loss-redelivery` from verified `main` at `1cfdc10`
+  during PR #90's hosted run. Fast-forwarded to `26d61af` after PR #90 merged
+  to `main`. All hosted checks for #90 passed, including 43 engine/replay
+  cases per Python family.
+- The new queue test exits a disposable worker after a recorded game claim.
+  Its replacement defers until the match lease expires. It records
+  `worker_lost`, retries with the stored map and submissions, and advances
+  each winner once. Another delivery leaves the official state unchanged.
+- The queue suite passed 54 of 55 cases on the four pinned Python families
+  with one expected integration skip. Python 3.15.2 passed all 55 with
+  real-engine integration and passed 743 of 791 backend unit cases with 48
+  expected skips. The new failure injection uses fixture games.
+- Updated the test plan, Jira, coverage, CN-083 and memory. All nine backlog
+  categories and 42 Jira items remain. Target-host crash recovery, capacity,
+  provider outage and multi-host verification remain open.

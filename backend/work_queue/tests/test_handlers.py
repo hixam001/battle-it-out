@@ -8,6 +8,7 @@ the worker program as a separate process and plays real sandboxed matches; it ne
 """
 import hashlib
 import json
+import multiprocessing
 import os
 import random
 import subprocess
@@ -16,7 +17,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from backend.match_orchestrator import bracket as B
+from backend.match_orchestrator import bracket as B, orchestrator as O
 from backend.match_orchestrator.store import JsonFileStore
 from backend.match_orchestrator.tests.test_bracket import MAPS, lower_wins, teams
 from backend.match_orchestrator.tests.test_tiebreak import PLATFORM
@@ -40,6 +41,17 @@ def verdict(data, status="valid", **kw):
          "checked_at": "2026-11-24T00:00:00Z", "map": "DefaultSmall", "trials": []}
     v.update(kw)
     return v
+
+
+def exit_during_game_attempt(data_dir, started_at):
+    def exit_worker(_context):
+        os._exit(73)
+
+    store = JsonFileStore(data_dir / "matches.json")
+    queue = J.JobQueue(data_dir / "queue.json")
+    now = Clock(started_at)
+    handler = H.run_round_handler(store, exit_worker, now=now, lease_seconds=120)
+    Worker(queue, {J.RUN_ROUND: handler}, name="exiting-worker", now=now, lease=60).run_once()
 
 
 class Base(unittest.TestCase):
@@ -199,6 +211,53 @@ class RoundJobs(Base):
         self.run_worker()
         self.assertEqual(len(self.games), 2)
         self.assertEqual(self.job(2)["result"]["games_run"], 0)
+
+    def test_recovering_a_round_from_an_exited_worker_preserves_one_result(self):
+        B.start_round(self.store, "b1", 1, "org-1", now=self.clock)
+        J.enqueue_round(self.q, "b1", 1, now=self.clock)
+        process = multiprocessing.get_context("spawn").Process(
+            target=exit_during_game_attempt, args=(self.dir, self.clock.t),
+        )
+        process.start()
+        try:
+            process.join(10)
+            self.assertEqual(process.exitcode, 73)
+        finally:
+            if process.is_alive():
+                process.kill()
+                process.join()
+            process.close()
+
+        job = self.job()
+        self.assertEqual(job["status"], J.RUNNING)
+        interrupted, = self.store.snapshot()["matches"].values()
+        self.assertEqual(interrupted["status"], O.RUNNING)
+        self.assertIsNone(interrupted["result"])
+
+        self.clock.t = job["claim"]["expires"] + 1
+        self.assertEqual([r["outcome"] for r in self.run_worker()], [J.QUEUED])
+        self.assertEqual(self.games, [])
+        self.assertEqual(O.get_match(self.store, interrupted["id"]), interrupted)
+
+        self.clock.t = self.job()["not_before"]
+        self.assertGreater(self.clock.t, interrupted["lease"]["expires_at"])
+        self.assertEqual([r["outcome"] for r in self.run_worker()], [J.DONE])
+        recovered = O.get_match(self.store, interrupted["id"])
+        self.assertEqual([a["status"] for a in recovered["attempts"]], ["platform_failed", "completed"])
+        self.assertEqual(recovered["attempts"][0]["failure_reason"], "worker_lost")
+        self.assertEqual(self.job()["failures"], 1)
+        for field in ("map", "submission_a", "submission_b"):
+            self.assertEqual(recovered[field], interrupted[field])
+
+        bracket = B.get_bracket(self.store, "b1")
+        self.assertEqual(bracket["rounds"][0]["status"], B.COMPLETED)
+        self.assertEqual(bracket["rounds"][1]["status"], B.READY)
+        self.assertEqual(sum(item["event"] == "advanced" for item in bracket["history"]), 2)
+        before = self.store.snapshot()
+        J.enqueue_round(self.q, "b1", 1, now=self.clock)
+        self.assertEqual([r["outcome"] for r in self.run_worker()], [J.DONE])
+        self.assertCountEqual(self.games, before["matches"].keys())
+        self.assertEqual(self.store.snapshot(), before)
 
     def test_a_round_nobody_started_is_dead_and_plays_nothing(self):
         J.enqueue_round(self.q, "b1", 1, now=self.clock)
