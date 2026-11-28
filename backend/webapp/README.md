@@ -251,6 +251,11 @@ remaining core routes are still BIO-404 work.
 
 ## Verification
 
+The **Web and browser tests** workflow runs the Django suite, system check
+and migration-drift check against a disposable PostgreSQL 18.7 service.
+It then starts loopback Django and Vite for Playwright with seeded fixture
+data. See [the workflow](../../.github/workflows/web-tests.yml).
+
 ```bash
 backend/.venvs/web/bin/python backend/webapp/manage.py check
 backend/.venvs/web/bin/python backend/webapp/manage.py test \

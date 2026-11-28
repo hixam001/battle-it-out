@@ -131,6 +131,9 @@ The console keeps the current section visible inside its navigation strip.
 Keyboard activation of a console link moves focus to the main content.
 
 Browser fixtures must target loopback and use disposable seeded accounts/data.
+The **Web and browser tests** workflow provisions those services and runs
+the Chromium suite for frontend and backend changes to `main`.
+See [the workflow](../.github/workflows/web-tests.yml).
 Use the [Django local environment](../backend/webapp/README.md#install-and-run)
 with `BIO_WEB_DEBUG=1`, a fresh PostgreSQL database named `bio_qa_*`, and a new
 absolute `BIO_DATA_DIR`. Run the fixture commands from the repository root:

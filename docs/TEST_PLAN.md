@@ -328,7 +328,10 @@ workflow changes to `main` (BIO-804 / CN-075). Browser and backend checks
 have separate entry points. The **Backend unit matrix** check follows the
 execution lock's Python families and uses `backend/run_tests.py --matrix`
 on Ubuntu 24.04 for backend and workflow changes to `main` (CN-076).
-Web, browser and real-engine checks use their existing local instructions.
+The **Web and browser tests** workflow runs Django and Chromium Playwright
+with disposable PostgreSQL 18.7, Django and Vite services (CN-077). Hosted
+real-engine CI remains open. The existing local commands cover real-engine
+verification.
 
 ### Unit tests
 

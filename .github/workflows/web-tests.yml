@@ -1,0 +1,108 @@
+name: Web and browser tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - backend/**
+      - frontend/**
+      - .github/workflows/web-tests.yml
+  push:
+    branches: [main]
+    paths:
+      - backend/**
+      - frontend/**
+      - .github/workflows/web-tests.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18.7-trixie
+        env:
+          POSTGRES_USER: bio_ci
+          POSTGRES_PASSWORD: disposable-fixture-password
+          POSTGRES_DB: bio_qa_ci
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -U bio_ci -d bio_qa_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      BIO_WEB_DEBUG: '1'
+      BIO_PGHOST: 127.0.0.1
+      BIO_PGDATABASE: bio_qa_ci
+      BIO_PGUSER: bio_ci
+      BIO_PGPASSWORD: disposable-fixture-password
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: '0.13.10'
+          enable-cache: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '26.13.1'
+          package-manager-cache: false
+      - name: Install web dependencies
+        run: |
+          uv venv --python 3.15.2 backend/.venvs/web
+          uv pip install --python backend/.venvs/web/bin/python -r backend/webapp/requirements.lock.txt
+          npm ci --prefix frontend
+          frontend/node_modules/.bin/playwright install --with-deps chromium
+      - name: Initialize disposable test settings
+        env:
+          MAPPED_POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
+        run: |
+          test_root=$(mktemp -d "$RUNNER_TEMP/bio-web-ci.XXXXXX")
+          signing_key=$(backend/.venvs/web/bin/python -c 'import secrets; print(secrets.token_urlsafe(48))')
+          echo "::add-mask::$signing_key"
+          {
+            printf 'BIO_WEB_SECRET_KEY=%s\n' "$signing_key"
+            printf 'BIO_PGPORT=%s\n' "$MAPPED_POSTGRES_PORT"
+            printf 'BIO_DATA_DIR=%s\n' "$test_root/state"
+          } >> "$GITHUB_ENV"
+      - name: Run Django web tests
+        run: |
+          python=backend/.venvs/web/bin/python
+          manage=backend/webapp/manage.py
+          labels=$("$python" -c 'from pathlib import Path; print("\n".join(sorted("backend.webapp." + p.stem for p in Path("backend/webapp").glob("tests*.py"))))')
+          mapfile -t test_modules <<< "$labels"
+          "$python" "$manage" check
+          "$python" "$manage" makemigrations --check --dry-run
+          "$python" "$manage" test "${test_modules[@]}" --noinput
+      - name: Run Playwright on disposable local services
+        run: |
+          python=backend/.venvs/web/bin/python
+          manage=backend/webapp/manage.py
+          "$python" "$manage" migrate --noinput
+          "$python" -m frontend.tests.seed_fixture
+          export BIO_ENGINE_JAR="$BIO_DATA_DIR/fixture-engine.jar"
+          "$python" "$manage" runserver 127.0.0.1:8000 --noreload > "$RUNNER_TEMP/bio-django.log" 2>&1 &
+          django_pid=$!
+          npm run dev --prefix frontend -- --strictPort > "$RUNNER_TEMP/bio-vite.log" 2>&1 &
+          vite_pid=$!
+          cleanup() {
+            status=$?
+            kill "$django_pid" "$vite_pid" 2>/dev/null || true
+            if (( status != 0 )); then
+              tail -80 "$RUNNER_TEMP/bio-django.log" "$RUNNER_TEMP/bio-vite.log"
+            fi
+          }
+          trap cleanup EXIT
+          curl --fail --silent --show-error --max-time 2 --retry 20 --retry-delay 1 --retry-all-errors \
+            http://127.0.0.1:5173/api/v1/health/
+          npm test --prefix frontend -- --max-failures=1
