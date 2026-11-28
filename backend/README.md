@@ -52,6 +52,14 @@ Python family in the execution lock on Ubuntu 26.04. The replay integration
 module checks the match's recorded Python family and writes its match and
 vault data to temporary directories.
 
+Run [Full Battlecode engine integration](../.github/workflows/engine-integration.yml)
+from the repository's Actions tab for the entire backend library suite. Each
+locked Python family gets its own Ubuntu 26.04 runner, so games run in sequence
+within a job while the jobs can run in parallel. Missing prerequisites that
+would skip tests fail the job. The replay fixture uses the job's interpreter.
+Fixtures that exercise the configured default continue to use the lock's
+primary launcher. The workflow also runs on PRs that change its own file.
+
 The **Backend unit matrix** workflow installs the Python families listed in
 `match_runner/versions.lock.json`, creates the primary launcher environment
 and runs `backend/run_tests.py --matrix` on Ubuntu 24.04. Each run reports

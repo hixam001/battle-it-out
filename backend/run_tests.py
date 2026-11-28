@@ -60,7 +60,7 @@ def find_python(version: str) -> str:
     return path
 
 
-def run_matrix(versions: list[str], prefixes: list[str], integration: bool) -> int:
+def run_matrix(versions: list[str], prefixes: list[str], integration: bool, *, require_no_skips: bool = False) -> int:
     env = dict(os.environ)
     if integration:
         env["BIO_INTEGRATION"] = "1"
@@ -71,6 +71,8 @@ def run_matrix(versions: list[str], prefixes: list[str], integration: bool) -> i
         cmd = [python, str(Path(__file__).resolve()), *prefixes]
         if integration:
             cmd.append("--integration")
+        if require_no_skips:
+            cmd.append("--require-no-skips")
         # -I would also hide this file's directory; the child needs only the repository root.
         code = subprocess.run(cmd, cwd=ROOT, env=env).returncode
         if code != 0:
@@ -85,6 +87,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--matrix", nargs="*", metavar="VERSION",
                         help="run on each version through uv (no version: every tested_python of the lock)")
     parser.add_argument("--integration", action="store_true", help="set BIO_INTEGRATION=1 (real engine games)")
+    parser.add_argument("--require-no-skips", action="store_true", help="fail if any tests are skipped")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
 
@@ -93,7 +96,8 @@ def main(argv: list[str]) -> int:
         print("no test module matches", file=sys.stderr)
         return 2
     if args.matrix is not None:
-        return run_matrix(args.matrix or tested_versions(), args.prefixes, args.integration)
+        return run_matrix(args.matrix or tested_versions(), args.prefixes, args.integration,
+                          require_no_skips=args.require_no_skips)
 
     if args.integration:
         os.environ["BIO_INTEGRATION"] = "1"
@@ -103,6 +107,9 @@ def main(argv: list[str]) -> int:
     if result.testsRun == 0:
         print("no test ran", file=sys.stderr)
         return 2
+    if args.require_no_skips and result.skipped:
+        print(f"{len(result.skipped)} tests skipped with --require-no-skips", file=sys.stderr)
+        return 1
     return 0 if result.wasSuccessful() else 1
 
 

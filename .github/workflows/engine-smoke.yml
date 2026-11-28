@@ -1,6 +1,12 @@
 name: Battlecode engine smoke test
 
 on:
+  workflow_call:
+    inputs:
+      full_python:
+        description: Locked Python family to run the full integration suite
+        type: string
+        required: true
   pull_request:
     branches: [main]
     paths:
@@ -16,13 +22,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: engine-smoke-${{ github.ref }}-${{ inputs.full_python || 'smoke' }}
   cancel-in-progress: true
 
 jobs:
   engine-smoke:
+    name: ${{ inputs.full_python && 'engine-full' || 'engine-smoke' }}
     runs-on: ubuntu-26.04
-    timeout-minutes: 15
+    timeout-minutes: ${{ inputs.full_python && 20 || 15 }}
     env:
       UV_MANAGED_PYTHON: '1'
     steps:
@@ -40,6 +47,7 @@ jobs:
           bwrap --version
           "${JAVA_HOME_21_X64:?}/bin/java" -version
           printf 'JAVA_HOME=%s\n' "$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+          printf '%s/bin\n' "$JAVA_HOME_21_X64" >> "$GITHUB_PATH"
       - name: Install the locked Python launcher environments
         run: |
           versions=$(python3 -c 'from backend.run_tests import tested_versions; print(" ".join(tested_versions()))')
@@ -85,6 +93,7 @@ jobs:
           cd backend/battlecode26-scaffold
           ./gradlew --console=plain --init-script "$resolver" resolveEngineRuntime
       - name: Verify real engine results and replays across Python versions
+        if: ${{ !inputs.full_python }}
         run: |
           read -ra runtimes <<< "$BIO_CI_PYTHON_VERSIONS"
           failed=0
@@ -95,3 +104,13 @@ jobs:
               backend.match_orchestrator.tests.test_replays || failed=1
           done
           exit "$failed"
+      - name: Run the complete backend integration suite
+        if: ${{ inputs.full_python }}
+        env:
+          BIO_CI_FULL_PYTHON: ${{ inputs.full_python }}
+        run: |
+          ss -V
+          javac --version
+          launcher_python="backend/.venvs/py$BIO_CI_FULL_PYTHON/bin/python"
+          "$launcher_python" --version
+          "$launcher_python" backend/run_tests.py --integration --require-no-skips --verbose

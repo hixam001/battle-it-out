@@ -276,8 +276,24 @@ test("participant sees tournament notices and manages a private inbox on mobile"
   await other.getByLabel("Username", { exact: true }).fill("captain-b");
   await other.getByLabel("Password", { exact: true }).fill("test-fixture-passphrase");
   await other.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(other.getByText("No notifications yet.")).toBeVisible();
   await expect(other.getByText("Fixture notice 22")).toHaveCount(0);
+  const result = other.getByRole("listitem").filter({ hasText: /tb (won|lost) round 1 against ta/ });
+  await result.getByRole("button", { name: "Mark read", exact: true }).click();
+  await expect(result.getByRole("button", { name: "Mark unread", exact: true })).toBeVisible();
+  const inboxResult = result.getByRole("link", { name: "View match result" });
+  await expect(inboxResult).toHaveAttribute("href", /^\/matches\/[^/]+$/);
+  const href = await inboxResult.getAttribute("href");
+  const resultUrl = new URL(href!, other.url()).href;
+  await other.getByRole("link", { name: "Dashboard", exact: true }).click();
+  await other.getByLabel("Tournament", { exact: true }).selectOption("cup");
+  const dashboardResult = other.getByRole("region", { name: "Tournament notices" })
+    .getByRole("link", { name: "View match result" });
+  await expect(dashboardResult).toHaveAttribute("href", href!);
+  await dashboardResult.focus();
+  await other.keyboard.press("Enter");
+  await expect(other).toHaveURL(resultUrl);
+  await expect(other.getByRole("region", { name: "Series result" })).toBeVisible();
+  await expect(other.getByRole("region", { name: "Games in this series" }).getByText("Selected game", { exact: true })).toBeVisible();
   await other.close();
 });
 

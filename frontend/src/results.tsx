@@ -62,7 +62,7 @@ const decisions: Record<string, string> = {
   bot_forfeit: "Bot forfeit",
   bye: "Bye",
 };
-const matchPath = (id: string) => `/matches/${encodeURIComponent(id)}`;
+export const matchPath = (id: string) => `/matches/${encodeURIComponent(id)}`;
 const bracketPath = (id: string) => `/participant/tournaments/${encodeURIComponent(id)}/bracket`;
 const stateLabel = (state: string) => states[state] ?? state.replaceAll("_", " ");
 

@@ -357,8 +357,12 @@ The **Battlecode engine smoke test** uses bubblewrap and JDK 21 on Ubuntu
 26.04 (CN-078). It runs the replay integration module sequentially with each
 Python family in the execution lock (CN-082). The real fixture verifies
 the match's recorded Python family, replay access and archive purge with the
-completed bracket retained. The wider real-engine suite can still be run
-with the existing local commands.
+completed bracket retained. **Full Battlecode engine integration** (CN-090)
+runs `backend/run_tests.py --integration --require-no-skips` on a separate
+Ubuntu 26.04 runner per locked Python family. It can be dispatched from
+Actions and also runs on PRs modifying its own workflow. Games run in
+sequence on each host. The replay tests use the job's interpreter and the
+default-runtime fixtures exercise the configured primary launcher.
 
 ### Unit tests
 
@@ -745,3 +749,12 @@ after a failed audit. The browser flow opens a dispute, finds the filing on
 the assigned Organizer's dashboard and records a review. The participant sees
 the update at a mobile viewport and opens the selected tournament's dispute
 queue to read the review reason.
+
+### Match result notice links (BIO-705 / CN-091)
+
+The Django fixture generates a normal match-result event through the round
+notice source. It checks resolution to the last official game, unchanged
+read-state behavior, archive access and removal of the link after membership
+ends. A second event without a matching official series stays readable in
+the feed. Chromium checks that the dashboard and inbox use the same link,
+read-state changes preserve it and the participant can open the game by keyboard.

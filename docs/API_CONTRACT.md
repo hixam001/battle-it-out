@@ -876,9 +876,13 @@ returns an empty feed without disclosing its existence.
 default 0), `unread_only` (`true` or `false`, default `false`) and
 `tournament_id` (safe opaque identifier). Unknown/repeated parameters and invalid
 values return `400`.\
-**Success:** `200 {"items":[],"total":0,"unread":0}`. Items contain only `id`,
+**Success:** `200 {"items":[],"total":0,"unread":0}`. Items contain `id`,
 `tournament_id`, `event_type`, `title`, `body`, `created_at`, `read`, `read_at`
-and `email_status`. Delivery errors, provider metadata, event keys and recipient
+and `email_status`. A match-result notice also carries `result_match_id` if
+the recipient remains a verified member of the team that received the notice
+and the official game is accessible. It links to the series' last recorded
+game. The field is omitted when the link is unavailable. Archive retains
+access to authorized results. Delivery errors, provider metadata, event keys and recipient
 IDs are excluded. Sort is newest first, then ID for equal timestamps. `total`
 counts the filtered feed before paging; `unread` counts unread items in the
 tournament filter before the `unread_only` filter and paging.
