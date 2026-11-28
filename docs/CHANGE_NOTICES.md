@@ -1038,5 +1038,10 @@ Decisions from the owner that change or narrow what the requirement documents (P
   Python family from the execution lock. It runs the replay integration
   module sequentially to share the pinned Gradle runtime and fixed engine
   port. The fixture checks the Python family recorded by its match attempt.
+- **BIO-606:** The first hosted matrix exposed a window where replay
+  registration could recreate an archived folder or report a false missing
+  replay incident. Temporary file creation now checks archive state under
+  the index lock. If the archive removes a staged copy during validation,
+  registration reports an archive refusal and records no missing replay.
 - Hosted results are recorded in the PR. Wider integration and deployment
   remain open.

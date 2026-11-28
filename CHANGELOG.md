@@ -166,6 +166,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Fixed
 
+- **Replay registration during archive (BIO-606, CN-082)** refuses a late
+  replay as archived even if the purge removes its temporary copy during
+  verification. An archived folder stays removed after the write attempt.
+
 - **Round map verification (BIO-304, CN-080)** checks pinned map bytes at
   round start and before the configured worker plays. Staff can retry the
   same request after restoring the expected engine catalogue.

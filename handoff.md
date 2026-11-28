@@ -1573,6 +1573,12 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   the interpreter written to the match attempt alongside replay and archive.
 - All 42 cases passed locally on each of Python 3.12.15, 3.13.18, 3.14.10
   and 3.15.2. All five shell steps passed syntax checks.
+- The first hosted unit and smoke runs exposed a replay registration race
+  (BIO-606). All real match cases passed. The repair checks archive state
+  under the replay index lock before creating an incoming file. A purged
+  copy reports archive refusal and leaves no false missing-replay incident.
+  The regression reproduced both failure paths and the patched race tests
+  passed 20 repetitions each on Python 3.13.18 and 3.15.2.
 - Updated the backend guide, test and project plans, Jira, coverage,
   CN-082 and memory. All 91 statuses, nine backlog categories and 42 Jira
   items remain. Wider integration and deployment remain open.

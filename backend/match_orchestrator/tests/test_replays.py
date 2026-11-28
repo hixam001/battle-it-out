@@ -484,6 +484,25 @@ class Archive(Base):
             self.assertFalse([r for r in self.snap()["replays"].values()
                               if r["tournament_id"] == tid and r["status"] != "purged"], f"round {round_}")
 
+    def test_archive_during_validation_refuses_without_leaving_a_folder_or_incident(self):
+        check = R._sha256_and_check
+        for during_copy in (False, True):
+            with self.subTest(during_copy=during_copy):
+                tid = f"archive-during-check-{int(during_copy)}"
+                source = self.make()
+
+                def archive_during_check(path, limit):
+                    if path.name.startswith(".incoming-") == during_copy:
+                        R.archive_tournament(self.vault, tid, "a")
+                    return check(path, limit)
+
+                with patch.object(R, "_sha256_and_check", side_effect=archive_during_check):
+                    with self.assertRaises(R.ArchivedRefused):
+                        R.register_from_result(self.vault, tid, tid, {"replay": source, "replay_sha256": sha(source)})
+                self.assertFalse((self.vault.root / tid).exists())
+                self.assertNotIn(tid, self.snap()["replays"])
+                self.assertEqual(self.snap()["incidents"], [])
+
 
 class WithTheBracket(Base):
     """The replays of a whole tournament, and what an archive must not touch."""

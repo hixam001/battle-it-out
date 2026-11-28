@@ -23,7 +23,8 @@ remaining backlog after every task.
 ## Verified checkpoint and where Claude stopped
 
 - BIO-804 / CN-082 extends real-engine replay smoke to all four pinned
-  Python families and checks the interpreter recorded by the match.
+  Python families, checks the interpreter recorded by the match and fixes
+  the replay registration race exposed by its first hosted run (BIO-606).
 - BIO-705 / CN-081 shows the recorded game and tie-break map order on the
   scoped bracket page.
   PR #89 merged into `main` at `1cfdc10` after all four hosted checks passed.
@@ -1394,6 +1395,12 @@ launcher environment listed in `versions.lock.json` and runs the replay
 integration module for each family in sequence. The real game checks the
 recorded match interpreter. The job fails if any family fails. Locally all
 42 cases passed on each of Python 3.12.15, 3.13.18, 3.14.10 and 3.15.2, and
-all five workflow shell steps passed syntax checks. Full hosted
+all five workflow shell steps passed syntax checks. The first hosted run
+passed all four real match cases and exposed an intermittent registration
+failure in two jobs. File creation now shares the archive state lock and
+purged temporary copies return an archive refusal. Two deterministic
+interleavings reproduced the failure before the fix. Both archive race
+tests passed 20 repetitions each on Python 3.13.18 and 3.15.2 after the fix.
+Full hosted
 integration and target-host deployment remain open. All 91 requirement
 statuses, nine backlog categories and 42 Jira items remain.
