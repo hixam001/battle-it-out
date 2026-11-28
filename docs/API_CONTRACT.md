@@ -773,8 +773,10 @@ and the separate confirmed draw and start routes (CN-062).
 **Implemented (BIO-603 / CN-034):** `GET /api/v1/tournaments/{id}/bracket/`
 returns `tournament_id` and a `bracket` object once a draw is stored. The bracket
 contains the recorded draw, registered playoff teams, map-pool ID when recorded,
-rounds, pairings, byes, game IDs/status, advancement and champion. The `bracket`
-field is `null` before a draw. The series includes win counts by side based on
+rounds, pairings, byes, game IDs/status, advancement and champion. The
+`maps` object carries the recorded `play`, `tiebreak_normal` and
+`tiebreak_final` name arrays in order (CN-081). The `bracket` field is
+`null` before a draw. The series includes win counts by side based on
 the recorded game outcomes. Raw engine point totals require additional result data.
 
 ### GET `/matches/{match_id}`

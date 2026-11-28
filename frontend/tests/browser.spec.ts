@@ -423,6 +423,19 @@ test("captain sees an invalid upload and queued validation without losing the ac
   await expect(history.getByText("Active version: v1")).toBeVisible();
 });
 
+test("a participant can read the bracket's maps and final tie-break order by keyboard", async ({ page, useSession }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await useSession(page, "captain-a");
+  await page.goto("/participant/tournaments/cup/bracket");
+  const summary = page.getByText("Maps and tie-break order", { exact: true });
+  await summary.focus();
+  await page.keyboard.press("Enter");
+  const maps = page.locator("details.bracket-maps");
+  await expect(maps.getByText("one", { exact: true })).toBeVisible();
+  await expect(maps.getByRole("listitem")).toHaveText(["two", "three", "four"]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test("bracket links show match results and a recorded coin flip after replay archive", async ({ page, useSession }) => {
   await useSession(page, "admin");
   await page.goto("/participant/tournaments/tied-fixture/bracket");

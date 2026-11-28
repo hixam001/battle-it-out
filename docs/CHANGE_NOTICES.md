@@ -1024,3 +1024,10 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - Worker failures follow queue backoff before opening a match attempt. A
   completed round remains safe to redeliver. The configured JAR must match
   the launcher's runtime. Custom maps remain separate work.
+
+## CN-081 — Bracket map order (2026-11-28)
+
+- **BIO-705:** The scoped bracket API includes the recorded game and tie-break
+  map names. The shared bracket page shows the configured final order before
+  play and after archive. A keyboard-operable section keeps the map list
+  accessible on mobile.

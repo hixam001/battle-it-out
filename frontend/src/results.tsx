@@ -15,6 +15,7 @@ type Pairing = {
 type Bracket = {
   status: string;
   champion: string | null;
+  maps?: { play: string[]; tiebreak_normal: string[]; tiebreak_final: string[] };
   rounds: { number: number; final: boolean; status: string; matches: Pairing[] }[];
 };
 type Game = GameRef & {
@@ -103,6 +104,19 @@ export function BracketResults({ tournament }: { tournament: { id: string; name:
               {tournament.status === "archived" ? "Archived" : stateLabel(bracket.status)}
               {bracket.champion && <> · Champion <strong>{bracket.champion}</strong></>}
             </p>
+            {bracket.maps && (
+              <details className="panel validation-details bracket-maps">
+                <summary>Maps and tie-break order</summary>
+                <dl>
+                  <dt>Main games</dt><dd>{bracket.maps.play.join(", ")}</dd>
+                  <dt>Normal tie-break</dt><dd>{bracket.maps.tiebreak_normal.join(", ")}</dd>
+                  <dt>Final tie-breaks</dt>
+                  <dd>
+                    <ol>{bracket.maps.tiebreak_final.map((map) => <li key={map}>{map}</li>)}</ol>
+                  </dd>
+                </dl>
+              </details>
+            )}
             <div className="bracket-rounds">
               {bracket.rounds.map((round) => (
                 <section className="panel bracket-round" key={round.number} aria-labelledby={`round-${round.number}`}>

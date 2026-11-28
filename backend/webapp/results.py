@@ -37,6 +37,7 @@ def bracket(request, tid):
 
     view = B.public_view(official)
     view['map_pool_id'] = official.get('map_pool')
+    view['maps'] = {kind: official['maps'][kind] for kind in ('play', 'tiebreak_normal', 'tiebreak_final')}
     for round_source, round_view in zip(official['rounds'], view['rounds']):
         for pairing, pairing_view in zip(round_source['matches'], round_view['matches']):
             sid = pairing['series_id']

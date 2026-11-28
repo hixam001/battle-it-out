@@ -1547,3 +1547,19 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
   coverage, CN-080, changelog and memory. All 91 statuses, nine backlog
   categories and 42 Jira items remain. The engine JAR configuration must
   point at the launcher's installed runtime.
+
+### 2026-11-28 — BIO-705 Bracket map order
+
+- Confirmed PR #88 merged into `main` at `5547f08` after all three hosted
+  checks passed. Started `BIO-705-bracket-map-order` from that merge.
+- The existing scoped bracket response includes the recorded main and
+  tie-break map names. The console uses a keyboard-operable section and
+  lists the final tie-break maps in order. Authorized archive reads retain
+  the map lists.
+- The production build, 148 Django cases, system and migration checks,
+  and all 32 browser cases (41.9 seconds) passed. Verification used
+  disposable services and fixtures.
+- Updated the bracket API, React screen, scope and browser tests, user guide,
+  test plan, coverage, Jira, CN-081, changelog and memory. All 91 statuses,
+  nine backlog categories and 42 Jira items remain. Replay playback and raw
+  engine points remain open.

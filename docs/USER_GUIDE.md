@@ -67,6 +67,8 @@ Organizer for help with a permission error. Other teams' source stays private.
   use three, followed by a recorded 50/50 coin flip if the tie persists.
 
 Open **Bracket & results** to see round progression, byes and game win counts.
+Expand **Maps and tie-break order** for the recorded main-game maps, the
+normal tie-break map and the three final tie-break maps in order.
 Open a match for its pinned versions, game order, tie-break maps and recorded
 coin flip. From **Replay**, download the native `.bc26` file while it is
 available and open it in the Battlecode client. Archive removes the download

@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-705 / CN-081 shows the recorded game and tie-break map order on the
+  scoped bracket page.
 - BIO-304 / CN-080 rechecks pinned map pools at round start and configured
   worker execution. Map drift blocks games until the catalogue is repaired.
+  PR #88 merged into `main` at `5547f08` after all three hosted checks passed.
 - BIO-803 / CN-079 reconciles restored replay files under completed archive
   purge receipts. A disposable PostgreSQL and service-state restore passed.
   PR #87 merged into `main` at `43a178f` after all three hosted checks passed.
@@ -470,7 +473,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    action controls await their policy. CN-034 delivers
    current-scope bracket and game result reads, including archived history. CN-035 adds confirmed archive for current
    Admins and assigned Organizers. CN-054 adds bracket, game details and
-   recorded tie resolution in the console. CN-038 delivers staff map-pool selection,
+   recorded tie resolution in the console. CN-081 shows the stored main and
+   tie-break map lists on the scoped bracket page. CN-038 delivers staff map-pool selection,
    bracket draw and sequential round-start actions. CN-047 adds draft creation,
    detail, edit, submit, approve, reject and open registration over HTTP.
    CN-055 adds the Admin approval queue. CN-056 adds the Organizer list,
@@ -1359,3 +1363,18 @@ repair, one completion and no replay of a completed round. All 91 requirement st
 nine backlog categories and 42 Jira items remain. The configured JAR must be
 the launcher's engine JAR. Custom-map approval and production persistence
 remain open.
+
+PR #88 merged into `main` at `5547f08` after the unit matrix, real-engine
+smoke test and web/browser checks passed.
+
+## CN-081 continuation evidence
+
+BIO-705 starts from merged `main` at `5547f08` on
+`BIO-705-bracket-map-order`. The scoped API projects the bracket's saved
+main-game and tie-break names. The console adds a native disclosure with
+the final tie-breaks in an ordered list. Archive retains the map lists with
+the official bracket. Full replay playback and raw engine points remain open.
+The production build, all 148 Django cases and all 32 Playwright cases
+passed with disposable services. The new browser case checks keyboard
+access and the final map order at a 390-pixel viewport. All 91 requirement
+statuses, nine backlog categories and 42 Jira items remain.
