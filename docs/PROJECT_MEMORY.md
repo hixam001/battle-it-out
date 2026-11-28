@@ -22,8 +22,11 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-804 / CN-090 adds an on-demand full backend engine-integration workflow
+  with a separate hosted job per locked Python family.
 - BIO-607 / CN-089 shows scoped dispute filings and review updates on the
-  dashboard. The browser follows the notice to the selected tournament.
+  dashboard. PR #97 merged into `main` at `bec3e2b` after all four hosted
+  checks passed.
 - BIO-607 / CN-088 shows recent approval and rejection decisions in the
   current creating Organizer's console. PR #96 merged into `main` at `3b159e2`
   after all four hosted checks passed.
@@ -465,8 +468,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    complete TC-05 including these scenarios. The round-start route and
    configured worker re-verify pinned map pools (CN-080). Custom-map safety,
    suitability and production persistence remain.
-   Other OSes, 3.16/free-threaded builds and wider real-engine CI remain open. New
-   native bundle/live tests do not close any of these execution gates.
+   Other OSes, 3.16 and free-threaded builds remain open. CN-090 adds
+   on-demand full hosted integration on the locked Ubuntu/Python matrix.
    CN-087 supplies a local control command and verified usage report.
    Representative bots, maps and an approved target worker remain needed.
 4. **Registration/submissions:** public claim and verification endpoints and
@@ -559,12 +562,13 @@ with current code and the coverage matrix; nothing here is closed by intake.
    Branding,
    usability, formal accessibility/nonvisual play-by-play and full FLOW-01–08
    acceptance remain; production capacity/outage/concurrency/multi-host tests,
-   target-host backups/recovery, deployment/TLS, wider real-engine CI,
+   target-host backups/recovery, deployment/TLS, supported OS matrix,
    runbook adoption/sign-off, pilot and go-live approval remain open. CN-033
    supplies an interim runbook and console guide with disposable restore and
    web signing-key rehearsal. CN-075–077 add CI for the frontend build,
    backend unit matrix, Django and browser tests. CN-078/082 add real-engine
-   replay smoke on all locked Python families. No release dates before the
+   replay smoke on all locked Python families. CN-090 adds on-demand full
+   engine integration for those families. No release dates before the
    benchmark.
 9. **Owner/legal and follow-up scope:** written Battlecode Java-engine license
    clarification, copyright holder, participant terms and network source offer;
@@ -1563,3 +1567,28 @@ The production build, all 151 PostgreSQL Django tests, system and migration
 checks and all 32 browser cases passed with disposable fixtures. All 91
 requirement statuses, nine backlog categories and 42 Jira items remain.
 Inbox state, email, comment notices and dispute outcome policies are open.
+
+PR #97 merged into `main` at `bec3e2b` after the build, backend unit matrix,
+engine smoke and web/browser checks passed.
+
+## CN-090 continuation evidence
+
+BIO-804 starts `BIO-804-full-engine-integration` from verified `main` at
+`3b159e2` and fast-forwards to `bec3e2b` before publication. Every locked
+Python family gets an isolated hosted runner using the existing smoke
+setup. A full suite fails when any case skips. The replay fixture records
+the job's interpreter and default-runtime fixtures exercise the primary
+launcher. Routine PRs keep the short smoke path.
+
+All 18 runner tests passed locally on Python 3.15.2, including optional
+skip refusal and propagation through the matrix. The seven workflow shell
+blocks passed syntax checks. All 91 requirement statuses, nine backlog
+categories and 42 Jira items remain. Target deployment, pinned worker image
+and approved supported OSes remain open.
+
+The initial local Python 3.15.2 full run passed all 794 cases with zero
+skips in 500.570 seconds. The first hosted run failed live transport and
+service lifecycle. Ubuntu 26.04 ships Java 25 as its PATH default while
+the workflow selected `JAVA_HOME` 21 for Gradle. A local mixed-JDK
+fixture confirmed that incompatible compiler output cannot load on JDK
+21. The job now selects the same JDK for both Gradle and `javac`.

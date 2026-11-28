@@ -1693,3 +1693,23 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated API and user guides, test plan, coverage, Jira, CN-089, changelog
   and memory. All nine backlog categories and 42 Jira items remain.
   Inbox state, email, comment notices and outcome policies remain open.
+
+### 2026-11-28 — BIO-804 Full hosted engine integration
+
+- Started `BIO-804-full-engine-integration` at `3b159e2` during PR #97's
+  checks and fast-forwarded to `bec3e2b` after its verified merge to `main`.
+- On-demand GitHub Actions runs the full backend integration suite on each
+  locked Python family, with a separate host for each fixed-port engine.
+  Workflow-definition PRs also exercise this path. `--require-no-skips`
+  fails when prerequisites leave coverage incomplete.
+- All 18 runner tests and seven workflow shell syntax checks passed locally.
+  Replay fixtures run with the matrix interpreter and default-runtime
+  fixtures use the primary launcher specified in the lock.
+- Updated the backend guide, test and project plans, coverage, Jira, CN-090,
+  changelog and memory. All nine backlog categories and 42 Jira items remain.
+  A pinned worker image, deployment and further OS support remain open.
+- Local full integration passed all 794 cases with zero skips in 500.570
+  seconds. The first hosted run failed live transport and the configured
+  service lifecycle. The workflow now selects JDK 21 for both Gradle and
+  the live adapter compiler, and the live test includes bounded server-log
+  diagnostics if another fixture start fails.
