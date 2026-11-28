@@ -32,8 +32,10 @@ release, service account and config path before adopting them on a managed host.
 4. Compare queue, `open_incidents`, `unalerted_incidents`,
    `unalerted_failed_emails` and email counts with the previous sample.
    HTTP `200` on health proves process liveness. HTTP `200` on readiness shows
-   that the configured PostgreSQL connection can run a query. A readiness
-   `503` leaves liveness available and carries a request ID for correlation.
+   that the configured connection can reach PostgreSQL and see the Django
+   model tables. A readiness `503` leaves liveness available and carries a
+   request ID for correlation. Check the target database, applied migrations
+   and schema search path using the web process's configuration.
    Check a scoped console request and the service logs for worker, engine and
    legacy-store failures. Zero counts
    can mean the wrong data directory. Confirm Django's `BIO_DATA_DIR` matches

@@ -80,7 +80,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | Method | `/api/v1` path | Behavior |
 |---|---|---|
 | GET/HEAD | `/health/` | Public process liveness only; no database, account, legacy-store or engine access |
-| GET/HEAD | `/ready/` | Public PostgreSQL connectivity check with redacted `503` on an outage |
+| GET/HEAD | `/ready/` | Public PostgreSQL connectivity and model-table visibility check with redacted `503` when unavailable |
 | GET | `/auth/session/` | Current user or null and masked CSRF token; private/no-store |
 | POST | `/auth/login/`, `/auth/logout/` | CSRF-protected session lifecycle |
 | GET | `/notifications/` | Linked recipient's bounded feed, unread/tournament filters and counts |
@@ -245,7 +245,8 @@ This follows Django's [exception-to-response middleware behavior](https://docs.d
 and addresses the [DRF handler's exception-only scope](https://www.django-rest-framework.org/api-guide/exceptions/#custom-exception-handling).
 The `/health/` endpoint checks whether the web process can respond. The
 `/ready/` endpoint uses a separate PostgreSQL connection for one read-only
-query with connection and statement timeouts. Worker and engine checks,
+catalogue query with connection and statement timeouts. It checks managed
+model table visibility on the configured schema search path. Worker and engine checks,
 production monitoring, pagination, global idempotency/concurrency and
 remaining core routes are still BIO-404 work.
 

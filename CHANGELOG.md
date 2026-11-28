@@ -166,6 +166,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Fixed
 
+- **PostgreSQL readiness (BIO-404, CN-086)** reports `503` when the web
+  connection can reach PostgreSQL but cannot see its required model tables.
+
 - **Archive during replay maintenance (BIO-606, CN-084)** lets maintenance
   skip a tournament archived during replay collection and finish the rest of
   the pass.

@@ -712,3 +712,8 @@ an unreachable socket returning a redacted `503` while liveness stays `200`,
 HEAD parity, and recovery when the connection is restored. Load, production
 monitoring and remaining BIO-404 pagination/global idempotency/concurrency
 are separate checks.
+
+CN-086 also verifies a reachable PostgreSQL connection whose schema search
+path hides the application's migrated tables. GET and HEAD return a redacted
+`503`, liveness remains `200`, and restoring the search path returns readiness
+to `200`.

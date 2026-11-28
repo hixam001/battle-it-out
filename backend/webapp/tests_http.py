@@ -273,3 +273,21 @@ class PostgresReadiness(TestCase):
         self.assertEqual(head.content, b'')
         self.assertEqual(health.status_code, 200)
         self.assertEqual(self.client.get('/api/v1/ready/').status_code, 200)
+
+    def test_reachable_postgresql_without_app_tables_is_not_ready(self):
+        db = connections['default']
+        # The disposable server can answer SQL, but the app's migrated tables
+        # are outside this connection's schema search path.
+        params = {**db.get_connection_params(), 'options': '-c search_path=pg_catalog'}
+        with patch.object(db, 'get_connection_params', return_value=params):
+            response = self.client.get('/api/v1/ready/')
+            head = self.client.head('/api/v1/ready/')
+            health = self.client.get('/api/v1/health/')
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()['error']['code'], 'SERVICE_UNAVAILABLE')
+        self.assertEqual(response.json()['error']['details'], {})
+        self.assertNotIn(b'pg_catalog', response.content)
+        self.assertEqual(head.status_code, 503)
+        self.assertEqual(head.content, b'')
+        self.assertEqual(health.status_code, 200)
+        self.assertEqual(self.client.get('/api/v1/ready/').status_code, 200)

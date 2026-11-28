@@ -75,10 +75,12 @@ including ordinary `ValueError`, stay server failures and reach Django logging.
 
 GET/HEAD `/health/` is public, returns `200 {"status":"ok"}`, and checks only
 web-process liveness. GET/HEAD `/ready/` is public and probes the default
-PostgreSQL connection with the web application's credentials (BIO-404 / CN-051).
-It runs `SELECT 1` with a 3-second connection timeout and a 2-second statement
-timeout and returns `200 {"status":"ready"}` on success. PostgreSQL connection
-or query availability errors return a redacted `503 SERVICE_UNAVAILABLE`.
+PostgreSQL connection with the web application's credentials (BIO-404 /
+CN-051/086). A read-only catalogue query verifies the model tables visible
+to the connection. The connection timeout is 3 seconds and the statement
+timeout is 2 seconds. Readiness returns `200 {"status":"ready"}` on success.
+An unavailable connection, query or required table returns a redacted
+`503 SERVICE_UNAVAILABLE`.
 Both paths use private/no-store and a fresh request ID. HEAD returns no body.
 Worker, engine, JSON-store and deployment readiness remain separate.
 The implemented `/auth/login/` takes JSON `username`/`password` (CN-028) and now
