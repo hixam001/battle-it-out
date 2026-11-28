@@ -22,8 +22,12 @@ remaining backlog after every task.
 
 ## Verified checkpoint and where Claude stopped
 
+- BIO-407 / CN-094 checks the enabled PostgreSQL audit and dispute history
+  triggers as part of schema readiness.
+
 - BIO-405 / CN-093 counts failed authentication toward the interim
-  PostgreSQL login limit for each source and account.
+  PostgreSQL login limit for each source and account. PR #101 merged into
+  `main` at `5717a60` after all three hosted checks passed.
 
 - BIO-802 / CN-092 runs two tournaments sequentially through the real
   configured service worker and verifies that archive affects its own artifacts.
@@ -455,7 +459,8 @@ with current code and the coverage matrix; nothing here is closed by intake.
    proposal remains open. CN-051 adds a PostgreSQL readiness probe with
    verified unavailable/recovery behavior. Worker and deployment monitoring
    remain open. CN-086 verifies model table visibility on the configured
-   connection. Legacy creator fallback remains outside these scoped
+   connection. CN-094 verifies the active append-only history guards on
+   the same connection. Legacy creator fallback remains outside these scoped
    feature routes and must be replaced before the full role API is implemented.
    CN-042 reads current-role scoped audit across the existing stores. Permanent
    migration remains open. CN-048 and CN-050 add official series history and
@@ -1661,3 +1666,21 @@ PostgreSQL. The regression signs in two provisioned fixture accounts twelve
 times from one source and preserves the independent failure-limit tests.
 All 91 requirement statuses, nine backlog categories and 42 Jira items remain.
 Public account registration, verification email and recovery are open.
+
+PR #101 merged into `main` at `5717a60` after the hosted unit matrix,
+engine smoke and web/browser checks passed.
+
+## CN-094 continuation evidence
+
+BIO-407 and BIO-404 start `BIO-407-audit-trigger-readiness` from verified
+`main` at `ac5236d` and incorporate `5717a60` before publication. The existing
+PostgreSQL catalogue probe checks the visible audit and dispute history
+guards. Empty fixture tables without their triggers return redacted `503`
+on GET and HEAD. Liveness remains available and the configured schema
+shows readiness again.
+
+All 154 Django tests and system and migration checks passed on the
+reconciled branch with isolated disposable PostgreSQL. All 91 requirement
+statuses, nine backlog categories and 42 Jira items remain. Permanent
+legacy audit migration, deletion, recovery and production monitoring
+remain open.

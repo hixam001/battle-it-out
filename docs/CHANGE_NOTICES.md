@@ -1154,3 +1154,13 @@ Decisions from the owner that change or narrow what the requirement documents (P
 - The test signs in two provisioned fixture accounts twelve times through
   one source. The existing failure test verifies the `401` and `429` paths,
   independent source and account blocking and absent failed sessions.
+
+## CN-094 — Audit history readiness (2026-11-28)
+
+- **BIO-407 / BIO-404:** PostgreSQL readiness checks for the active
+  append-only triggers on the visible audit and dispute event tables.
+  The existing bounded catalogue query returns unavailable if either guard
+  is missing or disabled for the configured connection.
+- A disposable schema fixture provides visible history tables without the
+  guards. GET and HEAD return a redacted `503`; liveness stays `200`.
+  Restoring the configured search path recovers readiness.

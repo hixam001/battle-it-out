@@ -1765,3 +1765,20 @@ DEC-01 code per participant vs team (rec: per participant) · DEC-02 captain-onl
 - Updated the web guide, API and test plans, Jira, CN-093, changelog and
   memory. All nine backlog categories and 42 Jira items remain. Public
   registration, verification email and account recovery remain open.
+
+- PR #101 merged into `main` at `5717a60` after all three hosted checks passed.
+
+### 2026-11-28 — BIO-407 / BIO-404 Audit and dispute history readiness
+
+- Started `BIO-407-audit-trigger-readiness` at `ac5236d` and incorporated
+  `5717a60` after the earlier backlog PRs merged.
+- The bounded read-only PostgreSQL query checks for enabled append-only
+  triggers on the visible audit and dispute history tables. Unprotected
+  test tables return redacted `503`; liveness stays `200` and restoring the
+  search path recovers readiness.
+- All 154 Django cases and system and migration checks passed on the
+  reconciled branch with isolated disposable PostgreSQL.
+- Updated the web and API guides, runbook, test plan, coverage, Jira,
+  CN-094, changelog and memory. All nine backlog categories and 42 Jira
+  items remain. Permanent legacy audit, deletion and production recovery
+  remain open.

@@ -181,6 +181,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Fixed
 
+- **Append-only history readiness (BIO-407, CN-094)** reports unavailable
+  when visible PostgreSQL audit or dispute history lacks its active trigger.
+
 - **Sign-in failure limits (BIO-405, CN-093)** count failed authentication
   while allowing successful sign-ins to share a connection source.
 

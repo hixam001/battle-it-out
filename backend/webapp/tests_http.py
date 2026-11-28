@@ -9,6 +9,7 @@ from django.db import DatabaseError, connections
 from django.http import Http404, JsonResponse
 from django.test import Client, SimpleTestCase, TestCase, override_settings
 from django.urls import path
+from psycopg import connect, sql
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import Throttled, ValidationError
 from rest_framework.permissions import AllowAny
@@ -287,6 +288,36 @@ class PostgresReadiness(TestCase):
         self.assertEqual(response.json()['error']['code'], 'SERVICE_UNAVAILABLE')
         self.assertEqual(response.json()['error']['details'], {})
         self.assertNotIn(b'pg_catalog', response.content)
+        self.assertEqual(head.status_code, 503)
+        self.assertEqual(head.content, b'')
+        self.assertEqual(health.status_code, 200)
+        self.assertEqual(self.client.get('/api/v1/ready/').status_code, 200)
+
+    def test_readiness_requires_the_history_triggers_on_the_visible_tables(self):
+        db = connections['default']
+        params = db.get_connection_params()
+        schema = 'bio_readiness_fixture'
+        shadow = sql.Identifier(schema)
+        # Use empty tables on the disposable search path. The real history
+        # and its triggers remain intact throughout the fixture.
+        with connect(**params, autocommit=True) as probe, probe.cursor() as cursor:
+            cursor.execute(sql.SQL('CREATE SCHEMA {}').format(shadow))
+            try:
+                for table in ('webapp_auditevent', 'webapp_disputeevent'):
+                    name = sql.Identifier(table)
+                    cursor.execute(sql.SQL('CREATE TABLE {}.{} (LIKE {})').format(shadow, name, name))
+                current = cursor.execute('SHOW search_path').fetchone()[0]
+                shadow_params = {**params, 'options': f'-c search_path={schema},{current.replace(" ", "")}'}
+                with patch.object(db, 'get_connection_params', return_value=shadow_params):
+                    response = self.client.get('/api/v1/ready/')
+                    head = self.client.head('/api/v1/ready/')
+                    health = self.client.get('/api/v1/health/')
+            finally:
+                cursor.execute(sql.SQL('DROP SCHEMA {} CASCADE').format(shadow))
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()['error']['code'], 'SERVICE_UNAVAILABLE')
+        self.assertEqual(response.json()['error']['details'], {})
+        self.assertNotIn(schema, response.content.decode())
         self.assertEqual(head.status_code, 503)
         self.assertEqual(head.content, b'')
         self.assertEqual(health.status_code, 200)

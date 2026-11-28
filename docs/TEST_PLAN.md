@@ -742,6 +742,11 @@ path hides the application's migrated tables. GET and HEAD return a redacted
 `503`, liveness remains `200`, and restoring the search path returns readiness
 to `200`.
 
+CN-094 also checks readiness against visible audit and dispute event tables
+with no append-only triggers. The test uses empty tables in a disposable
+schema. GET and HEAD report unavailability, liveness remains `200` and
+the configured schema restores readiness without changing the real history.
+
 ### Dispute dashboard notices (BIO-607 / CN-089)
 
 PostgreSQL tests verify current access for both staff roles, the filing team

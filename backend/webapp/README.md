@@ -80,7 +80,7 @@ Canonical paths use a trailing slash, except the CSV export.
 | Method | `/api/v1` path | Behavior |
 |---|---|---|
 | GET/HEAD | `/health/` | Public process liveness only; no database, account, legacy-store or engine access |
-| GET/HEAD | `/ready/` | Public PostgreSQL connectivity and model-table visibility check with redacted `503` when unavailable |
+| GET/HEAD | `/ready/` | Public PostgreSQL connectivity, model-table visibility and append-only history trigger check |
 | GET | `/auth/session/` | Current user or null and masked CSRF token; private/no-store |
 | POST | `/auth/login/`, `/auth/logout/` | CSRF-protected session lifecycle |
 | GET | `/notifications/` | Linked recipient's bounded feed, unread/tournament filters and counts |
@@ -259,8 +259,9 @@ and addresses the [DRF handler's exception-only scope](https://www.django-rest-f
 The `/health/` endpoint checks whether the web process can respond. The
 `/ready/` endpoint uses a separate PostgreSQL connection for one read-only
 catalogue query with connection and statement timeouts. It checks managed
-model table visibility on the configured schema search path. Worker and engine checks,
-production monitoring, pagination, global idempotency/concurrency and
+model table visibility and the active append-only audit and dispute triggers
+on the configured schema search path. Worker and engine checks, production
+monitoring, pagination, global idempotency/concurrency and
 remaining core routes are still BIO-404 work.
 
 ## Verification
