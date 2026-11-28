@@ -166,6 +166,10 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Fixed
 
+- **Archive during replay maintenance (BIO-606, CN-084)** lets maintenance
+  skip a tournament archived during replay collection and finish the rest of
+  the pass.
+
 - **Replay registration during archive (BIO-606, CN-082)** refuses a late
   replay as archived even if the purge removes its temporary copy during
   verification. An archived folder stays removed after the write attempt.

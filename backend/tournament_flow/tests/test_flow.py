@@ -17,6 +17,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from backend.match_orchestrator import bracket as B
 from backend.match_orchestrator import maps as M
@@ -350,7 +351,7 @@ class Upkeep(BracketBase):
     def vault(self):
         return P.Vault(self.dir / "vault", P.ReplayIndex(self.dir / "replays.json"))
 
-    def test_housekeeping_stores_the_replays_of_finished_games_once(self):
+    def finish_bracket_with_replay(self):
         self.ready(("ta", "tb"))
         self.open(("ta", "tb"))
         F.start_round(self.flow, "b1", 1, "org-1", now=self.clock)
@@ -364,6 +365,10 @@ class Upkeep(BracketBase):
                     "reason": DECISIVE, "replay": str(src), "replay_sha256": sha,
                     "structured_log": {"path": "/x/l.jsonl", "events": 5}}
         self.play(fail=run_fn)
+        return src
+
+    def test_housekeeping_stores_the_replays_of_finished_games_once(self):
+        self.finish_bracket_with_replay()
         vault = self.vault()
         first = F.housekeeping(self.flow, vault, now=self.clock)
         self.assertEqual(first["replays"], {"b1": {"stored": 1, "already_known": 0}})
@@ -372,18 +377,7 @@ class Upkeep(BracketBase):
         self.assertEqual(second["purged"], [])
 
     def test_housekeeping_finishes_an_interrupted_archive_and_does_not_collect_into_it(self):
-        self.ready(("ta", "tb"))
-        self.open(("ta", "tb"))
-        F.start_round(self.flow, "b1", 1, "org-1", now=self.clock)
-        data = gzip.compress(b"replay bytes")
-        src = self.dir / "r.bc26"
-        src.write_bytes(data)
-
-        def run_fn(ctx):
-            return {"outcome": "completed", "classification": "normal", "ok": True, "winner": "A", "round": 300,
-                    "reason": DECISIVE, "replay": str(src), "replay_sha256": hashlib.sha256(data).hexdigest(),
-                    "structured_log": {"path": "/x/l.jsonl", "events": 5}}
-        self.play(fail=run_fn)
+        self.finish_bracket_with_replay()
         vault = self.vault()
         F.housekeeping(self.flow, vault, now=self.clock)
         with vault.index.transaction() as state:                   # a crash right after the archive was marked
@@ -392,6 +386,35 @@ class Upkeep(BracketBase):
         out = F.housekeeping(self.flow, vault, now=self.clock)
         self.assertEqual((out["purged"], out["archived_skipped"], out["replays"]), (["t1"], ["b1"], {}))
         self.assertFalse((vault.root / "t1").exists())
+
+    def test_housekeeping_continues_when_archive_starts_during_collection(self):
+        source = self.finish_bracket_with_replay()
+        store = self.flow.store
+        bracket = B.get_bracket(store, "b1")
+        B.create_bracket(store, "b2", bracket["teams"], bracket["maps"])
+        with store.transaction() as state:
+            state["brackets"]["b2"]["tournament_id"] = "t2"
+        vault = self.vault()
+        original_check = P._sha256_and_check
+
+        def start_archive_after_read(path, limit):
+            result = original_check(path, limit)
+            if path == source:
+                with vault.index.transaction() as state:
+                    P._tournament(state, "t1", self.clock()).update(
+                        status=P.ARCHIVED, archived_at=P._iso(self.clock()), archived_by="a",
+                    )
+            return result
+
+        before = store.snapshot()
+        with patch.object(P, "_sha256_and_check", side_effect=start_archive_after_read):
+            out = F.housekeeping(self.flow, vault, now=self.clock)
+        self.assertEqual(out["archived_skipped"], ["b1"])
+        self.assertEqual(out["replays"], {"b2": {"stored": 0, "already_known": 0}})
+        self.assertEqual(out["purged"], ["t1"])
+        self.assertFalse((vault.root / "t1").exists())
+        self.assertEqual(vault.index.snapshot()["incidents"], [])
+        self.assertEqual(store.snapshot(), before)
 
     def test_housekeeping_skips_brackets_without_a_tournament_and_needs_no_vault(self):
         B.create_bracket(self.flow.store, "loose", [{"team": "ta", "submission": "ta-v1"}, {"team": "tb", "submission": "tb-v1"}],

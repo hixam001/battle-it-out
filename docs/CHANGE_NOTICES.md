@@ -1055,3 +1055,12 @@ Decisions from the owner that change or narrow what the requirement documents (P
   winners once and leaves official records identical after another delivery.
   The fixture simulates game results. Target-host process cleanup, capacity
   and outage drills remain open.
+
+## CN-084 — Archive during replay maintenance (2026-11-28)
+
+- **BIO-606:** Maintenance treats an archive refusal during replay
+  collection the same as an archive detected before collection. It lists
+  the bracket as skipped, visits later tournaments and finishes pending
+  vault purges in the same pass.
+- A deterministic fixture archives during source verification and keeps
+  official match and bracket records unchanged.

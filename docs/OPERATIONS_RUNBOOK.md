@@ -116,6 +116,8 @@ game and one advancement per winner.
    restored copies private until the artifact retention review is complete.
    Maintenance checks archived folders even when a purge is marked `done`.
    If a restore brought a file back, verify that the next purge removes it.
+   If archive starts during replay collection, maintenance skips that
+   bracket and continues the remaining work in the same pass.
 
 ## Backup and restore rehearsal
 

@@ -195,6 +195,9 @@ def housekeeping(flow: Flow, vault: P.Vault | None = None, *, now: Callable[[], 
             if state is not None and state["status"] == P.ARCHIVED:
                 out["archived_skipped"].append(bid)
                 continue
-            out["replays"][bid] = P.collect_bracket(vault, flow.store, tid, bid, now=now)
+            try:
+                out["replays"][bid] = P.collect_bracket(vault, flow.store, tid, bid, now=now)
+            except P.ArchivedRefused:
+                out["archived_skipped"].append(bid)
         out["purged"] = P.purge_pending(vault, now=now)
     return out
